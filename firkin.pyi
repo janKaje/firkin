@@ -253,6 +253,13 @@ class Firkin:
         """
         ...
 
+    @classmethod
+    def empty(cls) -> Self: 
+        """
+        Returns a Firkin with value 1 and no units attached.
+        """
+        ...
+
     def as_unit(self, other:Self|float|int|str) -> Self: 
         """
         Returns a unit idential to self, but with the units of other.

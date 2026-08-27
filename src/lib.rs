@@ -49,6 +49,11 @@ mod firkin {
             }
         }
 
+        #[classmethod]
+        fn empty(_cls: &Bound<'_, PyType>) -> PyResult<Self> {
+            Ok(Firkin::empty_unit())
+        }
+
         fn as_unit(&self, other: UnitCoercible) -> PyResult<Firkin> {
             let other: Firkin = other.into();
             match self.as_unit_internal(&other.unit_collection) {
@@ -361,7 +366,6 @@ mod firkin {
             }
         }
 
-        #[allow(unused)]
         fn empty_unit() -> Firkin {
             Firkin {
                 unit_collection: UnitCollection::empty_collection(),
