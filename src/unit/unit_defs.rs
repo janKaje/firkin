@@ -5,7 +5,7 @@ use crate::unit::single_unit::{SingleUnit, UnitDef};
 // name, abbr, offset (in and from base units), scale, (exponents) second, meter, kilogram, ampere, kelvin, mole, candela, USD
 
 #[rustfmt::skip]
-const BASE_UNITS: &[UnitDef] = &[
+pub(crate) const BASE_UNITS: &[UnitDef] = &[
     ("second", "s",    0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
     ("meter", "m",     0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
     ("kilogram", "kg", 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0),
