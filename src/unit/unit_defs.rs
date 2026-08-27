@@ -125,6 +125,7 @@ const OTHER_UNITS: &[UnitDef] = &[
     ("shed", "shed", 0.0, 1.0e-52, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
     ("martian sol", "sol", 0.0, 88775.244, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
     ("jiffy", "jfy", 0.0, 0.01, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+    ("light speed", "c", 0.0, 299792458.0, -1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
 ];
 
 // alias, pointer
@@ -152,6 +153,8 @@ const UNIT_ALIASES: &[Alias] = &[
     ("fahrenheit", "degree Fahrenheit"),
     ("statute mile", "mile"),
     ("firkin", "firkin (mass)"),
+    ("speed of light", "light speed"),
+    ("lightspeed", "light speed"),
 ];
 
 // prefix, abbr, multiplier

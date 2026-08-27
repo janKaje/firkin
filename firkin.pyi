@@ -186,6 +186,50 @@ class Firkin:
         """
         ...
 
+    @classmethod
+    def constant(cls, query:str) -> Self: 
+        """
+        Create a new Firkin instance by searching for the name of a constant.
+
+        Parameters
+        ----------
+        query : str
+            The query by which to find the constant. Generally the constant's
+            name, but can be an abbreviation (i.e. `c` for `light speed`)
+
+        Returns
+        -------
+        Firkin
+            The new Firkin instance.
+
+        Raises
+        ------
+        LookupError
+            If the constant name does not correspond to an entry in the database.
+
+        Examples
+        --------
+        >>> from firkin import Firkin
+        >>> Firkin.constant("gas constant")
+        8.31446261815324 [J/K.mol]
+
+        Due to the fact that the speed of light is sometimes used as a unit in
+        certain fields of physics, it can be used as either a unit or a 
+        constant.
+
+        >>> c_unit = Firkin.unit("light speed")
+        >>> c_unit
+        1 [c]
+        >>> c_constant = Firkin.constant("light speed")
+        >>> c_constant
+        299792458 [m/s]
+        >>> c_constant.as_unit(c_unit)
+        1 [c]
+        >>> ("eV"/c_unit**2).as_unit("kg")
+        0.0000000000000000000000000000000000017826656668079864 [kg]
+        """
+        ...
+
     def as_unit(self, other:Self|float|int|str) -> Self: 
         """
         Returns a unit idential to self, but with the units of other.

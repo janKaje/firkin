@@ -5,6 +5,7 @@ use std::fmt;
 #[derive(Debug)]
 pub(crate) enum FirkinError {
     UnitNotFound(String),
+    ConstantNotFound(String),
     IncompatibleUnits { first: String, second: String },
     CannotConvertToFirkin(String),
     CannotConvertToNumber(String),
@@ -16,6 +17,7 @@ impl fmt::Display for FirkinError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::UnitNotFound(query) => write!(f, "Unit {query} not found"),
+            Self::ConstantNotFound(query) => write!(f, "Constant {query} not found"),
             Self::IncompatibleUnits { first, second } => {
                 write!(f, "{first} and {second} are not compatible")
             }
@@ -33,6 +35,7 @@ impl std::convert::From<FirkinError> for PyErr {
     fn from(err: FirkinError) -> PyErr {
         match &err {
             FirkinError::UnitNotFound(_query) => PyLookupError::new_err(err.to_string()),
+            FirkinError::ConstantNotFound(_query) => PyLookupError::new_err(err.to_string()),
             FirkinError::IncompatibleUnits {
                 first: _,
                 second: _,

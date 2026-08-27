@@ -4,6 +4,7 @@ use pyo3::prelude::*;
 
 mod error;
 mod unit;
+mod constant;
 
 /// A Python module implemented in Rust.
 #[pymodule]
@@ -13,6 +14,7 @@ mod firkin {
 
     use crate::error::FirkinError;
     use crate::unit::UnitCollection;
+    use crate::constant::search_for_constant_name;
 
     /// Unit! yippee
     #[pyclass(from_py_object)]
@@ -37,6 +39,14 @@ mod firkin {
                 unit_collection: unit,
                 value: 1.0,
             })
+        }
+
+        #[classmethod]
+        fn constant(_cls: &Bound<'_, PyType>, constant_name: &str) -> PyResult<Self> {
+            match Firkin::constant_query_internal(constant_name) {
+                Ok(r) => Ok(r),
+                Err(e) => Err(e.into())
+            }
         }
 
         fn as_unit(&self, other: UnitCoercible) -> PyResult<Firkin> {
@@ -341,6 +351,19 @@ mod firkin {
             Firkin {
                 unit_collection: UnitCollection::empty_collection(),
                 value: 1.0,
+            }
+        }
+
+        fn constant_query_internal(query: &str) -> Result<Firkin, FirkinError> {
+            match search_for_constant_name(query) {
+                None => Err(FirkinError::ConstantNotFound(query.to_string())),
+                Some(const_def) => Ok(Firkin {
+                    unit_collection: match UnitCollection::from_unit_name(const_def.2) {
+                        Some(r) => r,
+                        None => return Err(FirkinError::UnitNotFound(const_def.2.to_string()))
+                    },
+                    value: const_def.1
+                })
             }
         }
     }
