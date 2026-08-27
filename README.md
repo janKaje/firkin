@@ -109,3 +109,67 @@ Physical constants can be accessed through `Firkin.constant` as mentioned previo
 ```
 
 See the inbuilt documentation for more detailed information.
+
+## Real-world example
+
+Say you want to analyze the rate of heat transfer across a single-pane window. You measure the window's area and thickness, which are 4.5 sq ft and 1/4 inch, respectively. Outside it's 100 °F and inside you keep it cool at 70 °F.
+
+```py
+from firkin import Firkin
+
+# define window area
+foot = Firkin.unit("foot")
+inch = Firkin.unit("inch")
+
+window_area = 4.5 * foot ** 2
+window_width = 0.25 * inch
+
+# define temperatures
+degf = Firkin.unit("deg F")
+
+outside_temperature = 100 * degf
+inside_temperature = 70 * degf
+```
+
+Using your engineering judgment, you assume some convection coefficients.
+
+```python
+# assume values for convection coefficients
+inside_convection_coefficient = 2 * watt / "m2.K" # 2 W/m2.K
+outside_convection_coefficient = 10 * watt / "m2.K" # 10 W/m2.K
+```
+
+All that's left is the final calculation:
+
+```python
+# calculate thermal resistances 
+inside_resistance = 1/inside_convection_coefficient/window_area
+window_resistance = window_width/glass_thermal_conductivity/window_area
+outside_resistance = 1/outside_convection_coefficient/window_area
+
+# sum
+overall_resistance = inside_resistance + window_resistance + outside_resistance
+
+# calculate heat flow
+heat_flow = (outside_temperature - inside_temperature)/overall_resistance
+
+print(heat_flow.as_unit("W"))
+
+# 11.496997564233522 [W]
+```
+
+Seems like it might be time to invest in some better-insulated windows.
+
+## Contributions
+
+Firkin was heavily inspired by both [Unum](https://pypi.org/project/Unum/) and [fend](https://github.com/printfn/fend). Some implementation details were taken or adapted from both, so many thanks to the creators and contributors to those projects.
+
+## Future plans
+
+* Package library for PyPI
+* Proper support for logarithmic units
+* Auto simplification, especially for units of different prefixes
+* Improve case-sensitiveness for queries
+* Add LaTeX formatting support
+* Add support for arbitrary-precision numbers
+* Add support for uncertainty, with basic error propagation
