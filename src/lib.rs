@@ -57,12 +57,15 @@ mod firkin {
             }
         }
 
-        #[pyo3(signature = (other=None))]
-        fn as_number(&self, other: Option<UnitCoercible>) -> PyResult<f64> {
+        #[pyo3(signature = (other=None, scale=false))]
+        fn as_number(&self, other: Option<UnitCoercible>, scale: bool) -> PyResult<f64> {
             match other {
                 Some(other) => {
                     let other: Firkin = other.into();
-                    match self.as_number_internal(&other.unit_collection) {
+                    match self.as_number_internal(
+                        &other.unit_collection,
+                        if scale {other.value} else {1.0}
+                    ) {
                         Ok(r) => Ok(r),
                         Err(e) => Err(e.into()),
                     }
@@ -72,7 +75,7 @@ mod firkin {
         }
 
         fn as_unitless(&self) -> PyResult<f64> {
-            match self.as_number_internal(&UnitCollection::empty_collection()) {
+            match self.as_number_internal(&UnitCollection::empty_collection(), 1.0) {
                 Ok(r) => Ok(r),
                 Err(e) => Err(e.into()),
             }
@@ -207,7 +210,7 @@ mod firkin {
 
         fn __pow__(&self, exponent: UnitCoercible, _modulus: Option<PyNumber>) -> PyResult<Firkin> {
             let exponent: Firkin = exponent.into();
-            let exponent = exponent.as_number_internal(&UnitCollection::empty_collection())?;
+            let exponent = exponent.as_number_internal(&UnitCollection::empty_collection(), 1.0)?;
             Ok(Firkin {
                 unit_collection: self.unit_collection.pow(exponent),
                 value: self.value.powf(exponent),
@@ -216,7 +219,7 @@ mod firkin {
 
         fn __rpow__(&self, other: UnitCoercible, _modulus: Option<PyNumber>) -> PyResult<Firkin> {
             let other: Firkin = other.into();
-            let exponent = self.as_number_internal(&UnitCollection::empty_collection())?;
+            let exponent = self.as_number_internal(&UnitCollection::empty_collection(), 1.0)?;
             Ok(Firkin {
                 unit_collection: other.unit_collection.pow(exponent),
                 value: other.value.powf(exponent),
@@ -286,7 +289,7 @@ mod firkin {
         }
 
         fn __exp__(&self) -> PyResult<f64> {
-            let exponent = self.as_number_internal(&UnitCollection::empty_collection())?;
+            let exponent = self.as_number_internal(&UnitCollection::empty_collection(), 1.0)?;
             Ok(exponent.exp())
         }
 
@@ -295,7 +298,7 @@ mod firkin {
         }
 
         fn __log__(&self) -> PyResult<f64> {
-            let exponent = self.as_number_internal(&UnitCollection::empty_collection())?;
+            let exponent = self.as_number_internal(&UnitCollection::empty_collection(), 1.0)?;
             Ok(exponent.ln())
         }
 
@@ -304,7 +307,7 @@ mod firkin {
         }
 
         fn __log10__(&self) -> PyResult<f64> {
-            let exponent = self.as_number_internal(&UnitCollection::empty_collection())?;
+            let exponent = self.as_number_internal(&UnitCollection::empty_collection(), 1.0)?;
             Ok(exponent.log10())
         }
 
@@ -351,9 +354,9 @@ mod firkin {
             }
         }
 
-        fn as_number_internal(&self, other: &UnitCollection) -> Result<f64, FirkinError> {
+        fn as_number_internal(&self, other: &UnitCollection, scale: f64) -> Result<f64, FirkinError> {
             match self.as_unit_internal(other) {
-                Ok(u) => Ok(u.value),
+                Ok(u) => Ok(u.value/scale),
                 Err(e) => Err(e),
             }
         }

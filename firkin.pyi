@@ -34,7 +34,7 @@ class Firkin:
     
     Firkin instances can do basic arithmetic and exponentiation with numbers,
     other Firkin instances, or strings. In the case of strings, it will be
-    transformed into a Firkin instance the same way Firkin.unit() uses. If
+    transformed into a Firkin instance the same way `Firkin.unit` uses. If
     no corresponding unit is found, an error will be thrown.
 
     >>> joule = Firkin.unit("joule")
@@ -90,12 +90,19 @@ class Firkin:
     >>> (10*degc/"s").as_unit("deg F/s") # degrees per second
     18 [°F/s]
 
+    ### Currency
+
+    Since exchange rates change throughout time, and calculations might require
+    exchange rates from different times, all currencies other than USD are
+    intentionally left blank. See the "Custom Units" section below on
+    workarounds.
+
     ### Non-arithmetic math functions
 
     Non-arithmetic math functions such as trigonometric functions, 
     exponentiation, and logarithms don't accept units in some or all of their 
     arguments. For such cases, you will need to either ensure the Firkin
-    has no units, or call `as_number()` on the instance to remove the units.
+    has no units, or call `as_number` on the instance to remove the units.
 
     >>> inch = Firkin.unit("inch")
     >>> cm = Firkin.unit("cm")
@@ -132,10 +139,26 @@ class Firkin:
     0.587786664902119
 
     Currently, only `exp`, `log`, and `log10` are implemented this way. For any
-    other functions, consider using the .as_unitless() method:
+    other functions, consider using the `as_unitless` method:
 
     >>> np.sin((degc/degf).as_unitless())
     0.9738476308781953
+
+    ### Custom Units
+
+    Firkin does not support custom units. Instead, Firkin instances can act as
+    custom units in certain cases. The `as_number` method supports an optional
+    argument `scale` that, if True, indicates that a custom unit should be 
+    applied.
+
+    >>> usd = Firkin.unit("USD")
+    >>> eur = 1.16537 * usd # define a "custom unit"
+    >>> (123.45 * usd).as_number(eur, True) # intended result
+    105.9320215897097
+    >>> (123.45 * usd)/eur # equivalent calculation
+    105.9320215897097 []
+    >>> (123.45 * usd).as_number(eur) # unintended result
+    123.45
     """
 
     @classmethod
@@ -252,7 +275,7 @@ class Firkin:
         """
         ...
 
-    def as_number(self, other:Self|float|int|str|None=None) -> float: 
+    def as_number(self, other:Self|float|int|str|None=None, scale:bool=False) -> float: 
         """
         Similar to the .as_unit() method, but returns itself as a number.
 
@@ -262,6 +285,8 @@ class Firkin:
             The units to coerce self into. If None, will return without 
             altering the units. Strings will attempt to use .unit() algorithm, 
             and numbers will be considered unitless.
+        scale : bool, default False
+            If true, returns the equivalent of (self/other).as_unitless().
 
         Returns
         -------
@@ -272,6 +297,22 @@ class Firkin:
         ------
         TypeError
             If the units of self and other are incompatible.
+
+        Examples
+        --------
+
+        >>> from firkin import Firkin
+        >>> usd = Firkin.unit("USD")
+        >>> gbp = 1.35851 * usd
+        >>> amt = 123.45 * usd
+        >>> amt.as_number(gbp) # trying to convert from usd to gbp
+        123.45
+        >>> amt.as_number(gbp, True) # correct response
+        90.87161669770558
+        >>> (amt/gbp).as_unitless() # equivalent to prev
+        90.87161669770558
+        >>> amt/gbp # returns a unitless Firkin instance
+        90.87161669770558 []
         """
         ...
 
@@ -289,6 +330,13 @@ class Firkin:
         ------
         TypeError
             If self is not unitless.
+        """
+        ...
+
+    def as_base_units(self) -> Self:
+        """
+        Similar to as_unit, but takes no arguments and instead returns self as
+        base units (SI units + USD for currency)
         """
         ...
 
