@@ -1,6 +1,4 @@
-use std::
-    hash::{Hash, Hasher}
-;
+use std::hash::{Hash, Hasher};
 
 #[derive(Clone, PartialEq, Debug)]
 pub(crate) struct SingleUnit {
@@ -19,19 +17,44 @@ impl Hash for SingleUnit {
 
 impl Eq for SingleUnit {}
 
-// name, abbr, scale, offset (in and from base units), (exponents) second, meter, kilogram, ampere, kelvin, mole, candela, USD
-pub(crate) type UnitDef = (&'static str, &'static str, f64, f64, f64, f64, f64, f64, f64, f64, f64, f64);
-pub(crate) type UnitDefString = (String, String, f64, f64, f64, f64, f64, f64, f64, f64, f64, f64);
+// name, abbr, offset (in and from base units), scale, (exponents) second, meter, kilogram, ampere, kelvin, mole, candela, USD
+pub(crate) type UnitDef = (
+    &'static str,
+    &'static str,
+    f64,
+    f64,
+    f64,
+    f64,
+    f64,
+    f64,
+    f64,
+    f64,
+    f64,
+    f64,
+);
+pub(crate) type UnitDefString = (
+    String,
+    String,
+    f64,
+    f64,
+    f64,
+    f64,
+    f64,
+    f64,
+    f64,
+    f64,
+    f64,
+    f64,
+);
 
 impl SingleUnit {
-
     pub(crate) fn create_from_unit_def(u: UnitDef) -> Self {
         SingleUnit {
             name: u.0.to_string(),
             abbr: u.1.to_string(),
             offset: u.2,
             scale: u.3,
-            base_units: [u.4, u.5, u.6, u.7, u.8, u.9, u.10, u.11]
+            base_units: [u.4, u.5, u.6, u.7, u.8, u.9, u.10, u.11],
         }
     }
 
@@ -41,7 +64,7 @@ impl SingleUnit {
             abbr: u.1,
             offset: u.2,
             scale: u.3,
-            base_units: [u.4, u.5, u.6, u.7, u.8, u.9, u.10, u.11]
+            base_units: [u.4, u.5, u.6, u.7, u.8, u.9, u.10, u.11],
         }
     }
 }

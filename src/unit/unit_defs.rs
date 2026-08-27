@@ -1,19 +1,23 @@
+// #![allow(unused)]
+
 use crate::unit::single_unit::{SingleUnit, UnitDef};
 
-// name, plural name, abbr, offset (in and from base units), scale, (exponents) second, meter, kilogram, ampere, kelvin, mole, candela, USD
+// name, abbr, offset (in and from base units), scale, (exponents) second, meter, kilogram, ampere, kelvin, mole, candela, USD
 
+#[rustfmt::skip]
 const BASE_UNITS: &[UnitDef] = &[
-    ("second", "s",      0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-    ("meter", "m",        0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+    ("second", "s",    0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+    ("meter", "m",     0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
     ("kilogram", "kg", 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-    ("ampere", "A",      0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0),
-    ("kelvin", "K",      0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0),
-    ("mole", "mol",        0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0),
-    ("candela", "cd",   0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0),
-    ("USD", "USD",           0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0),
+    ("ampere", "A",    0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0),
+    ("kelvin", "K",    0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0),
+    ("mole", "mol",    0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0),
+    ("candela", "cd",  0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+    ("USD", "USD",     0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0),
 ];
 
-const DERIVED_UNITS: &[UnitDef] = &[
+#[rustfmt::skip]
+const OTHER_UNITS: &[UnitDef] = &[
     ("gram", "g", 0.0, 0.001, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0),
     ("pascal", "Pa", 0.0, 1.0, -2.0, -1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0),
     ("radian", "rad", 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
@@ -113,6 +117,14 @@ const DERIVED_UNITS: &[UnitDef] = &[
     ("parsec", "pc", 0.0, 30856775814913673.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
     ("millimeter of mercury", "mmHg", 0.0, 133.322387415, -2.0, -1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0),
     ("inch of mercury", "inHg", 0.0, 133.322387415*25.4, -2.0, -1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+    ("firkin (vol)", "frknv", 0.0, 9.0*0.003785412, 0.0, 3.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+    ("firkin (mass)", "frknm", 0.0, 90.0*0.4535924, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0), // as seen in the FFF system of measurements
+    ("furlong", "flg", 0.0, 660.0*0.3048, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+    ("fortnight", "ftnt", 0.0, 14.0*86400.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+    ("outhouse", "ouths", 0.0, 1.0e-34, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+    ("shed", "shed", 0.0, 1.0e-52, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+    ("martian sol", "sol", 0.0, 88775.244, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+    ("jiffy", "jfy", 0.0, 0.01, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
 ];
 
 // alias, pointer
@@ -131,148 +143,168 @@ const UNIT_ALIASES: &[Alias] = &[
     ("cc", "milliliter"),
     ("deg C", "degree Celsius"),
     ("deg F", "degree Fahrenheit"),
+    ("deg c", "degree Celsius"),
+    ("deg f", "degree Fahrenheit"),
     ("rankine", "Rankine"),
     ("Celsius", "degree Celsius"),
     ("Fahrenheit", "degree Fahrenheit"),
+    ("celsius", "degree Celsius"),
+    ("fahrenheit", "degree Fahrenheit"),
     ("statute mile", "mile"),
+    ("firkin", "firkin (mass)"),
 ];
 
 // prefix, abbr, multiplier
 type PrefixDef = (&'static str, &'static str, f64);
 
 const STANDARD_PREFIXES: &[PrefixDef] = &[
-	("kibi", "Ki", (2<<10) as f64),
-	("mebi", "Mi", (2<<20) as f64),
-	("gibi", "Gi", (2<<30) as f64),
-	("tebi", "Ti", (2i64 << 40) as f64),
-	("pebi", "Pi", (2i64 << 50) as f64),
-	("exbi", "Ei", (2i64 << 60) as f64),
-	("zebi", "Zi", (2i128 << 70) as f64),
-	("yobi", "Yi", (2i128 << 80) as f64),
-	("quetta", "Q", 1e30),
-	("ronna", "R", 1e27),
-	("yotta", "Y", 1e24),
-	("zetta", "Z", 1e21),
-	("exa", "E", 1e18),
-	("peta", "P", 1e15),
-	("tera", "T", 1e12),
-	("giga", "G", 1e9),
-	("mega", "M", 1e6),
-	("myria", "myria", 1e4),
-	("kilo", "k", 1e3),
-	("hecto", "h", 1e2),
-	("deca", "da", 1e1),
-	("deka", "da", 1e1),
-	("deci", "d", 1e-1),
-	("centi", "c", 1e-2),
-	("milli", "m", 1e-3),
-	("micro", "u", 1e-6),
-	("nano", "n", 1e-9),
-	("pico", "p", 1e-12),
-	("femto", "f", 1e-15),
-	("atto", "a", 1e-18),
-	("zepto", "z", 1e-21),
-	("yocto", "y", 1e-24),
-	("ronto", "r", 1e-27),
-	("quecto", "q", 1e-30),
+    ("kibi", "Ki", (2 << 10) as f64),
+    ("mebi", "Mi", (2 << 20) as f64),
+    ("gibi", "Gi", (2 << 30) as f64),
+    ("tebi", "Ti", (2i64 << 40) as f64),
+    ("pebi", "Pi", (2i64 << 50) as f64),
+    ("exbi", "Ei", (2i64 << 60) as f64),
+    ("zebi", "Zi", (2i128 << 70) as f64),
+    ("yobi", "Yi", (2i128 << 80) as f64),
+    ("quetta", "Q", 1e30),
+    ("ronna", "R", 1e27),
+    ("yotta", "Y", 1e24),
+    ("zetta", "Z", 1e21),
+    ("exa", "E", 1e18),
+    ("peta", "P", 1e15),
+    ("tera", "T", 1e12),
+    ("giga", "G", 1e9),
+    ("mega", "M", 1e6),
+    ("myria", "myria", 1e4),
+    ("kilo", "k", 1e3),
+    ("hecto", "h", 1e2),
+    ("deca", "da", 1e1),
+    ("deka", "da", 1e1),
+    ("deci", "d", 1e-1),
+    ("centi", "c", 1e-2),
+    ("milli", "m", 1e-3),
+    ("micro", "u", 1e-6),
+    ("nano", "n", 1e-9),
+    ("pico", "p", 1e-12),
+    ("femto", "f", 1e-15),
+    ("atto", "a", 1e-18),
+    ("zepto", "z", 1e-21),
+    ("yocto", "y", 1e-24),
+    ("ronto", "r", 1e-27),
+    ("quecto", "q", 1e-30),
 ];
 
-fn query_unit_names_internal(query: &str) -> Option<&UnitDef> {
-    let mut query_substituted = query;
+fn query_unit_aliases_internal(query: &str) -> &str {
+    // if alias found, return pointer, else self
     for alias in UNIT_ALIASES {
         if query == alias.0 {
-            query_substituted = alias.1;
-            break;
+            return alias.1;
         }
     }
+    query
+}
+
+fn query_unit_names_internal(query: &str, include_aliases: bool) -> Option<&UnitDef> {
+    let query = if include_aliases {
+        query_unit_aliases_internal(query)
+    } else {
+        query
+    };
+
     for unit in BASE_UNITS {
-        if query_substituted == unit.0 {
-            return Some(unit)
+        if query == unit.0 {
+            return Some(unit);
         }
     }
-    for unit in DERIVED_UNITS {
-        if query_substituted == unit.0 {
-            return Some(unit)
+
+    for unit in OTHER_UNITS {
+        if query == unit.0 {
+            return Some(unit);
         }
     }
-    return None
+
+    return None;
 }
 
 fn query_unit_symbols_internal(query: &str) -> Option<&UnitDef> {
     for unit in BASE_UNITS {
         if query == unit.1 {
-            return Some(unit)
+            return Some(unit);
         }
     }
-    for unit in DERIVED_UNITS {
+
+    for unit in OTHER_UNITS {
         if query == unit.1 {
-            return Some(unit)
+            return Some(unit);
         }
     }
-    return None
+
+    return None;
 }
 
+pub(crate) fn search_for_unit_name(query: &str) -> Option<SingleUnit> {
+    // substitute from alias if applicable
+    let query = query_unit_aliases_internal(query);
 
-pub(crate) fn search_for_unit_name(query: & str) -> Option<SingleUnit> {
     // first, see if the query contains a perfect match
-    if let Some(result) = query_unit_names_internal(query) {
-        return Some(SingleUnit::create_from_unit_def(*result))
+    if let Some(result) = query_unit_names_internal(query, false) {
+        return Some(SingleUnit::create_from_unit_def(*result));
     } else if let Some(result) = query_unit_symbols_internal(query) {
-        return Some(SingleUnit::create_from_unit_def(*result))
+        return Some(SingleUnit::create_from_unit_def(*result));
     }
 
     // if not, try to remove prefix
     for prefix_def in STANDARD_PREFIXES {
-
         if query.starts_with(prefix_def.0) {
             // if the query starts with a standard prefix, try taking it out and querying the names
-            if let Some(result) = 
-            query_unit_names_internal(&query.replacen(prefix_def.0, "", 1)) {
+            if let Some(result) =
+                query_unit_names_internal(&query.replacen(prefix_def.0, "", 1), true)
+            {
                 // disallow prefixes for nonabsolute scales
                 if result.2 != 0.0 {
-                    return None
+                    return None;
                 }
                 let ret = (
-                    prefix_def.0.to_string() + result.0, 
-                    prefix_def.1.to_string() + result.1, 
+                    prefix_def.0.to_string() + result.0,
+                    prefix_def.1.to_string() + result.1,
                     0.0,
-                    result.3 * prefix_def.2, 
+                    result.3 * prefix_def.2,
                     result.4,
-                    result.5, 
-                    result.6, 
-                    result.7, 
-                    result.8, 
-                    result.9, 
-                    result.10, 
+                    result.5,
+                    result.6,
+                    result.7,
+                    result.8,
+                    result.9,
+                    result.10,
                     result.11,
                 );
 
-                return Some(SingleUnit::create_from_unit_def_string(ret))
+                return Some(SingleUnit::create_from_unit_def_string(ret));
             }
         } else if query.starts_with(prefix_def.1) {
             // if the query starts with a shortened prefix, try taking it out and querying the abbreviations
-            if let Some(result) = 
-            query_unit_symbols_internal(&query.replacen(prefix_def.1, "", 1)) {
+            if let Some(result) = query_unit_symbols_internal(&query.replacen(prefix_def.1, "", 1))
+            {
                 // disallow prefixes for nonabsolute scales
                 if result.2 != 0.0 {
-                    return None
+                    return None;
                 }
                 let ret = (
-                    prefix_def.0.to_string() + result.0, 
-                    prefix_def.1.to_string() + result.1, 
+                    prefix_def.0.to_string() + result.0,
+                    prefix_def.1.to_string() + result.1,
                     0.0,
-                    result.3 * prefix_def.2, 
+                    result.3 * prefix_def.2,
                     result.4,
-                    result.5, 
-                    result.6, 
-                    result.7, 
-                    result.8, 
-                    result.9, 
-                    result.10, 
+                    result.5,
+                    result.6,
+                    result.7,
+                    result.8,
+                    result.9,
+                    result.10,
                     result.11,
                 );
 
-                return Some(SingleUnit::create_from_unit_def_string(ret))
+                return Some(SingleUnit::create_from_unit_def_string(ret));
             }
             // break statement not helpful for shortened prefix
         }
@@ -289,7 +321,7 @@ mod tests {
     fn meter_search() {
         let _meter = match search_for_unit_name("meter") {
             Some(unit) => unit,
-            None => panic!("meter not found")
+            None => panic!("meter not found"),
         };
     }
 
@@ -297,7 +329,7 @@ mod tests {
     fn pascal_search() {
         let _pascal = match search_for_unit_name("pascal") {
             Some(unit) => unit,
-            None => panic!("pascal not found")
+            None => panic!("pascal not found"),
         };
     }
 
@@ -305,7 +337,7 @@ mod tests {
     fn metre_search() {
         let _meter = match search_for_unit_name("metre") {
             Some(unit) => unit,
-            None => panic!("metre not found")
+            None => panic!("metre not found"),
         };
     }
 
@@ -313,7 +345,7 @@ mod tests {
     fn kilometer_search() {
         let kilometer = match search_for_unit_name("kilometer") {
             Some(unit) => unit,
-            None => panic!("kilometer not found")
+            None => panic!("kilometer not found"),
         };
         assert_eq!(kilometer.scale, 1000.0);
     }
@@ -322,7 +354,7 @@ mod tests {
     fn yobidyne_search() {
         let _yobidyne = match search_for_unit_name("yobidyne") {
             Some(unit) => unit,
-            None => panic!("yobidyne not found")
+            None => panic!("yobidyne not found"),
         };
     }
 
@@ -330,7 +362,7 @@ mod tests {
     fn cm_search() {
         let _mm = match search_for_unit_name("cm") {
             Some(unit) => unit,
-            None => panic!("cm not found")
+            None => panic!("cm not found"),
         };
     }
 
@@ -338,8 +370,7 @@ mod tests {
     fn kmm_hg_search() {
         let _kmm_hg = match search_for_unit_name("kmmHg") {
             Some(unit) => unit,
-            None => panic!("kmmHg not found")
+            None => panic!("kmmHg not found"),
         };
     }
-
 }

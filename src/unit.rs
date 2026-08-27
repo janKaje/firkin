@@ -1,11 +1,14 @@
-use std::{collections::HashMap, fmt, ops::{Div, Mul}};
+use std::{
+    collections::HashMap,
+    fmt,
+    ops::{Div, Mul},
+};
 
 mod single_unit;
 mod unit_defs;
 
 use single_unit::SingleUnit;
 use unit_defs::search_for_unit_name;
-
 
 const UNIT_SEP: &str = "."; // separate units within num/denom
 const UNIT_DIV_SEP: &str = "/"; // separate numerator from denominator
@@ -28,7 +31,6 @@ impl Mul for UnitCollection {
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self {
-
         // easy stuff first - base units and scale
         let mut prod_base_units = [0.0; 8];
         for i in 0..8 {
@@ -51,7 +53,11 @@ impl Mul for UnitCollection {
             }
         }
 
-        UnitCollection { single_units: prod_single_units, base_units: prod_base_units, scale: prod_scale }
+        UnitCollection {
+            single_units: prod_single_units,
+            base_units: prod_base_units,
+            scale: prod_scale,
+        }
     }
 }
 
@@ -59,7 +65,6 @@ impl Div for UnitCollection {
     type Output = Self;
 
     fn div(self, rhs: Self) -> Self {
-
         // easy stuff first - base units and scale
         let mut quot_base_units = [0.0; 8];
         for i in 0..8 {
@@ -82,13 +87,15 @@ impl Div for UnitCollection {
             }
         }
 
-        UnitCollection { single_units: quot_single_units, base_units: quot_base_units, scale: quot_scale }
+        UnitCollection {
+            single_units: quot_single_units,
+            base_units: quot_base_units,
+            scale: quot_scale,
+        }
     }
 }
 
-
 impl UnitCollection {
-
     pub(crate) fn offset(&self) -> Option<f64> {
         let mut keys = self.single_units.keys().collect::<Vec<&SingleUnit>>();
         if keys.len() != 1 {
@@ -101,12 +108,11 @@ impl UnitCollection {
     }
 
     // raise to a power
-    pub(crate) fn pow(&self, exponent:f64) -> Self {
-
+    pub(crate) fn pow(&self, exponent: f64) -> Self {
         let mut result_single_units = HashMap::new();
 
         for (k, v) in self.single_units.iter() {
-            result_single_units.insert(k.clone(), v*exponent);
+            result_single_units.insert(k.clone(), v * exponent);
         }
 
         let mut result_base_units = self.base_units.clone();
@@ -115,22 +121,33 @@ impl UnitCollection {
             result_base_units[i] *= exponent
         }
 
-        UnitCollection { single_units: result_single_units, base_units: result_base_units, scale: self.scale.powf(exponent) }
+        UnitCollection {
+            single_units: result_single_units,
+            base_units: result_base_units,
+            scale: self.scale.powf(exponent),
+        }
     }
 
-    pub(crate) fn coerce_unit_to_collection(unit:SingleUnit) -> Self {
-        UnitCollection {base_units: unit.base_units, scale: unit.scale, single_units: HashMap::from([(unit, 1.0)])}
+    pub(crate) fn coerce_unit_to_collection(unit: SingleUnit) -> Self {
+        UnitCollection {
+            base_units: unit.base_units,
+            scale: unit.scale,
+            single_units: HashMap::from([(unit, 1.0)]),
+        }
     }
 
     pub(crate) fn empty_collection() -> Self {
-        UnitCollection {base_units: [0.0; 8], scale: 1.0, single_units: HashMap::new()}
+        UnitCollection {
+            base_units: [0.0; 8],
+            scale: 1.0,
+            single_units: HashMap::new(),
+        }
     }
 
-    pub(crate) fn from_unit_name(query:&str) -> Option<Self> {
+    pub(crate) fn from_unit_name(query: &str) -> Option<Self> {
         if let Some(single_unit) = search_for_unit_name(query) {
             Some(Self::coerce_unit_to_collection(single_unit))
         } else {
-
             let query = query.trim();
 
             // separate by numerator/denominator
@@ -147,8 +164,9 @@ impl UnitCollection {
 
             // go through numerator units
             for num_query in numerator.split(UNIT_SEP) {
-
-                if num_query == "1" || num_query == "" { continue }
+                if num_query == "1" || num_query == "" {
+                    continue;
+                }
 
                 // separate unit and exponent
                 let (q, exp) = match num_query.rfind(char::is_numeric) {
@@ -163,15 +181,18 @@ impl UnitCollection {
                 };
 
                 match search_for_unit_name(q) {
-                    Some(unit) => result = result * UnitCollection::coerce_unit_to_collection(unit).pow(exp),
+                    Some(unit) => {
+                        result = result * UnitCollection::coerce_unit_to_collection(unit).pow(exp)
+                    }
                     None => continue,
                 };
             }
 
             // go through denominator units
             for denom_query in denominator.split(UNIT_SEP) {
-
-                if denom_query == "1" || denom_query == "" { continue }
+                if denom_query == "1" || denom_query == "" {
+                    continue;
+                }
 
                 // separate unit and exponent
                 let (q, exp) = match denom_query.rfind(char::is_numeric) {
@@ -186,11 +207,13 @@ impl UnitCollection {
                 };
 
                 match search_for_unit_name(q) {
-                    Some(unit) => result = result / UnitCollection::coerce_unit_to_collection(unit).pow(exp),
+                    Some(unit) => {
+                        result = result / UnitCollection::coerce_unit_to_collection(unit).pow(exp)
+                    }
                     None => continue,
                 };
             }
-        
+
             if result.single_units.len() == 0 {
                 None
             } else {
@@ -200,26 +223,31 @@ impl UnitCollection {
     }
 
     pub(crate) fn as_string(&self) -> String {
-
-        let mut num = self.single_units
+        let mut num = self
+            .single_units
             .iter()
             .filter(|x| *x.1 > 0.0)
             .map(|x| {
                 if *x.1 != 1.0 {
                     x.0.abbr.clone() + UNIT_POW_IND + &x.1.to_string()
-                } else {x.0.abbr.clone()}
+                } else {
+                    x.0.abbr.clone()
+                }
             })
             .collect::<Vec<String>>();
         num.sort();
         let num = num.join(UNIT_SEP);
 
-        let mut denom = self.single_units
+        let mut denom = self
+            .single_units
             .iter()
             .filter(|x| *x.1 < 0.0)
             .map(|x| {
                 if *x.1 != -1.0 {
                     x.0.abbr.clone() + UNIT_POW_IND + &(-x.1).to_string()
-                } else {x.0.abbr.clone()}
+                } else {
+                    x.0.abbr.clone()
+                }
             })
             .collect::<Vec<String>>();
         denom.sort();
@@ -227,37 +255,47 @@ impl UnitCollection {
 
         if denom != "" {
             if num == "" {
-                return format!("{}1{}{}{}", UNIT_FORMAT.0, UNIT_DIV_SEP, denom, UNIT_FORMAT.1);
+                return format!(
+                    "{}1{}{}{}",
+                    UNIT_FORMAT.0, UNIT_DIV_SEP, denom, UNIT_FORMAT.1
+                );
             } else {
-                return format!("{}{}{}{}{}", UNIT_FORMAT.0, num, UNIT_DIV_SEP, denom, UNIT_FORMAT.1);
+                return format!(
+                    "{}{}{}{}{}",
+                    UNIT_FORMAT.0, num, UNIT_DIV_SEP, denom, UNIT_FORMAT.1
+                );
             }
         } else {
             return format!("{}{}{}", UNIT_FORMAT.0, num, UNIT_FORMAT.1);
         }
-
     }
 
     pub(crate) fn as_descriptive_string(&self) -> String {
-
-        let mut num = self.single_units
+        let mut num = self
+            .single_units
             .iter()
             .filter(|x| *x.1 > 0.0)
             .map(|x| {
                 if *x.1 != 1.0 {
                     x.0.name.clone() + UNIT_POW_IND + &x.1.to_string()
-                } else {x.0.name.clone()}
+                } else {
+                    x.0.name.clone()
+                }
             })
             .collect::<Vec<String>>();
         num.sort();
         let num = num.join(UNIT_SEP);
 
-        let mut denom = self.single_units
+        let mut denom = self
+            .single_units
             .iter()
             .filter(|x| *x.1 < 0.0)
             .map(|x| {
                 if *x.1 != -1.0 {
                     x.0.name.clone() + UNIT_POW_IND + &(-x.1).to_string()
-                } else {x.0.name.clone()}
+                } else {
+                    x.0.name.clone()
+                }
             })
             .collect::<Vec<String>>();
         denom.sort();
@@ -265,30 +303,35 @@ impl UnitCollection {
 
         if denom != "" {
             if num == "" {
-                return format!("{}1{}{}{}", UNIT_FORMAT.0, UNIT_DIV_SEP, denom, UNIT_FORMAT.1);
+                return format!(
+                    "{}1{}{}{}",
+                    UNIT_FORMAT.0, UNIT_DIV_SEP, denom, UNIT_FORMAT.1
+                );
             } else {
-                return format!("{}{}{}{}{}", UNIT_FORMAT.0, num, UNIT_DIV_SEP, denom, UNIT_FORMAT.1);
+                return format!(
+                    "{}{}{}{}{}",
+                    UNIT_FORMAT.0, num, UNIT_DIV_SEP, denom, UNIT_FORMAT.1
+                );
             }
         } else {
             return format!("{}{}{}", UNIT_FORMAT.0, num, UNIT_FORMAT.1);
         }
-
-
     }
 
     pub(crate) fn equivalent_scale_diff(&self, other: &Self) -> Option<ScaleDiff> {
         if self.base_units != other.base_units {
             None
         } else {
-            Some(ScaleDiff { self_scale: self.scale, other_scale: other.scale })
+            Some(ScaleDiff {
+                self_scale: self.scale,
+                other_scale: other.scale,
+            })
         }
     }
 }
 
-
 impl fmt::Display for UnitCollection {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-
         write!(f, "{}", self.as_string())?;
 
         Ok(())
@@ -315,8 +358,6 @@ impl Div<ScaleDiff> for f64 {
         self * rhs.self_scale / rhs.other_scale
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {
@@ -354,10 +395,10 @@ mod tests {
         let joule = UnitCollection::from_unit_name("joule").unwrap();
         let meter = UnitCollection::from_unit_name("meter").unwrap();
 
-        let joule_meter = joule.clone()*meter.clone();
+        let joule_meter = joule.clone() * meter.clone();
         assert_eq!(format!("{}", joule_meter), "[J.m]");
 
-        let joule_meter = joule/meter;
+        let joule_meter = joule / meter;
         assert_eq!(format!("{}", joule_meter), "[J/m]");
     }
 
@@ -369,7 +410,7 @@ mod tests {
         let joule2 = joule.clone().pow(2.0);
         assert_eq!(format!("{}", joule2), "[J2]");
 
-        let joule_meter2 = (joule/meter).pow(2.0);
+        let joule_meter2 = (joule / meter).pow(2.0);
         assert_eq!(format!("{}", joule_meter2), "[J2/m2]");
     }
 }
