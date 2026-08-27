@@ -60,7 +60,7 @@ class Firkin:
     non-unit number, strings, numbers, and Firkins can all be used.
 
     >>> joule.as_unit("W.hr")
-    0.0002777777777777778 [hr.W]
+    0.0002777777777777778 [W.hr]
 
     >>> newton = Firkin.unit("newton")
     >>> joule.as_number(newton * meter)
@@ -113,7 +113,7 @@ class Firkin:
     Traceback (most recent call last):
     File "<stdin>", line 1, in <module>
         inch**cm
-    TypeError: [cm] and [] are not 
+    TypeError: [cm] and [] are not compatible
     
     >>> unitless = inch/cm
     >>> inch**unitless # not generally helpful, but doable
