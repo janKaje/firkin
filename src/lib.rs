@@ -78,6 +78,10 @@ mod firkin {
             }
         }
 
+        fn round_sfig(&mut self, n_sig_figs: i32) -> PyResult<Firkin> {
+            self.__round__(Some(n_sig_figs-1-(self.value.abs().log10().floor() as i32)))
+        }
+
         fn __str__(&self) -> PyResult<String> {
             Ok(format!("{}", self))
         }

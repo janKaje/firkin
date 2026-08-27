@@ -299,6 +299,13 @@ class Firkin:
         """
         ...
 
+    def round_sfig(self, n_sig_figs:int) -> Self: 
+        """
+        Returns a copy of self, with the value rounded to n_sig_figs
+        significant figures. Similar to self.__round__().
+        """
+        ...
+
     def __str__(self) -> str: ...
 
     def __repr__(self) -> str: ...
