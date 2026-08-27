@@ -30,6 +30,26 @@ class Firkin:
         area - 2*cm
     TypeError: [cm] cannot be coerced into [m2]
 
+    ### Prefixes
+
+    All of the SI units (micro-, centi-, kilo-, etc.) are implemented in 
+    Firkin. During a query, their full names can affixed to the unit name and
+    their symbols can be affixed to the unit symbol. 
+
+    >>> kilojoule = Firkin.unit("kilojoule")
+    >>> kJ = Firkin.unit("kJ")
+    >>> kilojoule, kJ
+    1 [kJ] 1 [kJ]
+
+    >>> kilojoule == kJ
+    True
+
+    >>> Firkin.unit("kiloJ")
+    Traceback (most recent call last):
+    File "<stdin>", line 1, in <module>
+        Firkin.unit("kiloJ")
+    LookupError: Unit kiloJ not found
+
     ### Compatibility
     
     Firkin instances can do basic arithmetic and exponentiation with numbers,
@@ -248,8 +268,8 @@ class Firkin:
         299792458 [m/s]
         >>> c_constant.as_unit(c_unit)
         1 [c]
-        >>> ("eV"/c_unit**2).as_unit("kg")
-        0.0000000000000000000000000000000000017826656668079864 [kg]
+        >>> ("keV"/c_unit**2).as_unit("amu") # keV/c2 as atomic mass unit
+        0.000001073545754277516 [amu]
         """
         ...
 

@@ -30,6 +30,7 @@ const CONSTANT_ALIASES: &[Alias] = &[
     ("boltzmann", "boltzmann's constant"),
     ("elementary charge", "electron charge"),
     ("avogadro", "avogadro's constant"),
+    ("avogadro's number", "avogadro's constant"),
     ("N_A", "avogadro's constant"),
     ("stefan-boltzmann", "stefan-boltzmann's constant"),
     ("stefan boltzmann", "stefan-boltzmann's constant"),
