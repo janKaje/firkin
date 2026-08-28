@@ -5,7 +5,7 @@ edition = "2024"
 description = "Unit-attached numbers for scientific or engineering calculations"
 readme = "README.md"
 license = "MIT"
-license-files = ["LICEN[CS]E*"]
+license-files = "LICENSE.md"
 repository = "https://github.com/janKaje/firkin"
 homepage = "https://github.com/janKaje/firkin"
 
