@@ -142,9 +142,14 @@ outside_temperature = 100 * degf
 inside_temperature = 70 * degf
 ```
 
-Using your engineering judgment, you assume some convection coefficients.
+You find the thermal conductivity of the glass online. Using your engineering judgment, you assume some convection coefficients.
 
 ```python
+# define thermal conductivity
+watt = Firkin.unit("W")
+
+glass_thermal_conductivity = 1.05 * watt / "m.K" # 1.05 W/m.K
+
 # assume values for convection coefficients
 inside_convection_coefficient = 2 * watt / "m2.K" # 2 W/m2.K
 outside_convection_coefficient = 10 * watt / "m2.K" # 10 W/m2.K
