@@ -1,23 +1,34 @@
 # Firkin
 
+[![PyPI Version](https://img.shields.io/pypi/v/firkin_units)](https://pypi.org/project/firkin_units/)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/janKaje/firkin/CI.yml)](https://github.com/janKaje/firkin/actions)
+
 Unit-attached numbers for scientific or engineering calculations.
 
-Many scientists and engineers choose to use Python for their everyday calculations, since it strikes a nice balance between ease of use and versatility. However, the lack of unit awareness in calculations can be dangerous, so the use of libraries such as [Unum](https://pypi.org/project/Unum/) or [Pint](https://pypi.org/project/Pint/) is common.
+Many scientists and engineers choose to use Python for their everyday calculations, since it strikes a nice balance between ease of use and versatility. Since Python doesn't natively include unit awareness, libraries such as [Unum](https://pypi.org/project/Unum/) or [Pint](https://pypi.org/project/Pint/) are used to make calculations both easier and safer.
 
-Firkin is an alternative to these, and boasts the following features:
+Firkin is such a library, and boasts the following features:
 
 * Written in Rust for speed and reliability
 * Arbitrary prefix implementation: `centimeter`, `kilogallon`, `nanoinch of mercury`, and `exajiffy` are all valid Firkin units
 * Compatibility for non-absolute temperature scales, so `10 °C` accurately maps to `50 °F`
 * Includes physical constants, so you can easily access the `ideal gas constant` and `avogadro's number`
 * Broad compatibility with mathematical functions to ensure dimensional consistency
-* Extreme ease of use, in both short and long scripts
+* Flexibility and ease of use
+
+## Installation
+
+Firkin can be installed using pip or uv:
+
+```console
+pip install firkin-units
+```
+
+```console
+uv tool install firkin-units
+```
 
 ## Getting started
-
-Currently, Firkin is only available here, as source code. That should change in the future (hopefully!).
-
-To install, clone the repository, make sure you have [Rust](https://rust-lang.org/) and [Maturin](https://github.com/PyO3/maturin) installed, and use maturin to develop the package.
 
 The `Firkin` class is currently the only interface to the library. Each instance of `Firkin` contains both a value and a unit. Instantiate with either of these methods:
 
@@ -49,7 +60,7 @@ One of Firkin's biggest strengths is its ability to coerce both numbers and stri
 >>> longer_length = length + "foot"
 >>> longer_length # 3 m + 1 ft
 3.3048 [m]
->>> length/width + 2 # plain numbers must be added to a unitless instance
+>>> length/width + 2 # plain numbers can only be added to a unitless instance
 2.571428571428571 []
 ```
 
@@ -155,18 +166,25 @@ heat_flow = (outside_temperature - inside_temperature)/overall_resistance
 
 print(heat_flow.as_unit("W"))
 
-# 11.496997564233522 [W]
+# Output: 11.496997564233522 [W]
 ```
 
 Seems like it might be time to invest in some better-insulated windows.
 
-## Contributions
+## Thanks to
 
-Firkin was heavily inspired by both [Unum](https://pypi.org/project/Unum/) and [fend](https://github.com/printfn/fend). Some implementation details were taken or adapted from both, so many thanks to the creators and contributors to those projects.
+Firkin was heavily inspired by both [Unum](https://pypi.org/project/Unum/) and [fend](https://github.com/printfn/fend). Some implementation details were taken or adapted from both, so many thanks to the creators and contributors of those projects.
+
+## Contributing
+
+Any contributions to Firkin are happily welcomed. Feel free to submit issues or pull requests to:
+
+* Fix bugs
+* Improve documentation
+* Add features (see below for ideas/my own future plans)
 
 ## Future plans
 
-* Package library for PyPI
 * Proper support for logarithmic units
 * Auto simplification, especially for units of different prefixes
 * Improve case-sensitiveness for queries
