@@ -4,6 +4,11 @@ build-backend = "maturin"
 
 [project]
 name = "firkin"
+authors = [
+  { name="Kyle Duke", email="kylehduke@gmail.com" },
+]
+description = "Unit-attached numbers for scientific or engineering calculations"
+readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Rust",
@@ -11,3 +16,9 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dynamic = ["version"]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+
+[project.urls]
+Homepage = "https://github.com/janKaje/firkin"
+Issues = "https://github.com/janKaje/firkin/issues"
