@@ -3,7 +3,7 @@
 version = 4
 
 [[package]]
-name = "firkin"
+name = "firkin_units"
 version = "0.1.0"
 dependencies = [
  "pyo3",

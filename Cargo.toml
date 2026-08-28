@@ -1,7 +1,13 @@
 [package]
-name = "firkin"
+name = "firkin_units"
 version = "0.1.0"
 edition = "2024"
+description = "Unit-attached numbers for scientific or engineering calculations"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+repository = "https://github.com/janKaje/firkin"
+homepage = "https://github.com/janKaje/firkin"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]

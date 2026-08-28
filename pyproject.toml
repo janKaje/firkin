@@ -3,7 +3,7 @@ requires = ["maturin>=1.14,<2.0"]
 build-backend = "maturin"
 
 [project]
-name = "firkin"
+name = "firkin_units"
 authors = [
   { name="Kyle Duke", email="kylehduke@gmail.com" },
 ]
