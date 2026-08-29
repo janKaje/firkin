@@ -78,7 +78,7 @@ fn write_base_units_rs(config: &toml::Table) -> HashMap<String, UnitDefNumbers> 
         base_units_str.push_str(abbr.as_str().expect(("Unit ".to_string() + &key + "  abbr is not string").as_str()));
         base_units_str.push_str("\", 0.0, 1.0, ");
         for n in numbers.iter() {
-            base_units_str.push_str(format!("{:.1?}, ", n).as_str());
+            base_units_str.push_str(format!("{:?}, ", n).as_str());
         }
         base_units_str.push_str("),");
 
@@ -194,9 +194,9 @@ pub(crate) const OTHER_UNITS: &[(&'static str, &'static str, f64, f64".to_string
     derived_units_rs.push_str(")] = &[");
 
     for unit_def in unit_def_vec {
-        derived_units_rs.push_str(format!("\n    (\"{}\", \"{}\", {:.1?}, {:.1?}, ", unit_def.name, unit_def.abbr, unit_def.offset, unit_def.scale).as_str());
+        derived_units_rs.push_str(format!("\n    (\"{}\", \"{}\", {:?}, {:?}, ", unit_def.name, unit_def.abbr, unit_def.offset, unit_def.scale).as_str());
         for n in &unit_def.base_units {
-            derived_units_rs.push_str(format!("{:.1?}, ", n).as_str());
+            derived_units_rs.push_str(format!("{:?}, ", n).as_str());
         }
         derived_units_rs.push_str("),");
     }
@@ -267,6 +267,8 @@ pub(crate) const UNIT_ALIASES: &[(&'static str, &'static str)] = &[".to_string()
 }
 
 fn main() {
+
+    
 
     println!("cargo::rerun-if-changed=unit_definitions");
 

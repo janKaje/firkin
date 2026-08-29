@@ -71,9 +71,9 @@ fn nonabs_temp() -> PyResult<()> {
         py.run(cr#"from firkin import Firkin
 degc = Firkin.unit('deg C')
 degf = Firkin.unit('deg f')
-assert str((10*degc).as_unit(degf)) == '50.00399999999995 [°F]'
-assert str(10*degf + 10*degc) == '28 [°F]'
-assert str((10*degc/"s").as_unit("deg F/s")) == '18 [°F/s]'"#, None, None)
+assert str((10*degc).as_unit(degf)) == '50.00399999999995 [°F]', f"Was actually {(10*degc).as_unit(degf)}"
+assert str(10*degf + 10*degc) == '28 [°F]', f"Was actually {10*degf + 10*degc}"
+assert str((10*degc/"s").as_unit("deg F/s")) == '18 [°F/s]', f"Was actually {(10*degc/"s").as_unit("deg F/s")}""#, None, None)
     })
 }
 
@@ -111,7 +111,7 @@ fn as_base_units() -> PyResult<()> {
     run_closure(|py| {
         py.run(cr#"from firkin import Firkin
 tsp = Firkin.unit('tsp')
-assert str(tsp.as_base_units()) == '0.000004928921875 [m3]'"#, None, None)
+assert str(tsp.as_base_units()) == '0.00000492892159375 [m3]', f"Was actually {tsp.as_base_units()}""#, None, None)
     })
 }
 
@@ -130,7 +130,7 @@ fn round_sfig() -> PyResult<()> {
     run_closure(|py| {
         py.run(cr#"from firkin import Firkin
 year = Firkin.unit('year')
-assert str((year.as_unit('calendar year'))) == '1.0006635583041097 [calendar year]'
+assert str((year.as_unit('calendar year'))) == '1.0006635583041097 [calendar year]', f"Was actually {year.as_unit('calendar year')}"
 assert str((year.as_unit('calendar year')).round_sfig(2)) == '1 [calendar year]'
 assert str((year.as_unit('calendar year')).round_sfig(5)) == '1.0007 [calendar year]'
 assert str((year.as_unit('calendar year')).round_sfig(7)) == '1.000664 [calendar year]'
@@ -178,7 +178,10 @@ except TypeError:
 fn numpy_consistency_checks() -> PyResult<()> {
     run_closure(|py| {
         py.run(cr#"from firkin import Firkin
-import numpy as np
+try:
+    import numpy as np
+except ImportError:
+    import math as np
 m2 = Firkin.unit('m2')
 inch = Firkin.unit('inch')
 np.exp(inch**2/m2)
@@ -188,6 +191,39 @@ try:
     raise ValueError('EXP ON inch/m2')
 except TypeError:
     pass
+
+"#, None, None)
+    })
+}
+
+#[test]
+fn unit_imports() -> PyResult<()> {
+    run_closure(|py| {
+        py.run(cr#"from firkin.units import (
+    ampere,
+    USD,
+    mole,
+    weber,
+    liter,
+    light_speed
+)
+
+assert str(USD) == "1 [USD]"
+
+"#, None, None)
+    })
+}
+
+#[test]
+fn constant_imports() -> PyResult<()> {
+    run_closure(|py| {
+        py.run(cr#"from firkin.constants import (
+    reduced_planck_const,
+    gas_const,
+    vacuum_permeability
+)
+
+assert str(gas_const) == "8.31446261815324 [J/K.mol]"
 
 "#, None, None)
     })

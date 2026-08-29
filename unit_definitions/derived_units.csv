@@ -57,7 +57,7 @@ fluid ounce,fl oz,fluid_ounce,0.0,0.0078125,gallon
 quart,qt,quart,0.0,0.25,gallon
 pint,pt,pint,0.0,0.125,gallon
 cup,cup,cup,0.0,0.0625,gallon
-tablespoon,tbsp,tablespoon,0.0,0.25,cup
+tablespoon,tbsp,tablespoon,0.0,0.0625,cup
 teaspoon,tsp,teaspoon,0.0,0.3333333333333333,tablespoon
 ton,ton,ton,0.0,2000.0,pound
 ounce,oz,ounce,0.0,0.325,pound

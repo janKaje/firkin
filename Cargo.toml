@@ -4,8 +4,7 @@ version = "0.1.0"
 edition = "2024"
 description = "Unit-attached numbers for scientific or engineering calculations"
 readme = "README.md"
-license = "MIT"
-license-files = "LICENSE.md"
+license-file = "LICENSE.md"
 repository = "https://github.com/janKaje/firkin"
 homepage = "https://github.com/janKaje/firkin"
 build = "build.rs"
@@ -20,5 +19,5 @@ pyo3 = {version = "0.29.2", features = ["abi3-py38"]}
 
 [build-dependencies]
 csv = "1.4.0"
-toml = "1.1.4+spec-1.1.0"
+toml = "1.1.4"
 serde = "1.0.229"

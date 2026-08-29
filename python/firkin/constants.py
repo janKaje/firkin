@@ -1,4 +1,4 @@
-from firkin import Firkin
+from . import Firkin
 
 light_speed = Firkin.constant("light speed")
 planck_const = Firkin.constant("planck's constant")
