@@ -3,21 +3,42 @@
 /// This build file takes the unit definitions from unit_definitions
 /// and turns them into usable rust files in src\unit\unit_defs
 
-use std::{collections::HashMap, fmt::Write, fs::{self, File}};
+use std::{collections::HashMap, fmt::Write, fs::{self, File}, path::{Component, PathBuf}, ffi::OsStr};
 
 use toml;
 use csv;
 
-const BASE_UNITS_TOML_PATH: &str = r"unit_definitions\base_units.toml";
-const DERIVED_UNITS_CSV_PATH: &str = r"unit_definitions\derived_units.csv";
-const ALIASES_CSV_PATH: &str = r"unit_definitions\aliases.csv";
+const UNIT_DEFINITONS_PATH: &str = "unit_definitions";
+const PY_UNITS_PATH: [&str; 3] = ["python", "firkin", "units"];
+const RS_UNITS_PATH: [&str; 3] = ["src", "unit", "unit_defs"];
 
-const BASE_UNITS_RS_PATH: &str = r"src\unit\unit_defs\base_units.rs";
-const DERIVED_UNITS_RS_PATH: &str = r"src\unit\unit_defs\derived_units.rs";
-const ALIASES_RS_PATH: &str = r"src\unit\unit_defs\aliases.rs";
+fn get_cfg_path(file_name: &str) -> PathBuf {
+    [
+        Component::CurDir, 
+        Component::Normal(UNIT_DEFINITONS_PATH.as_ref()), 
+        Component::Normal(file_name.as_ref())
+    ].iter().collect()
+}
 
-const BASE_UNITS_PY_PATH: &str = r"python\firkin\units\base_units.py";
-const DERIVED_UNITS_PY_PATH: &str = r"python\firkin\units\derived_units.py";
+fn get_py_path(file_name: &str) -> PathBuf {
+    [
+        Component::CurDir, 
+        Component::Normal(PY_UNITS_PATH[0].as_ref()), 
+        Component::Normal(PY_UNITS_PATH[1].as_ref()), 
+        Component::Normal(PY_UNITS_PATH[2].as_ref()), 
+        Component::Normal(file_name.as_ref())
+    ].iter().collect()
+}
+
+fn get_rs_path(file_name: &str) -> PathBuf {
+    [
+        Component::CurDir, 
+        Component::Normal(RS_UNITS_PATH[0].as_ref()), 
+        Component::Normal(RS_UNITS_PATH[1].as_ref()), 
+        Component::Normal(RS_UNITS_PATH[2].as_ref()), 
+        Component::Normal(file_name.as_ref())
+    ].iter().collect()
+}
 
 /// these definitions have three strings, since the third is for python variable name
 type DerivUnitConfigLine = (String, String, String, f64, f64, String);
@@ -36,15 +57,15 @@ struct UnitDef{
     base_units: Vec<f64>,
 }
 
+/// Gathers information found in base_units.toml
 fn read_base_units() -> toml::Table {
-    /// Gathers information found in base_units.toml
-    let config_str = fs::read_to_string(BASE_UNITS_TOML_PATH).expect("Failed to read file");
+    let config_str = fs::read_to_string(get_cfg_path("base_units.toml")).expect("Failed to read file");
     toml::from_str(&config_str).expect("Failed to parse toml")
 }
 
+/// Write to base_units.rs
+/// Returns a vector of the base unit names in the order they appear
 fn write_base_units_rs(config: &toml::Table) -> HashMap<String, UnitDefNumbers> {
-    /// Write to base_units.rs
-    /// Returns a vector of the base unit names in the order they appear
 
     // get number of base units and create type_str
     let n_base_units = config.len();
@@ -106,7 +127,7 @@ pub(crate) const BASE_UNITS: &[({})] = &[{}
         base_units_str
     );
 
-    fs::write(BASE_UNITS_RS_PATH, base_units_rs);
+    fs::write(get_rs_path("base_units.rs"), base_units_rs);
 
     unit_def_hashmap
 }
@@ -130,7 +151,7 @@ fn write_base_units_py(config: &toml::Table) {
         base_units_str.push_str("')" );
     }
 
-    fs::write(BASE_UNITS_PY_PATH, base_units_str);
+    fs::write(get_py_path("base_units.py"), base_units_str);
 
 }
 
@@ -203,7 +224,7 @@ pub(crate) const OTHER_UNITS: &[(&'static str, &'static str, f64, f64".to_string
 
     derived_units_rs.push_str("\n];");
 
-    fs::write(DERIVED_UNITS_RS_PATH, derived_units_rs);
+    fs::write(get_rs_path("derived_units.rs"), derived_units_rs);
 
 }
 
@@ -221,7 +242,7 @@ fn write_derived_units_py(unit_def_vec: &Vec<UnitDef>) {
         derived_units_py.push_str("')" );
     }
 
-    fs::write(DERIVED_UNITS_PY_PATH, derived_units_py);
+    fs::write(get_py_path("derived_units.py"), derived_units_py);
 
 }
 
@@ -229,7 +250,7 @@ fn write_derived_units(unit_def_hashmap: &mut HashMap<String, UnitDefNumbers>) {
 
     let mut unit_def_vec: Vec<UnitDef> = vec![];
 
-    let mut derived_unit_reader = csv::Reader::from_path(DERIVED_UNITS_CSV_PATH).expect("Could not locate derived units config");
+    let mut derived_unit_reader = csv::Reader::from_path(get_cfg_path("derived_units.csv")).expect("Could not locate derived units config");
 
     for line in derived_unit_reader.deserialize() {
 
@@ -246,7 +267,7 @@ fn write_derived_units(unit_def_hashmap: &mut HashMap<String, UnitDefNumbers>) {
 
 fn write_aliases() {
 
-    let mut aliases_reader = csv::Reader::from_path(ALIASES_CSV_PATH).expect("Could not locate aliases config");
+    let mut aliases_reader = csv::Reader::from_path(get_cfg_path("aliases.csv")).expect("Could not locate aliases config");
 
     let mut aliases_rs = "\
 /// This file was generated automatically by the build script. 
@@ -262,15 +283,23 @@ pub(crate) const UNIT_ALIASES: &[(&'static str, &'static str)] = &[".to_string()
 
     aliases_rs.push_str("\n];");
 
-    fs::write(ALIASES_RS_PATH, aliases_rs);
+    fs::write(get_rs_path("aliases.rs"), aliases_rs);
 
 }
 
 fn main() {
 
-    
+    let cfg_path: PathBuf = [
+        Component::CurDir, 
+        Component::Normal(UNIT_DEFINITONS_PATH.as_ref()), 
+    ].iter().collect();
 
-    println!("cargo::rerun-if-changed=unit_definitions");
+    println!(
+        "cargo::rerun-if-changed={}", 
+        cfg_path
+            .as_path()
+            .display()
+    );
 
     let base_unit_config = read_base_units();
 
