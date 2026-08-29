@@ -1,0 +1,48 @@
+
+[second]
+abbr = "s"
+python_var_name = "second"
+derived_can_have_offset = false
+is_logarithmic = false
+
+[meter]
+abbr = "m"
+python_var_name = "meter"
+derived_can_have_offset = false
+is_logarithmic = false
+
+[kilogram]
+abbr = "kg"
+python_var_name = "kilogram"
+derived_can_have_offset = false
+is_logarithmic = false
+
+[ampere]
+abbr = "A"
+python_var_name = "ampere"
+derived_can_have_offset = false
+is_logarithmic = false
+
+[kelvin]
+abbr = "K"
+python_var_name = "kelvin"
+derived_can_have_offset = true
+is_logarithmic = false
+
+[mole]
+abbr = "mol"
+python_var_name = "mole"
+derived_can_have_offset = false
+is_logarithmic = false
+
+[candela]
+abbr = "cd"
+python_var_name = "candela"
+derived_can_have_offset = false
+is_logarithmic = false
+
+[USD]
+abbr = "USD"
+python_var_name = "USD"
+derived_can_have_offset = false
+is_logarithmic = false

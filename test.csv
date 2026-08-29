@@ -1,0 +1,107 @@
+name,abbr,python_var_name,offset,scale,derivation
+gram,g,gram,0.0,0.001,kilogram
+radian,rad,radian,0.0,1.0,
+steradian,sr,steradian,0.0,1.0,
+hertz,Hz,hertz,0.0,1.0,second^-1
+newton,N,newton,0.0,1.0,second^-2_meter_kilogram
+pascal,Pa,pascal,0.0,1.0,second^-2_meter^-1_kilogram
+joule,J,joule,0.0,1.0,second^-2_meter^2_kilogram
+watt,W,watt,0.0,1.0,second^-3_meter^2_kilogram
+coulomb,C,coulomb,0.0,1.0,second_ampere
+volt,V,volt,0.0,1.0,second^-3_meter^2_kilogram_ampere^-1
+farad,F,farad,0.0,1.0,second^4_meter^-2_kilogram^-1_ampere^2
+ohm,\u{3A9},ohm,0.0,1.0,second^-3_meter^2_kilogram_ampere^-2
+siemens,S,siemens,0.0,1.0,second^3_meter^-2_kilogram^-1_ampere^2
+weber,Wb,weber,0.0,1.0,second^-2_meter^2_kilogram_ampere^-1
+tesla,T,tesla,0.0,1.0,second^-2_kilogram_ampere^-1
+hour,hr,hour,0.0,3600.0,second
+henry,H,henry,0.0,1.0,second^-2_meter^2_kilogram_ampere^-2
+degree Celsius,\u{B0}C,deg_C,-273.15,1.0,kelvin
+lumen,lm,lumen,0.0,1.0,candela
+lux,lx,lux,0.0,1.0,meter^-2_candela
+becquerel,Bq,becquerel,0.0,1.0,second^-1
+gray,Gy,gray,0.0,1.0,second^-2_meter^2
+sievert,Sv,sievert,0.0,1.0,second^-2_meter^2
+katal,kat,katal,0.0,1.0,second^-1_mole
+minute,min,minute,0.0,60.0,second
+day,d,day,0.0,86400.0,second
+degree (angle),\u{B0},arcdegree,0.0,0.017453292519943295,
+minute (angle),',arcminute,0.0,0.0002908882086657216,
+second (angle),'',arcsecond,0.0,0.00000484813681109536,
+liter,L,liter,0.0,0.001,meter^3
+metric ton,t,metric_ton,0.0,1000.0,kilogram
+neper,Np,neper,0.0,1.0,
+decibel,dB,decibel,0.0,1.0,
+electronvolt,eV,electronvolt,0.0,1.602176634e-19,joule
+unified atomic mass unit,amu,amu,0.0,1.66053906892e-27,kilogram
+foot,ft,foot,0.0,0.3048,meter
+mile,mi,mile,0.0,5280,foot
+nautical mile,nmi,nautical_mile,0.0,1852.0,meter
+knot,kn,knot,0.0,1,nautical mile_hour^-1
+are,are,are,0.0,100.0,meter^2
+bar,bar,bar,0.0,100000.0,pascal
+angstrom,\u{c5},angstrom,0.0,1e-10,meter
+barn,b,barn,0.0,1.0e-28,meter^2
+curie,Ci,curie,0.0,3.7e10,second^-1
+roentgen,R,roentgen,0.0,0.000258,second_kilogram^-1_ampere
+rem,rem,rem,0.0,0.01,sievert
+pound,lb,pound,0.0,0.45359237,kilogram
+inch,in,inch,0.0,0.0254,meter
+yard,yd,yard,0.0,0.9144,meter
+pound-mol,lbmol,lbmol,0.0,453.59237,mole
+gallon,gal,gallon,0.0,231,inch^3
+pound-force,lbf,lbf,0.0,4.4482216152605,newton
+grain,gr,grain,0.0,1.4285714285714285714285714285714e-4,pound
+slug,slug,slug,0.0,32.17405,pound
+fluid ounce,fl oz,fluid_ounce,0.0,0.0078125,gallon
+quart,qt,quart,0.0,0.25,gallon
+pint,pt,pint,0.0,0.125,gallon
+cup,cup,cup,0.0,0.0625,gallon
+tablespoon,tbsp,tablespoon,0.0,0.25,cup
+teaspoon,tsp,teaspoon,0.0,0.3333333333333333,tablespoon
+ton,ton,ton,0.0,2000.0,pound
+ounce,oz,ounce,0.0,0.325,pound
+atmosphere,atm,atmosphere,0.0,101325.0,pascal
+torr,torr,torr,0.0,0.00131578947368421052631578947368,atmosphere
+pounds per square inch,psi,psi,0.0,1,pound_inch^-2
+calorie,cal,calorie,0.0,4.184,joule
+erg,erg,erg,0.0,1e-07,joule
+british thermal unit,BTU,BTU,0.0,1054.35,joule
+horsepower,hp,horsepower,0.0,33000,foot_pound-force_minute^-1
+Hartree,hartree,Hartree,0.0,4.359748199e-18,joule
+poise,P,poise,0.0,1,second^-1_gram_centimeter^-1
+Rankine,\u{B0}R,Rankine,0.0,0.5555555555555556,kelvin
+degree Fahrenheit,\u{B0}F,deg_F,-255.37,1,Rankine
+year,y,year,0.0,365.242198781,day
+week,wk,week,0.0,7,day
+month,mo,month,0.0,0.08333333333333333,year
+lightyear,ly,lightyear,0.0,9460730472580800.0,meter
+acre,ac,acre,0.0,43560,foot^2
+hectare,ha,hectare,0.0,10000.0,meter^2
+carat,ct,carat,0.0,0.0002,kilogram
+watt hour,Wh,watt hour,0.0,3600.0,joule
+cent,¢,cent,0.0,0.01,USD
+darcy,d,darcy,0.0,1,centipoise_centimeter^2_atmosphere^-1_second^-1
+dyne,dyn,dyne,0.0,1e-05,newton
+astronomical unit,ua,astronomical_unit,0.0,149597870700.0,meter
+sidereal year,syr,sidereal_year,0.0,365.256363004,day
+anomalistic year,ayr,anomalistic_year,0.0,365.259636,day
+decade,decade,decade,0.0,10.0,year
+century,century,century,0.0,100.0,year
+millennium,millenium,millennium,0.0,1000.0,year
+calendar year,calendar year,calendar_year,0.0,365.0,day
+leap year,leap year,leap_year,0.0,366.0,day
+julian year,julian year,julian_year,0.0,365.25,day
+gregorian year,gregorian year,gregorian_year,0.0,365.2425,day
+parsec,pc,parsec,0.0,30856775814913673.0,meter
+meter of mercury,mHg,meter_of_mercury,0.0,133322.387415,pascal
+inch of mercury,inHg,inch_of_mercury,0.0,3386.389,pascal
+firkin (vol),frknv,firkin_vol,0.0,9,gallon
+firkin (mass),frknm,firkin_mass,0.0,90,pound
+furlong,flg,furlong,0.0,660.0,foot
+fortnight,ftnt,fortnight,0.0,14.0,day
+outhouse,ouths,outhouse,0.0,1.0e-34,meter^2
+shed,shed,shed,0.0,1.0e-52,meter^2
+martian sol,sol,martian_sol,0.0,88775.244,second
+jiffy,jfy,jiffy,0.0,0.01,second
+light speed,c,light_speed,0.0,299792458.0,second^-1_meter

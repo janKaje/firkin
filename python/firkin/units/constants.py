@@ -1,0 +1,18 @@
+from firkin import Firkin
+
+light_speed = Firkin.constant("light speed")
+planck_const = Firkin.constant("planck's constant")
+reduced_planck_const = Firkin.constant("reduced planck's constant")
+boltzmann_const = Firkin.constant("boltzmann's constant")
+electron_charge = Firkin.constant("electron charge")
+electron_mass = Firkin.constant("electron mass")
+proton_mass = Firkin.constant("proton mass")
+neutron_mass = Firkin.constant("neutron mass")
+avogadro_const = Firkin.constant("avogadro's constant")
+grav_const = Firkin.constant("gravitational constant")
+earth_gravity = Firkin.constant("earth gravity")
+stefan_boltzmann_const = Firkin.constant("stefan-boltzmann constant")
+gas_const = Firkin.constant("ideal gas constant")
+faraday_const = Firkin.constant("faraday constant")
+vacuum_permittivity = Firkin.constant("vacuum permittivity")
+vacuum_permeability = Firkin.constant("vacuum permeability")

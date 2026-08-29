@@ -22,3 +22,6 @@ license-files = ["LICEN[CS]E*"]
 [project.urls]
 Homepage = "https://github.com/janKaje/firkin"
 Issues = "https://github.com/janKaje/firkin/issues"
+
+[tool.maturin]
+python-source = "python"
