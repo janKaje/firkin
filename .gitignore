@@ -71,8 +71,5 @@ docs/_build/
 # Pyenv
 .python-version
 
-# Automatically generated Rust files
-src/unit/unit_defs
-
 # Python testing file
 test.py
