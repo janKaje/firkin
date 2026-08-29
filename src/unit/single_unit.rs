@@ -18,6 +18,7 @@ impl Hash for SingleUnit {
 impl Eq for SingleUnit {}
 
 // name, abbr, offset (in and from base units), scale, (exponents) second, meter, kilogram, ampere, kelvin, mole, candela, USD
+// TO DO: move to unit_defs, incorporate number_of_base_units
 pub(crate) type UnitDef = (
     &'static str,
     &'static str,

@@ -54,6 +54,17 @@ mod firkin {
             Ok(Firkin::empty_unit())
         }
 
+        #[classmethod]
+        fn custom(_cls: &Bound<'_, PyType>, name: String, abbr: String, definition: UnitCoercible) -> PyResult<Self> {
+            let definition: Firkin = definition.into();
+            let definition: UnitCollection = definition.into();
+            let unit = definition.to_single_unit(name, abbr);
+            Ok(Firkin {
+                unit_collection: UnitCollection::coerce_unit_to_collection(unit),
+                value: 1.0
+            })
+        }
+
         fn as_unit(&self, other: UnitCoercible) -> PyResult<Firkin> {
             let other: Firkin = other.into();
             match self.as_unit_internal(&other.unit_collection) {
@@ -421,6 +432,12 @@ mod firkin {
             write!(f, "{} {}", self.value, self.unit_collection.as_string())?;
 
             Ok(())
+        }
+    }
+
+    impl std::convert::From<Firkin> for UnitCollection {
+        fn from(input: Firkin) -> UnitCollection {
+            UnitCollection { single_units: input.unit_collection.single_units, base_units: input.unit_collection.base_units, scale: input.value * input.unit_collection.scale }
         }
     }
 

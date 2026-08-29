@@ -338,6 +338,10 @@ impl UnitCollection {
 
         UnitCollection { single_units: base_unit_hashmap, base_units: self.base_units, scale: 1.0 }
     }
+
+    pub(crate) fn to_single_unit(self, name: String, abbr: String) -> SingleUnit {
+        SingleUnit { name, abbr, scale: self.scale, offset: 0.0, base_units: self.base_units }
+    }
 }
 
 impl fmt::Display for UnitCollection {

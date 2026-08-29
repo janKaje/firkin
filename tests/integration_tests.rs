@@ -228,3 +228,18 @@ assert str(gas_const) == "8.31446261815324 [J/K.mol]"
 "#, None, None)
     })
 }
+
+#[test]
+fn custom_unit() -> PyResult<()> {
+    run_closure(|py| {
+        py.run(cr#"from firkin import Firkin
+
+usd = Firkin.unit("USD")
+eur = Firkin.custom("euro", "EUR", 1.16537 * usd)
+
+assert str(eur) == "1 [EUR]", f"Was actually {eur}"
+assert str(usd.as_unit(eur)) == "0.858096570188009 [EUR]", f"Was actually {usd.as_unit(eur)}"
+
+"#, None, None)
+    })
+}
