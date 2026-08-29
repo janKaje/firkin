@@ -166,19 +166,15 @@ class Firkin:
 
     ### Custom Units
 
-    Firkin does not support custom units. Instead, Firkin instances can act as
-    custom units in certain cases. The `as_number` method supports an optional
-    argument `scale` that, if True, indicates that a custom unit should be 
-    applied.
-
+    Custom Firkin units can be created with the `custom` method. See the 
+    method's documentation for more information.
+        
     >>> usd = Firkin.unit("USD")
-    >>> eur = 1.16537 * usd # define a "custom unit"
-    >>> (123.45 * usd).as_number(eur, True) # intended result
-    105.9320215897097
-    >>> (123.45 * usd)/eur # equivalent calculation
-    105.9320215897097 []
-    >>> (123.45 * usd).as_number(eur) # unintended result
-    123.45
+    >>> eur = Firkin.custom("euro", "EUR", 1.16537 * usd)
+    >>> eur
+    1 [EUR]
+    >>> usd.as_unit(eur)
+    0.858096570188009 [EUR]
     """
 
     @classmethod
@@ -277,6 +273,47 @@ class Firkin:
     def empty(cls) -> Self: 
         """
         Returns a Firkin with value 1 and no units attached.
+        """
+        ...
+
+    @classmethod
+    def custom(cls, name:str, abbr:str, definition:Self|float|int|str) -> Self:
+        """
+        Defines a custom Firkin unit. 
+        
+        Note that this custom unit cannot be 
+        accessed using string lookups, and is solely tied to the Firkin 
+        returned by this method. The unit also cannot be a non-absolute
+        temperature unit.
+        
+        Base units can not be created using this 
+        method either—if the definition does not include units, the custom unit
+        will be considered dimensionless.
+
+        Parameters
+        ----------
+        name : str
+            The name of the new unit.
+
+        abbr : str
+            The abbreviation or unit symbol for the new unit.
+
+        definition : Firkin, float, int, str
+            The definition of the custom unit.
+
+        Returns
+        -------
+        Firkin
+            The newly made custom unit.
+
+        Examples
+        --------
+        >>> usd = Firkin.unit("USD")
+        >>> eur = Firkin.custom("euro", "EUR", 1.16537 * usd)
+        >>> eur
+        1 [EUR]
+        >>> usd.as_unit(eur)
+        0.858096570188009 [EUR]
         """
         ...
 

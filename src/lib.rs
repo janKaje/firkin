@@ -2,9 +2,9 @@
 
 use pyo3::prelude::*;
 
+mod constant;
 mod error;
 mod unit;
-mod constant;
 
 /// A Python module implemented in Rust.
 #[pymodule]
@@ -12,9 +12,9 @@ mod firkin {
     use pyo3::{prelude::*, types::*};
     use std::{fmt, ops::Mul};
 
+    use crate::constant::search_for_constant_name;
     use crate::error::FirkinError;
     use crate::unit::UnitCollection;
-    use crate::constant::search_for_constant_name;
 
     /// Unit! yippee
     #[pyclass(from_py_object)]
@@ -45,7 +45,7 @@ mod firkin {
         fn constant(_cls: &Bound<'_, PyType>, constant_name: &str) -> PyResult<Self> {
             match Firkin::constant_query_internal(constant_name) {
                 Ok(r) => Ok(r),
-                Err(e) => Err(e.into())
+                Err(e) => Err(e.into()),
             }
         }
 
@@ -55,13 +55,18 @@ mod firkin {
         }
 
         #[classmethod]
-        fn custom(_cls: &Bound<'_, PyType>, name: String, abbr: String, definition: UnitCoercible) -> PyResult<Self> {
+        fn custom(
+            _cls: &Bound<'_, PyType>,
+            name: String,
+            abbr: String,
+            definition: UnitCoercible,
+        ) -> PyResult<Self> {
             let definition: Firkin = definition.into();
             let definition: UnitCollection = definition.into();
             let unit = definition.to_single_unit(name, abbr);
             Ok(Firkin {
                 unit_collection: UnitCollection::coerce_unit_to_collection(unit),
-                value: 1.0
+                value: 1.0,
             })
         }
 
@@ -80,7 +85,7 @@ mod firkin {
                     let other: Firkin = other.into();
                     match self.as_number_internal(
                         &other.unit_collection,
-                        if scale {other.value} else {1.0}
+                        if scale { other.value } else { 1.0 },
                     ) {
                         Ok(r) => Ok(r),
                         Err(e) => Err(e.into()),
@@ -105,7 +110,9 @@ mod firkin {
         }
 
         fn round_sfig(&mut self, n_sig_figs: i32) -> PyResult<Firkin> {
-            self.__round__(Some(n_sig_figs-1-(self.value.abs().log10().floor() as i32)))
+            self.__round__(Some(
+                n_sig_figs - 1 - (self.value.abs().log10().floor() as i32),
+            ))
         }
 
         fn __str__(&self) -> PyResult<String> {
@@ -342,10 +349,7 @@ mod firkin {
 
     impl Firkin {
         fn as_unit_internal(&self, other: &UnitCollection) -> Result<Firkin, FirkinError> {
-            if let Some(scale_diff) = self
-                .unit_collection
-                .equivalent_scale_diff(&other)
-            {
+            if let Some(scale_diff) = self.unit_collection.equivalent_scale_diff(&other) {
                 if let Some(self_offset) = self.unit_collection.offset()
                     && let Some(other_offset) = other.offset()
                 {
@@ -370,9 +374,13 @@ mod firkin {
             }
         }
 
-        fn as_number_internal(&self, other: &UnitCollection, scale: f64) -> Result<f64, FirkinError> {
+        fn as_number_internal(
+            &self,
+            other: &UnitCollection,
+            scale: f64,
+        ) -> Result<f64, FirkinError> {
             match self.as_unit_internal(other) {
-                Ok(u) => Ok(u.value/scale),
+                Ok(u) => Ok(u.value / scale),
                 Err(e) => Err(e),
             }
         }
@@ -390,10 +398,10 @@ mod firkin {
                 Some(const_def) => Ok(Firkin {
                     unit_collection: match UnitCollection::from_unit_name(const_def.2) {
                         Some(r) => r,
-                        None => return Err(FirkinError::UnitNotFound(const_def.2.to_string()))
+                        None => return Err(FirkinError::UnitNotFound(const_def.2.to_string())),
                     },
-                    value: const_def.1
-                })
+                    value: const_def.1,
+                }),
             }
         }
     }
@@ -437,7 +445,11 @@ mod firkin {
 
     impl std::convert::From<Firkin> for UnitCollection {
         fn from(input: Firkin) -> UnitCollection {
-            UnitCollection { single_units: input.unit_collection.single_units, base_units: input.unit_collection.base_units, scale: input.value * input.unit_collection.scale }
+            UnitCollection {
+                single_units: input.unit_collection.single_units,
+                base_units: input.unit_collection.base_units,
+                scale: input.value * input.unit_collection.scale,
+            }
         }
     }
 

@@ -8,7 +8,7 @@ mod single_unit;
 mod unit_defs;
 
 use single_unit::SingleUnit;
-use unit_defs::{search_for_unit_name, BASE_UNITS};
+use unit_defs::{BASE_UNITS, search_for_unit_name};
 
 const UNIT_SEP: &str = "."; // separate units within num/denom
 const UNIT_DIV_SEP: &str = "/"; // separate numerator from denominator
@@ -333,14 +333,27 @@ impl UnitCollection {
         let mut base_unit_hashmap = HashMap::new();
 
         for i in 0..8 {
-            base_unit_hashmap.insert(SingleUnit::create_from_unit_def(BASE_UNITS[i]), self.base_units[i]);
+            base_unit_hashmap.insert(
+                SingleUnit::create_from_unit_def(BASE_UNITS[i]),
+                self.base_units[i],
+            );
         }
 
-        UnitCollection { single_units: base_unit_hashmap, base_units: self.base_units, scale: 1.0 }
+        UnitCollection {
+            single_units: base_unit_hashmap,
+            base_units: self.base_units,
+            scale: 1.0,
+        }
     }
 
     pub(crate) fn to_single_unit(self, name: String, abbr: String) -> SingleUnit {
-        SingleUnit { name, abbr, scale: self.scale, offset: 0.0, base_units: self.base_units }
+        SingleUnit {
+            name,
+            abbr,
+            scale: self.scale,
+            offset: 0.0,
+            base_units: self.base_units,
+        }
     }
 }
 

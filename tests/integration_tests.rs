@@ -1,19 +1,22 @@
 use pyo3::prelude::*;
 
 fn run_closure<F>(closure: F) -> PyResult<()>
-    where 
-    F: for<'py> FnOnce(Python<'py>) -> PyResult<()> {
+where
+    F: for<'py> FnOnce(Python<'py>) -> PyResult<()>,
+{
     Python::initialize();
 
     match Python::attach(closure) {
         Ok(_) => Ok(()),
-        Err(e) => Err(e)
+        Err(e) => Err(e),
     }
 }
 
 #[test]
 fn unit_lookups() -> PyResult<()> {
-    run_closure(|py| {py.run(cr#"from firkin import Firkin
+    run_closure(|py| {
+        py.run(
+            cr#"from firkin import Firkin
 usd = Firkin.unit('USD')
 tesla = Firkin.unit('tesla')
 ugal = Firkin.unit('microgallon')
@@ -22,46 +25,66 @@ cP = Firkin.unit('cP')
 micron = Firkin.unit('micron')
 kilometre = Firkin.unit('kilometre')
 myriaAU = Firkin.unit('myriaAU')
-assert str(myriaAU) == '1 [myriaua]' "#, None, None)
+assert str(myriaAU) == '1 [myriaua]' "#,
+            None,
+            None,
+        )
     })
 }
 
 #[test]
 fn mulitple_unit_lookups() -> PyResult<()> {
-    run_closure(|py| {py.run(cr#"from firkin import Firkin
+    run_closure(|py| {
+        py.run(
+            cr#"from firkin import Firkin
 newton = Firkin.unit('kg.m/s2')
-assert str(newton) == '1 [kg.m/s2]' "#, None, None)
+assert str(newton) == '1 [kg.m/s2]' "#,
+            None,
+            None,
+        )
     })
 }
 
 #[test]
 fn constant_lookups() -> PyResult<()> {
     run_closure(|py| {
-        py.run(cr#"from firkin import Firkin
+        py.run(
+            cr#"from firkin import Firkin
 gasconst = Firkin.constant("gas constant")
 c_constant = Firkin.constant("light speed")
-assert str(gasconst) == '8.31446261815324 [J/K.mol]'"#, None, None)
+assert str(gasconst) == '8.31446261815324 [J/K.mol]'"#,
+            None,
+            None,
+        )
     })
 }
 
 #[test]
 fn empty() -> PyResult<()> {
     run_closure(|py| {
-        py.run(cr#"from firkin import Firkin
+        py.run(
+            cr#"from firkin import Firkin
 empty = Firkin.empty()
-assert str(empty) == '1 []'"#, None, None)
+assert str(empty) == '1 []'"#,
+            None,
+            None,
+        )
     })
 }
 
 #[test]
 fn as_unit() -> PyResult<()> {
     run_closure(|py| {
-        py.run(cr#"from firkin import Firkin
+        py.run(
+            cr#"from firkin import Firkin
 joule = Firkin.unit('joule')
 meter = Firkin.unit('meter')
 newton = Firkin.unit('newton')
 assert str(joule.as_unit("W.hr")) == '0.0002777777777777778 [W.hr]'
-assert str(joule.as_unit(newton * meter)) == '1 [N.m]'"#, None, None)
+assert str(joule.as_unit(newton * meter)) == '1 [N.m]'"#,
+            None,
+            None,
+        )
     })
 }
 
@@ -80,20 +103,25 @@ assert str((10*degc/"s").as_unit("deg F/s")) == '18 [°F/s]', f"Was actually {(1
 #[test]
 fn as_number() -> PyResult<()> {
     run_closure(|py| {
-        py.run(cr#"from firkin import Firkin
+        py.run(
+            cr#"from firkin import Firkin
 usd = Firkin.unit("USD")
 gbp = 1.35851 * usd
 amt = 123.45 * usd
 assert str(amt.as_number(gbp)) == '123.45'
 assert str(amt.as_number(gbp, True)) == '90.87161669770558'
-assert (amt/gbp).as_unitless() == amt.as_number(gbp, True)"#, None, None)
+assert (amt/gbp).as_unitless() == amt.as_number(gbp, True)"#,
+            None,
+            None,
+        )
     })
 }
 
 #[test]
 fn as_unitless() -> PyResult<()> {
     run_closure(|py| {
-        py.run(cr#"from firkin import Firkin
+        py.run(
+            cr#"from firkin import Firkin
 tsp = Firkin.unit('tsp')
 tbsp = Firkin.unit('tbsp')
 ratio = 4 * tsp / 17 / tbsp
@@ -102,7 +130,10 @@ try:
     (4*tsp).as_unitless()
     raise ValueError('NOT UNITLESS')
 except TypeError:
-    pass"#, None, None)
+    pass"#,
+            None,
+            None,
+        )
     })
 }
 
@@ -118,10 +149,14 @@ assert str(tsp.as_base_units()) == '0.00000492892159375 [m3]', f"Was actually {t
 #[test]
 fn descriptive() -> PyResult<()> {
     run_closure(|py| {
-        py.run(cr#"from firkin import Firkin
+        py.run(
+            cr#"from firkin import Firkin
 kdyn = Firkin.unit('kilodyne')
 assert str(kdyn) == '1 [kdyn]'
-assert str(kdyn.descriptive()) == '1 [kilodyne]'"#, None, None)
+assert str(kdyn.descriptive()) == '1 [kilodyne]'"#,
+            None,
+            None,
+        )
     })
 }
 
@@ -141,7 +176,8 @@ assert str((year.as_unit('calendar year')).round_sfig(7)) == '1.000664 [calendar
 #[test]
 fn consistency_checks() -> PyResult<()> {
     run_closure(|py| {
-        py.run(cr#"from firkin import Firkin
+        py.run(
+            cr#"from firkin import Firkin
 m2 = Firkin.unit('m2')
 
 try:
@@ -170,14 +206,18 @@ try:
 except TypeError:
     pass
 
-"#, None, None)
+"#,
+            None,
+            None,
+        )
     })
 }
 
 #[test]
 fn numpy_consistency_checks() -> PyResult<()> {
     run_closure(|py| {
-        py.run(cr#"from firkin import Firkin
+        py.run(
+            cr#"from firkin import Firkin
 try:
     import numpy as np
 except ImportError:
@@ -192,14 +232,18 @@ try:
 except TypeError:
     pass
 
-"#, None, None)
+"#,
+            None,
+            None,
+        )
     })
 }
 
 #[test]
 fn unit_imports() -> PyResult<()> {
     run_closure(|py| {
-        py.run(cr#"from firkin.units import (
+        py.run(
+            cr#"from firkin.units import (
     ampere,
     USD,
     mole,
@@ -210,14 +254,18 @@ fn unit_imports() -> PyResult<()> {
 
 assert str(USD) == "1 [USD]"
 
-"#, None, None)
+"#,
+            None,
+            None,
+        )
     })
 }
 
 #[test]
 fn constant_imports() -> PyResult<()> {
     run_closure(|py| {
-        py.run(cr#"from firkin.constants import (
+        py.run(
+            cr#"from firkin.constants import (
     reduced_planck_const,
     gas_const,
     vacuum_permeability
@@ -225,14 +273,18 @@ fn constant_imports() -> PyResult<()> {
 
 assert str(gas_const) == "8.31446261815324 [J/K.mol]"
 
-"#, None, None)
+"#,
+            None,
+            None,
+        )
     })
 }
 
 #[test]
 fn custom_unit() -> PyResult<()> {
     run_closure(|py| {
-        py.run(cr#"from firkin import Firkin
+        py.run(
+            cr#"from firkin import Firkin
 
 usd = Firkin.unit("USD")
 eur = Firkin.custom("euro", "EUR", 1.16537 * usd)
@@ -240,6 +292,9 @@ eur = Firkin.custom("euro", "EUR", 1.16537 * usd)
 assert str(eur) == "1 [EUR]", f"Was actually {eur}"
 assert str(usd.as_unit(eur)) == "0.858096570188009 [EUR]", f"Was actually {usd.as_unit(eur)}"
 
-"#, None, None)
+"#,
+            None,
+            None,
+        )
     })
 }

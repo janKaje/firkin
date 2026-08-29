@@ -18,29 +18,40 @@ Firkin is such a library, and boasts the following features:
 
 ## Installation
 
-Firkin can be installed using pip or uv:
+Firkin can be installed using pip:
 
 ```console
 pip install firkin-units
 ```
 
-```console
-uv tool install firkin-units
-```
-
 ## Getting started
 
-The `Firkin` class is currently the only interface to the library. Each instance of `Firkin` contains both a value and a unit. Instantiate with either of these methods:
+The library is centered around the `Firkin` class. Each instance of `Firkin` contains both a value and a unit. To get a unit in Python, you can either import from `firkin.units` (contains all non-prefixed units, usually by their full name) or do a text search with the `Firkin.unit()` method.
 
 ```pycon
+>>> from firkin.units import ampere, deg_C, firkin_mass
+>>> ampere
+1 [A]
 >>> from firkin import Firkin
->>> meter = Firkin.unit("meter") # 1 meter
->>> c = Firkin.constant("light speed") # 299792458 m/s
+>>> kJ = Firkin.unit("kilojoule")
+>>> kJ
+1 [kJ]
+```
+
+You can access the constants through `firkin.constants` or the `Firkin.constant()` method.
+
+```pycon
+>>> from firkin.constants import faraday_const, electron_charge
+>>> faraday_const
+96485.33212331001 [C/mol]
+>>> Firkin.constant("avogadro")
+602214076000000000000000 [mol]
 ```
 
 After defining units, you can use them as normal in basic arithmetic.
 
 ```pycon
+>>> from firkin.units import meter
 >>> length = 3 * meter
 >>> width = 5.25 * meter
 >>> area = length * width
@@ -127,27 +138,21 @@ Say you want to analyze the rate of heat transfer across a single-pane window. Y
 
 ```py
 from firkin import Firkin
+from firkin.units import foot, inch, deg_F, watt
 
 # define window area
-foot = Firkin.unit("foot")
-inch = Firkin.unit("inch")
-
 window_area = 4.5 * foot ** 2
 window_width = 0.25 * inch
 
 # define temperatures
-degf = Firkin.unit("deg F")
-
-outside_temperature = 100 * degf
-inside_temperature = 70 * degf
+outside_temperature = 100 * deg_F
+inside_temperature = 70 * deg_F
 ```
 
 You find the thermal conductivity of the glass online. Using your engineering judgment, you assume some convection coefficients.
 
 ```python
 # define thermal conductivity
-watt = Firkin.unit("W")
-
 glass_thermal_conductivity = 1.05 * watt / "m.K" # 1.05 W/m.K
 
 # assume values for convection coefficients

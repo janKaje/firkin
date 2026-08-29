@@ -1,8 +1,8 @@
 // #![allow(unused)]
 
+mod aliases;
 mod base_units;
 mod derived_units;
-mod aliases;
 
 use crate::unit::single_unit::{SingleUnit, UnitDef};
 
