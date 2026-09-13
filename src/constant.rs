@@ -36,7 +36,8 @@ const CONSTANT_ALIASES: &[Alias] = &[
     ("stefan boltzmann", "stefan-boltzmann's constant"),
     ("gas constant", "ideal gas constant"),
     ("molar gas constant", "ideal gas constant"),
-    ("faraday", "faraday's constant"),
+    ("faraday", "faraday constant"),
+    ("faraday's constant", "faraday constant"),
 ];
 
 fn query_constant_aliases_internal(query: &str) -> &str {

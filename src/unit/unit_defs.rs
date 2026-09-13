@@ -4,7 +4,8 @@ mod aliases;
 mod base_units;
 mod derived_units;
 
-use crate::unit::single_unit::{SingleUnit, UnitDef};
+use crate::unit::single_unit::SingleUnit;
+pub(crate) use base_units::UnitDefStatic;
 
 pub(crate) use aliases::UNIT_ALIASES;
 #[allow(unused)]
@@ -61,7 +62,7 @@ fn query_unit_aliases_internal(query: &str) -> &str {
     query
 }
 
-fn query_unit_names_internal(query: &str, include_aliases: bool) -> Option<&UnitDef> {
+fn query_unit_names_internal(query: &str, include_aliases: bool) -> Option<&UnitDefStatic> {
     let query = if include_aliases {
         query_unit_aliases_internal(query)
     } else {
@@ -83,7 +84,7 @@ fn query_unit_names_internal(query: &str, include_aliases: bool) -> Option<&Unit
     return None;
 }
 
-fn query_unit_symbols_internal(query: &str) -> Option<&UnitDef> {
+fn query_unit_symbols_internal(query: &str) -> Option<&UnitDefStatic> {
     for unit in BASE_UNITS {
         if query == unit.1 {
             return Some(unit);
@@ -105,9 +106,9 @@ pub(crate) fn search_for_unit_name(query: &str) -> Option<SingleUnit> {
 
     // first, see if the query contains a perfect match
     if let Some(result) = query_unit_names_internal(query, false) {
-        return Some(SingleUnit::create_from_unit_def(*result));
+        return Some(SingleUnit::create_from_unit_def_static(result));
     } else if let Some(result) = query_unit_symbols_internal(query) {
-        return Some(SingleUnit::create_from_unit_def(*result));
+        return Some(SingleUnit::create_from_unit_def_static(result));
     }
 
     // if not, try to remove prefix
@@ -127,13 +128,6 @@ pub(crate) fn search_for_unit_name(query: &str) -> Option<SingleUnit> {
                     0.0,
                     result.3 * prefix_def.2,
                     result.4,
-                    result.5,
-                    result.6,
-                    result.7,
-                    result.8,
-                    result.9,
-                    result.10,
-                    result.11,
                 );
 
                 return Some(SingleUnit::create_from_unit_def_string(ret));
@@ -152,13 +146,6 @@ pub(crate) fn search_for_unit_name(query: &str) -> Option<SingleUnit> {
                     0.0,
                     result.3 * prefix_def.2,
                     result.4,
-                    result.5,
-                    result.6,
-                    result.7,
-                    result.8,
-                    result.9,
-                    result.10,
-                    result.11,
                 );
 
                 return Some(SingleUnit::create_from_unit_def_string(ret));

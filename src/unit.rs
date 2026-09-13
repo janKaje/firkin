@@ -10,6 +10,8 @@ mod unit_defs;
 use single_unit::SingleUnit;
 use unit_defs::{BASE_UNITS, search_for_unit_name};
 
+use crate::unit::unit_defs::NUMBER_OF_BASE_UNITS;
+
 const UNIT_SEP: &str = "."; // separate units within num/denom
 const UNIT_DIV_SEP: &str = "/"; // separate numerator from denominator
 const UNIT_FORMAT: (&str, &str) = ("[", "]"); // to come before and after unit
@@ -21,7 +23,7 @@ const UNIT_POW_IND: &str = ""; // indicates unit raised to a power
 #[derive(Clone, PartialEq, Debug)]
 pub(crate) struct UnitCollection {
     pub(crate) single_units: HashMap<SingleUnit, f64>,
-    pub(crate) base_units: [f64; 8],
+    pub(crate) base_units: [f64; NUMBER_OF_BASE_UNITS],
     pub(crate) scale: f64,
 }
 
@@ -32,9 +34,9 @@ impl Mul for UnitCollection {
 
     fn mul(self, rhs: Self) -> Self {
         // easy stuff first - base units and scale
-        let mut prod_base_units = [0.0; 8];
-        for i in 0..8 {
-            prod_base_units[i] += self.base_units[i] + rhs.base_units[i]
+        let mut prod_base_units = [0.0; NUMBER_OF_BASE_UNITS];
+        for i in 0..NUMBER_OF_BASE_UNITS {
+            prod_base_units[i] += self.base_units[i] + rhs.base_units[i];
         }
         let prod_scale = self.scale * rhs.scale;
 
@@ -66,9 +68,9 @@ impl Div for UnitCollection {
 
     fn div(self, rhs: Self) -> Self {
         // easy stuff first - base units and scale
-        let mut quot_base_units = [0.0; 8];
-        for i in 0..8 {
-            quot_base_units[i] += self.base_units[i] - rhs.base_units[i]
+        let mut quot_base_units = [0.0; NUMBER_OF_BASE_UNITS];
+        for i in 0..NUMBER_OF_BASE_UNITS {
+            quot_base_units[i] += self.base_units[i] - rhs.base_units[i];
         }
         let quot_scale = self.scale / rhs.scale;
 
@@ -138,7 +140,7 @@ impl UnitCollection {
 
     pub(crate) fn empty_collection() -> Self {
         UnitCollection {
-            base_units: [0.0; 8],
+            base_units: [0.0; NUMBER_OF_BASE_UNITS],
             scale: 1.0,
             single_units: HashMap::new(),
         }
@@ -334,7 +336,7 @@ impl UnitCollection {
 
         for i in 0..8 {
             base_unit_hashmap.insert(
-                SingleUnit::create_from_unit_def(BASE_UNITS[i]),
+                SingleUnit::create_from_unit_def_static(&BASE_UNITS[i]),
                 self.base_units[i],
             );
         }

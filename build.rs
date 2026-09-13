@@ -81,8 +81,7 @@ fn write_base_units_rs(config: &toml::Table) -> HashMap<String, UnitDefNumbers> 
     // get number of base units and create type_str
     let n_base_units = config.len();
 
-    let type_str =
-        "&'static str, &'static str, f64, f64".to_string() + &", f64".repeat(n_base_units);
+    let type_str = format!("&'static str, &'static str, f64, f64, [f64; {n_base_units}]");
 
     // initialize buffers to write data from toml file into
     let mut base_units_str = String::new();
@@ -115,11 +114,11 @@ fn write_base_units_rs(config: &toml::Table) -> HashMap<String, UnitDefNumbers> 
             abbr.as_str()
                 .expect(("Unit ".to_string() + &key + "  abbr is not string").as_str()),
         );
-        base_units_str.push_str("\", 0.0, 1.0, ");
+        base_units_str.push_str("\", 0.0, 1.0, [");
         for n in numbers.iter() {
             base_units_str.push_str(format!("{:?}, ", n).as_str());
         }
-        base_units_str.push_str("),");
+        base_units_str.push_str("]),");
 
         // add numbers to hashmap
         unit_def_hashmap.insert(
@@ -138,13 +137,16 @@ fn write_base_units_rs(config: &toml::Table) -> HashMap<String, UnitDefNumbers> 
 /// If you want to change file layout, edit `build.rs`
 
 #[allow(unused)]
-pub(crate) const NUMBER_OF_BASE_UNITS: u8 = {};
+pub(crate) const NUMBER_OF_BASE_UNITS: usize = {};
+
+#[allow(unused)]
+pub(crate) type UnitDefStatic = (&'static str, &'static str, f64, f64, [f64; NUMBER_OF_BASE_UNITS]);
 
 #[rustfmt::skip]
-pub(crate) const BASE_UNITS: &[({})] = &[{}
+pub(crate) const BASE_UNITS: &[UnitDefStatic] = &[{}
 ];
 ",
-        n_base_units, type_str, base_units_str
+        n_base_units, base_units_str
     );
 
     fs::write(get_rs_path("base_units.rs"), base_units_rs);
@@ -247,19 +249,16 @@ fn write_derived_units_rs(unit_def_vec: &Vec<UnitDef>) {
 /// If you want to add units, edit `unit_definitions\\derived_units.toml`
 /// If you want to change file layout, edit `build.rs`
 
+use super::base_units::UnitDefStatic;
+
 #[rustfmt::skip]
-pub(crate) const OTHER_UNITS: &[(&'static str, &'static str, f64, f64"
+pub(crate) const OTHER_UNITS: &[UnitDefStatic] = &["
         .to_string();
-
-    let n_base_units = unit_def_vec[0].base_units.len();
-
-    derived_units_rs.push_str(&", f64".repeat(n_base_units));
-    derived_units_rs.push_str(")] = &[");
 
     for unit_def in unit_def_vec {
         derived_units_rs.push_str(
             format!(
-                "\n    (\"{}\", \"{}\", {:?}, {:?}, ",
+                "\n    (\"{}\", \"{}\", {:?}, {:?}, [",
                 unit_def.name, unit_def.abbr, unit_def.offset, unit_def.scale
             )
             .as_str(),
@@ -267,7 +266,7 @@ pub(crate) const OTHER_UNITS: &[(&'static str, &'static str, f64, f64"
         for n in &unit_def.base_units {
             derived_units_rs.push_str(format!("{:?}, ", n).as_str());
         }
-        derived_units_rs.push_str("),");
+        derived_units_rs.push_str("]),");
     }
 
     derived_units_rs.push_str("\n];\n");
