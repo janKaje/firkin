@@ -1,1 +1,1 @@
-from .firkin import Firkin
+from .firkin import Firkin, LogFirkin

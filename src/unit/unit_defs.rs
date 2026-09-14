@@ -3,8 +3,12 @@
 mod aliases;
 mod base_units;
 mod derived_units;
+mod log_units;
 
-use crate::unit::single_unit::SingleUnit;
+use log_units::LOG_UNITS;
+
+use super::single_unit::SingleUnit;
+pub(crate) use super::log_unit::LogUnit;
 pub(crate) use base_units::UnitDefStatic;
 
 pub(crate) use aliases::UNIT_ALIASES;
@@ -154,6 +158,19 @@ pub(crate) fn search_for_unit_name(query: &str) -> Option<SingleUnit> {
         }
     }
     // if not, return none
+    None
+}
+
+pub(crate) fn search_for_log_unit_name(query: &str) -> Option<LogUnit> {
+    for log_unit in LOG_UNITS {
+        if query == log_unit.0 || query == log_unit.1 {
+            return Some(LogUnit {
+                name: log_unit.0.to_string(),
+                abbr: log_unit.1.to_string(),
+                scale: log_unit.2,
+            })
+        }
+    }
     None
 }
 

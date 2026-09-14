@@ -298,3 +298,24 @@ assert str(usd.as_unit(eur)) == "0.858096570188009 [EUR]", f"Was actually {usd.a
         )
     })
 }
+
+#[test]
+fn log_firkin() -> PyResult<()> {
+    run_closure(|py| {
+        py.run(
+            cr#"from firkin.units import bel
+
+test = 2*bel
+
+assert str(test) == "2 [B]", f"Was actually {test}"
+assert str(test + 10) == "110.0", f"Was actually {test + 10}"
+assert str(2*test - 0.5*test) == "3 [B]", f"Was actually {2*test - 0.5*test}"
+assert str(test**1.1) == "158.48931924611142", f"Was actually {test**1.1}"
+assert str(1.1**test) == "13780.61233982238", f"Was actually {1.1**test}"
+assert str(120/test) == "1.2", f"Was actually {120/test}"
+"#,
+            None,
+            None,
+        )
+    })
+}

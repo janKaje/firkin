@@ -15,6 +15,8 @@ mod firkin {
     use crate::constant::search_for_constant_name;
     use crate::error::FirkinError;
     use crate::unit::UnitCollection;
+    use crate::unit::LogUnit;
+use crate::unit::search_for_log_unit_name;
 
     /// Unit! yippee
     #[pyclass(from_py_object)]
@@ -512,9 +514,11 @@ mod firkin {
         }
     }
 
+    #[derive(IntoPyObject)]
     enum PyNumber {
         Float(f64),
         Int(i32),
+        LogFirkin(LogFirkin)
     }
 
     impl FromPyObject<'_, '_> for PyNumber {
@@ -525,6 +529,8 @@ mod firkin {
                 Ok(PyNumber::Float(f.extract::<f64>()?))
             } else if let Ok(f) = obj.cast::<PyInt>() {
                 Ok(PyNumber::Int(f.extract::<i32>()?))
+            } else if let Ok(f) = obj.cast::<LogFirkin>() {
+                Ok(PyNumber::LogFirkin(f.extract::<LogFirkin>()?))
             } else {
                 Err(FirkinError::CannotConvertToNumber(obj.to_string()).into())
             }
@@ -536,7 +542,230 @@ mod firkin {
             match input {
                 PyNumber::Float(f) => f,
                 PyNumber::Int(i) => i as f64,
+                PyNumber::LogFirkin(l) => l.resolve(),
             }
         }
     }
+
+    #[pyclass(from_py_object)]
+    #[derive(Clone)]
+    struct LogFirkin {
+        unit: LogUnit,
+        value: f64,
+    }
+
+    #[pymethods]
+    impl LogFirkin {
+        #[classmethod]
+        fn unit(_cls: &Bound<'_, PyType>, unit_name_or_symbol: &str) -> PyResult<Self> {
+            let unit = match search_for_log_unit_name(unit_name_or_symbol) {
+                Some(unit) => unit,
+                None => {
+                    return Err(FirkinError::LogUnitNotFound(unit_name_or_symbol.to_string()).into());
+                }
+            };
+            Ok(LogFirkin {
+                unit,
+                value: 1.0,
+            })
+        }
+
+        fn as_unitless(&self) -> PyResult<f64> {
+            Ok(self.resolve())
+        }
+
+        fn round_sfig(&mut self, n_sig_figs: i32) -> PyResult<f64> {
+            self.__round__(Some(
+                n_sig_figs - 1 - (self.value.abs().log10().floor() as i32),
+            ))
+        }
+
+        fn __str__(&self) -> PyResult<String> {
+            Ok(format!("{}", self))
+        }
+
+        fn __repr__(&self) -> PyResult<String> {
+            self.__str__()
+        }
+
+        fn __mul__(&self, other: PyNumber) -> PyResult<PyNumber> {
+            match other {
+                PyNumber::Float(f) => Ok(PyNumber::LogFirkin(LogFirkin { unit: self.unit.clone(), value: self.value * f })),
+                PyNumber::Int(i) => Ok(PyNumber::LogFirkin(LogFirkin { unit: self.unit.clone(), value: self.value * i as f64 })),
+                PyNumber::LogFirkin(l) => Ok(PyNumber::Float(self.resolve() * l.resolve()))
+            }
+        }
+
+        fn __rmul__(&self, other: PyNumber) -> PyResult<PyNumber> {
+            self.__mul__(other)
+        }
+
+        fn __div__(&self, other: PyNumber) -> PyResult<PyNumber> {
+            match other {
+                PyNumber::Float(f) => Ok(PyNumber::LogFirkin(LogFirkin { unit: self.unit.clone(), value: self.value / f })),
+                PyNumber::Int(i) => Ok(PyNumber::LogFirkin(LogFirkin { unit: self.unit.clone(), value: self.value / i as f64 })),
+                PyNumber::LogFirkin(l) => Ok(PyNumber::Float(self.resolve() / l.resolve()))
+            }
+        }
+
+        fn __truediv__(&self, other: PyNumber) -> PyResult<PyNumber> {
+            self.__div__(other)
+        }
+
+        fn __rdiv__(&self, other: PyNumber) -> PyResult<f64> {
+            match other {
+                PyNumber::Float(f) => Ok(f / self.resolve()),
+                PyNumber::Int(i) => Ok(i as f64 / self.resolve()),
+                PyNumber::LogFirkin(l) => Ok(l.resolve() / self.resolve())
+            }
+        }
+
+        fn __rtruediv__(&self, other: PyNumber) -> PyResult<f64> {
+            self.__rdiv__(other)
+        }
+
+        fn __pos__(&self) -> PyResult<LogFirkin> {
+            Ok(self.clone())
+        }
+
+        fn __neg__(&self) -> PyResult<LogFirkin> {
+            Ok(LogFirkin {
+                unit: self.unit.clone(),
+                value: -self.value,
+            })
+        }
+
+        fn __add__(&self, other: PyNumber) -> PyResult<PyNumber> {
+            match other {
+                PyNumber::Float(f) => Ok(PyNumber::Float(f + self.resolve())),
+                PyNumber::Int(i) => Ok(PyNumber::Float(i as f64 + self.resolve())),
+                PyNumber::LogFirkin(l) => Ok(PyNumber::LogFirkin(LogFirkin { unit: self.unit.clone(), value: self.value + l.resolve().log(self.unit.scale)})),
+            }
+        }
+
+        fn __radd__(&self, other: PyNumber) -> PyResult<PyNumber> {
+            self.__add__(other)
+        }
+
+        fn __sub__(&self, other: PyNumber) -> PyResult<PyNumber> {
+            match other {
+                PyNumber::Float(f) => Ok(PyNumber::Float(self.resolve() - f)),
+                PyNumber::Int(i) => Ok(PyNumber::Float(self.resolve() - i as f64)),
+                PyNumber::LogFirkin(l) => Ok(PyNumber::LogFirkin(LogFirkin { unit: self.unit.clone(), value: self.value - l.resolve().log(self.unit.scale)})),
+            }
+        }
+
+        fn __rsub__(&self, other: PyNumber) -> PyResult<PyNumber> {
+            match other {
+                PyNumber::Float(f) => Ok(PyNumber::Float(f - self.resolve())),
+                PyNumber::Int(i) => Ok(PyNumber::Float(i as f64 - self.resolve())),
+                PyNumber::LogFirkin(l) => Ok(PyNumber::LogFirkin(LogFirkin { unit: self.unit.clone(), value: l.resolve().log(self.unit.scale) - self.value})),
+            }
+        }
+
+        fn __pow__(&self, exponent: PyNumber, _modulus: Option<PyNumber>) -> PyResult<f64> {
+            let exponent: f64 = exponent.into();
+            Ok(self.resolve().powf(exponent))
+        }
+
+        fn __rpow__(&self, other: PyNumber, _modulus: Option<PyNumber>) -> PyResult<f64> {
+            let other: f64 = other.into();
+            Ok(other.powf(self.resolve()))
+        }
+
+        fn __lt__(&self, other: PyNumber) -> PyResult<bool> {
+            let other: f64 = other.into();
+            Ok(self.resolve() < other)
+        }
+
+        fn __le__(&self, other: PyNumber) -> PyResult<bool> {
+            let other: f64 = other.into();
+            Ok(self.resolve() <= other)
+        }
+
+        fn __gt__(&self, other: PyNumber) -> PyResult<bool> {
+            let other: f64 = other.into();
+            Ok(self.resolve() > other)
+        }
+
+        fn __ge__(&self, other: PyNumber) -> PyResult<bool> {
+            let other: f64 = other.into();
+            Ok(self.resolve() >= other)
+        }
+
+        fn __eq__(&self, other: PyNumber) -> PyResult<bool> {
+            let other: f64 = other.into();
+            Ok(self.resolve() == other)
+        }
+
+        fn __ne__(&self, other: PyNumber) -> PyResult<bool> {
+            let other: f64 = other.into();
+            Ok(self.resolve() != other)
+        }
+
+        fn __abs__(&self) -> PyResult<f64> {
+            Ok(self.resolve().abs())
+        }
+
+        fn __int__(&self) -> PyResult<i32> {
+            Ok(self.resolve() as i32)
+        }
+
+        fn __float__(&self) -> PyResult<f64> {
+            Ok(self.resolve())
+        }
+
+        #[pyo3(signature=(ndigits=None))]
+        fn __round__(&self, ndigits: Option<i32>) -> PyResult<f64> {
+            match ndigits {
+                Some(n) => {
+                    let mul = 10.0f64.powi(n);
+                    Ok((self.resolve() * mul).round() / mul)
+                }
+                None => Ok(self.resolve().round()),
+            }
+        }
+
+        fn __exp__(&self) -> PyResult<f64> {
+            Ok(self.resolve().exp())
+        }
+
+        fn exp(&self) -> PyResult<f64> {
+            self.__exp__()
+        }
+
+        fn __log__(&self) -> PyResult<f64> {
+            Ok(self.resolve().ln())
+        }
+
+        fn log(&self) -> PyResult<f64> {
+            self.__log__()
+        }
+
+        fn __log10__(&self) -> PyResult<f64> {
+            Ok(self.resolve().log10())
+        }
+
+        fn log10(&self) -> PyResult<f64> {
+            self.__log10__()
+        }
+
+        
+
+    }
+
+    impl LogFirkin {
+        fn resolve(&self) -> f64 {
+            self.unit.scale.powf(self.value)
+        }
+    }
+
+    impl fmt::Display for LogFirkin {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "{} [{}]", self.value, self.unit.abbr)?;
+
+            Ok(())
+        }
+    }
+
 }

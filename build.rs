@@ -327,6 +327,81 @@ pub(crate) const UNIT_ALIASES: &[(&'static str, &'static str)] = &["
     fs::write(get_rs_path("aliases.rs"), aliases_rs);
 }
 
+fn write_log_units_rs(config: &toml::Table) {
+    let mut log_units_rs = "\
+/// This file was generated automatically by the build script. 
+/// If you want to add units, edit `unit_definitions\\log_units.toml`
+/// If you want to change file layout, edit `build.rs`
+
+#[rustfmt::skip]
+pub(crate) const LOG_UNITS: &[(&'static str, &'static str, f64)] = &["
+        .to_string();
+
+    for (key, value) in config.iter() {
+
+        let as_table = value
+            .as_table()
+            .expect("base_units.toml should not have root table");
+        let abbr = as_table
+            .get("abbr")
+            .expect(("Unit ".to_string() + &key + "  does not have abbr").as_str());
+        let scaling_factor = as_table
+            .get("scaling_factor")
+            .expect(("Unit ".to_string() + &key + "  does not have scaling_factor").as_str());
+
+        log_units_rs.push_str(
+            format!(
+                "\n    (\"{}\", \"{}\", {:?}),", 
+                key, 
+                abbr.as_str().expect("Not a string"), 
+                scaling_factor.as_float().expect("Not a float")
+            ).as_str()
+        );
+    }
+
+    log_units_rs.push_str("\n];");
+
+    fs::write(get_rs_path("log_units.rs"), log_units_rs);
+
+}
+
+fn write_log_units_py(config: &toml::Table) {
+    let mut log_units_py = "from firkin import LogFirkin\n".to_string();
+
+    for (key, value) in config.iter() {
+
+        let as_table = value
+            .as_table()
+            .expect("base_units.toml should not have root table");
+        let python_var_name = as_table
+            .get("python_var_name")
+            .expect(("Unit ".to_string() + &key + "  does not have python_var_name").as_str());
+
+        log_units_py.push_str(
+            format!(
+                "\n{} = LogFirkin.unit(\"{}\")", 
+                key, 
+                python_var_name.as_str().expect("Not a string"), 
+            ).as_str()
+        );
+    }
+
+    fs::write(get_py_path("log_units.py"), log_units_py);
+
+}
+
+fn write_log_units() {
+    
+    let config_str =
+        fs::read_to_string(get_cfg_path("log_units.toml")).expect("Failed to read file");
+    let log_unit_config: toml::Table = toml::from_str(&config_str).expect("Failed to parse toml");
+
+    write_log_units_rs(&log_unit_config);
+
+    write_log_units_py(&log_unit_config);
+
+}
+
 fn main() {
     let cfg_path: PathBuf = [
         Component::CurDir,
@@ -346,4 +421,6 @@ fn main() {
     write_derived_units(&mut unit_def_hashmap);
 
     write_aliases();
+
+    write_log_units();
 }

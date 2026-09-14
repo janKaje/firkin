@@ -6,11 +6,13 @@ use std::{
 
 mod single_unit;
 mod unit_defs;
+mod log_unit;
 
 use single_unit::SingleUnit;
-use unit_defs::{BASE_UNITS, search_for_unit_name};
+use unit_defs::{BASE_UNITS, search_for_unit_name, NUMBER_OF_BASE_UNITS};
 
-use crate::unit::unit_defs::NUMBER_OF_BASE_UNITS;
+pub(crate) use log_unit::LogUnit;
+pub(crate) use unit_defs::search_for_log_unit_name;
 
 const UNIT_SEP: &str = "."; // separate units within num/denom
 const UNIT_DIV_SEP: &str = "/"; // separate numerator from denominator

@@ -1,0 +1,14 @@
+[neper]
+abbr = "Np"
+python_var_name = "neper"
+scaling_factor = 2.7182818284590452353602874713527
+
+[bel]
+abbr = "B"
+python_var_name = "bel"
+scaling_factor = 10.0
+
+[decibel]
+abbr = "dB"
+python_var_name = "decibel"
+scaling_factor = 1.2589254117941672104239541063958

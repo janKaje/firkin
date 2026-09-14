@@ -30,8 +30,6 @@ minute (angle),',arcminute,0.0,0.0002908882086657216,
 second (angle),'',arcsecond,0.0,0.00000484813681109536,
 liter,L,liter,0.0,0.001,meter^3
 metric ton,t,metric_ton,0.0,1000.0,kilogram
-neper,Np,neper,0.0,1.0,
-decibel,dB,decibel,0.0,1.0,
 electronvolt,eV,electronvolt,0.0,1.602176634e-19,joule
 unified atomic mass unit,amu,amu,0.0,1.66053906892e-27,kilogram
 foot,ft,foot,0.0,0.3048,meter
