@@ -7,8 +7,8 @@ mod log_units;
 
 use log_units::LOG_UNITS;
 
-use super::single_unit::SingleUnit;
 pub(crate) use super::log_unit::LogUnit;
+use super::single_unit::SingleUnit;
 pub(crate) use base_units::UnitDefStatic;
 
 pub(crate) use aliases::UNIT_ALIASES;
@@ -168,7 +168,7 @@ pub(crate) fn search_for_log_unit_name(query: &str) -> Option<LogUnit> {
                 name: log_unit.0.to_string(),
                 abbr: log_unit.1.to_string(),
                 scale: log_unit.2,
-            })
+            });
         }
     }
     None

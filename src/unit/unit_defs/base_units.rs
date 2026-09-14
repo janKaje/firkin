@@ -1,4 +1,4 @@
-/// This file was generated automatically by the build script. 
+/// This file was generated automatically by the build script.
 /// If you want to add units, edit `unit_definitions\base_units.toml`
 /// If you want to change file layout, edit `build.rs`
 

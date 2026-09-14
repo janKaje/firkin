@@ -14,9 +14,9 @@ mod firkin {
 
     use crate::constant::search_for_constant_name;
     use crate::error::FirkinError;
-    use crate::unit::UnitCollection;
     use crate::unit::LogUnit;
-use crate::unit::search_for_log_unit_name;
+    use crate::unit::UnitCollection;
+    use crate::unit::search_for_log_unit_name;
 
     /// Unit! yippee
     #[pyclass(from_py_object)]
@@ -518,7 +518,7 @@ use crate::unit::search_for_log_unit_name;
     enum PyNumber {
         Float(f64),
         Int(i32),
-        LogFirkin(LogFirkin)
+        LogFirkin(LogFirkin),
     }
 
     impl FromPyObject<'_, '_> for PyNumber {
@@ -561,13 +561,12 @@ use crate::unit::search_for_log_unit_name;
             let unit = match search_for_log_unit_name(unit_name_or_symbol) {
                 Some(unit) => unit,
                 None => {
-                    return Err(FirkinError::LogUnitNotFound(unit_name_or_symbol.to_string()).into());
+                    return Err(
+                        FirkinError::LogUnitNotFound(unit_name_or_symbol.to_string()).into(),
+                    );
                 }
             };
-            Ok(LogFirkin {
-                unit,
-                value: 1.0,
-            })
+            Ok(LogFirkin { unit, value: 1.0 })
         }
 
         fn as_unitless(&self) -> PyResult<f64> {
@@ -590,9 +589,15 @@ use crate::unit::search_for_log_unit_name;
 
         fn __mul__(&self, other: PyNumber) -> PyResult<PyNumber> {
             match other {
-                PyNumber::Float(f) => Ok(PyNumber::LogFirkin(LogFirkin { unit: self.unit.clone(), value: self.value * f })),
-                PyNumber::Int(i) => Ok(PyNumber::LogFirkin(LogFirkin { unit: self.unit.clone(), value: self.value * i as f64 })),
-                PyNumber::LogFirkin(l) => Ok(PyNumber::Float(self.resolve() * l.resolve()))
+                PyNumber::Float(f) => Ok(PyNumber::LogFirkin(LogFirkin {
+                    unit: self.unit.clone(),
+                    value: self.value * f,
+                })),
+                PyNumber::Int(i) => Ok(PyNumber::LogFirkin(LogFirkin {
+                    unit: self.unit.clone(),
+                    value: self.value * i as f64,
+                })),
+                PyNumber::LogFirkin(l) => Ok(PyNumber::Float(self.resolve() * l.resolve())),
             }
         }
 
@@ -602,9 +607,15 @@ use crate::unit::search_for_log_unit_name;
 
         fn __div__(&self, other: PyNumber) -> PyResult<PyNumber> {
             match other {
-                PyNumber::Float(f) => Ok(PyNumber::LogFirkin(LogFirkin { unit: self.unit.clone(), value: self.value / f })),
-                PyNumber::Int(i) => Ok(PyNumber::LogFirkin(LogFirkin { unit: self.unit.clone(), value: self.value / i as f64 })),
-                PyNumber::LogFirkin(l) => Ok(PyNumber::Float(self.resolve() / l.resolve()))
+                PyNumber::Float(f) => Ok(PyNumber::LogFirkin(LogFirkin {
+                    unit: self.unit.clone(),
+                    value: self.value / f,
+                })),
+                PyNumber::Int(i) => Ok(PyNumber::LogFirkin(LogFirkin {
+                    unit: self.unit.clone(),
+                    value: self.value / i as f64,
+                })),
+                PyNumber::LogFirkin(l) => Ok(PyNumber::Float(self.resolve() / l.resolve())),
             }
         }
 
@@ -616,7 +627,7 @@ use crate::unit::search_for_log_unit_name;
             match other {
                 PyNumber::Float(f) => Ok(f / self.resolve()),
                 PyNumber::Int(i) => Ok(i as f64 / self.resolve()),
-                PyNumber::LogFirkin(l) => Ok(l.resolve() / self.resolve())
+                PyNumber::LogFirkin(l) => Ok(l.resolve() / self.resolve()),
             }
         }
 
@@ -639,7 +650,10 @@ use crate::unit::search_for_log_unit_name;
             match other {
                 PyNumber::Float(f) => Ok(PyNumber::Float(f + self.resolve())),
                 PyNumber::Int(i) => Ok(PyNumber::Float(i as f64 + self.resolve())),
-                PyNumber::LogFirkin(l) => Ok(PyNumber::LogFirkin(LogFirkin { unit: self.unit.clone(), value: self.value + l.resolve().log(self.unit.scale)})),
+                PyNumber::LogFirkin(l) => Ok(PyNumber::LogFirkin(LogFirkin {
+                    unit: self.unit.clone(),
+                    value: self.value + l.resolve().log(self.unit.scale),
+                })),
             }
         }
 
@@ -651,7 +665,10 @@ use crate::unit::search_for_log_unit_name;
             match other {
                 PyNumber::Float(f) => Ok(PyNumber::Float(self.resolve() - f)),
                 PyNumber::Int(i) => Ok(PyNumber::Float(self.resolve() - i as f64)),
-                PyNumber::LogFirkin(l) => Ok(PyNumber::LogFirkin(LogFirkin { unit: self.unit.clone(), value: self.value - l.resolve().log(self.unit.scale)})),
+                PyNumber::LogFirkin(l) => Ok(PyNumber::LogFirkin(LogFirkin {
+                    unit: self.unit.clone(),
+                    value: self.value - l.resolve().log(self.unit.scale),
+                })),
             }
         }
 
@@ -659,7 +676,10 @@ use crate::unit::search_for_log_unit_name;
             match other {
                 PyNumber::Float(f) => Ok(PyNumber::Float(f - self.resolve())),
                 PyNumber::Int(i) => Ok(PyNumber::Float(i as f64 - self.resolve())),
-                PyNumber::LogFirkin(l) => Ok(PyNumber::LogFirkin(LogFirkin { unit: self.unit.clone(), value: l.resolve().log(self.unit.scale) - self.value})),
+                PyNumber::LogFirkin(l) => Ok(PyNumber::LogFirkin(LogFirkin {
+                    unit: self.unit.clone(),
+                    value: l.resolve().log(self.unit.scale) - self.value,
+                })),
             }
         }
 
@@ -749,9 +769,6 @@ use crate::unit::search_for_log_unit_name;
         fn log10(&self) -> PyResult<f64> {
             self.__log10__()
         }
-
-        
-
     }
 
     impl LogFirkin {
@@ -767,5 +784,4 @@ use crate::unit::search_for_log_unit_name;
             Ok(())
         }
     }
-
 }

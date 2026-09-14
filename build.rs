@@ -132,7 +132,7 @@ fn write_base_units_rs(config: &toml::Table) -> HashMap<String, UnitDefNumbers> 
 
     let base_units_rs = format!(
         "\
-/// This file was generated automatically by the build script. 
+/// This file was generated automatically by the build script.
 /// If you want to add units, edit `unit_definitions\\base_units.toml`
 /// If you want to change file layout, edit `build.rs`
 
@@ -245,7 +245,7 @@ fn get_unit_def_from_csv_line(
 
 fn write_derived_units_rs(unit_def_vec: &Vec<UnitDef>) {
     let mut derived_units_rs = "\
-/// This file was generated automatically by the build script. 
+/// This file was generated automatically by the build script.
 /// If you want to add units, edit `unit_definitions\\derived_units.toml`
 /// If you want to change file layout, edit `build.rs`
 
@@ -310,7 +310,7 @@ fn write_aliases() {
         .expect("Could not locate aliases config");
 
     let mut aliases_rs = "\
-/// This file was generated automatically by the build script. 
+/// This file was generated automatically by the build script.
 /// If you want to add units, edit `unit_definitions\\derived_units.toml`
 /// If you want to change file layout, edit `build.rs`
 
@@ -329,7 +329,7 @@ pub(crate) const UNIT_ALIASES: &[(&'static str, &'static str)] = &["
 
 fn write_log_units_rs(config: &toml::Table) {
     let mut log_units_rs = "\
-/// This file was generated automatically by the build script. 
+/// This file was generated automatically by the build script.
 /// If you want to add units, edit `unit_definitions\\log_units.toml`
 /// If you want to change file layout, edit `build.rs`
 
@@ -338,7 +338,6 @@ pub(crate) const LOG_UNITS: &[(&'static str, &'static str, f64)] = &["
         .to_string();
 
     for (key, value) in config.iter() {
-
         let as_table = value
             .as_table()
             .expect("base_units.toml should not have root table");
@@ -351,25 +350,24 @@ pub(crate) const LOG_UNITS: &[(&'static str, &'static str, f64)] = &["
 
         log_units_rs.push_str(
             format!(
-                "\n    (\"{}\", \"{}\", {:?}),", 
-                key, 
-                abbr.as_str().expect("Not a string"), 
+                "\n    (\"{}\", \"{}\", {:?}),",
+                key,
+                abbr.as_str().expect("Not a string"),
                 scaling_factor.as_float().expect("Not a float")
-            ).as_str()
+            )
+            .as_str(),
         );
     }
 
     log_units_rs.push_str("\n];");
 
     fs::write(get_rs_path("log_units.rs"), log_units_rs);
-
 }
 
 fn write_log_units_py(config: &toml::Table) {
     let mut log_units_py = "from firkin import LogFirkin\n".to_string();
 
     for (key, value) in config.iter() {
-
         let as_table = value
             .as_table()
             .expect("base_units.toml should not have root table");
@@ -379,19 +377,18 @@ fn write_log_units_py(config: &toml::Table) {
 
         log_units_py.push_str(
             format!(
-                "\n{} = LogFirkin.unit(\"{}\")", 
-                key, 
-                python_var_name.as_str().expect("Not a string"), 
-            ).as_str()
+                "\n{} = LogFirkin.unit(\"{}\")",
+                key,
+                python_var_name.as_str().expect("Not a string"),
+            )
+            .as_str(),
         );
     }
 
     fs::write(get_py_path("log_units.py"), log_units_py);
-
 }
 
 fn write_log_units() {
-    
     let config_str =
         fs::read_to_string(get_cfg_path("log_units.toml")).expect("Failed to read file");
     let log_unit_config: toml::Table = toml::from_str(&config_str).expect("Failed to parse toml");
@@ -399,7 +396,6 @@ fn write_log_units() {
     write_log_units_rs(&log_unit_config);
 
     write_log_units_py(&log_unit_config);
-
 }
 
 fn main() {
