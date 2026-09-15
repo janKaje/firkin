@@ -30,4 +30,10 @@ pub(crate) const UNIT_ALIASES: &[(&'static str, &'static str)] = &[
     ("arc second", "second (angle)"),
     ("arc degree", "degree (angle)"),
     ("dalton", "unified atomic mass unit"),
+    ("tonne", "metric ton"),
+    ("teacup", "gill"),
+    ("pole", "rod"),
+    ("perch", "rod"),
+    ("pound mass", "pound"),
+    ("pound-mass", "pound"),
 ];
