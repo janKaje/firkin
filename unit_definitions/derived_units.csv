@@ -49,7 +49,7 @@ yard,yd,yard,0.0,0.9144,meter
 pound-mol,lbmol,lbmol,0.0,453.59237,mole
 gallon,gal,gallon,0.0,231,inch^3
 pound-force,lbf,lbf,0.0,4.4482216152605,newton
-grain,gr,grain,0.0,1.4285714285714285714285714285714e-4,pound
+grain,gr,grain,0.0,0.06479891,gram
 slug,slug,slug,0.0,32.17405,pound
 fluid ounce,fl oz,fluid_ounce,0.0,0.0078125,gallon
 quart,qt,quart,0.0,0.25,gallon
@@ -103,3 +103,27 @@ shed,shed,shed,0.0,1.0e-52,meter^2
 martian sol,sol,martian_sol,0.0,88775.244,second
 jiffy,jfy,jiffy,0.0,0.01,second
 light speed,c,light_speed,0.0,299792458.0,second^-1_meter
+fluid ounce (food),fl oz (food),fl_oz_food,0.0,0.03,liter
+fluid ounce (imperial),fl oz (imp),fl_oz_imperial,0.0,0.0284130625,liter
+pint (imperial),pt (imp),pint_imperial,0.0,20.0,fluid ounce (imperial)
+pint (dry),pt (dry),pint_dry,0.0,0.5506104713575,liter
+quart (imperial),qt (imp),quart_imperial,0.0,40.0,fluid ounce (imperial)
+quart (dry),qt (dry),quart_dry,0.0,2.0,pint (dry)
+gallon (imperial),gal (imp),gallon_imperial,0.0,160.0,fluid ounce (imperial)
+survey foot,survey ft,survey_foot,0.0,0.30480060960121920243840487680975,meter
+stone,st,stone,0.0,14.0,pound
+troy ounce,oz t,troy_ounce,0.0,480.0,grain
+troy pound,lb t,troy_pound,0.0,5760.0,grain
+pennyweight,dwt,pennyweight,0.0,24.0,grain
+long ton,long ton,long_ton,0.0,2240.0,pound
+hundredweight,hundredweight,hundredweight,0.0,100,pound
+hundredweight (imperial),hundredweight (imp),hundredweight_imperial,0.0,112,pound
+gill,gill,gill,0.0,4.0,fluid ounce
+gill (imperial),gill (imp),gill_imperial,0.0,5.0,fluid ounce (imperial)
+chain,ch,chain,0.0,66.0,foot
+rod,rod,rod,0.0,16.5,foot
+poundal,pdl,poundal,0.0,1.0,pound_foot_second^-2
+barye,Ba,barye,0.0,0.1,pascal
+kilogram force,kgf,kilogram_force,0.0,9.806650,newton
+horsepower (metric),PS,horsepower_metric,0.0,75.0,kilogram force_meter_second^-1
+link,li,link,0.0,0.01,chain
