@@ -319,3 +319,17 @@ assert str(120/test) == "1.2", f"Was actually {120/test}"
         )
     })
 }
+
+#[test]
+fn latex() -> PyResult<()> {
+    run_closure(|py| {
+        py.run(
+            cr#"from firkin.units import meter, second, ampere
+test = 2*meter/second/ampere
+assert str(test.latex()) == "2~\\mathrm{\\frac{m}{A~s}}", f"Was actually {test.latex()}"
+"#,
+            None,
+            None,
+        )
+    })
+}

@@ -322,6 +322,48 @@ impl UnitCollection {
         }
     }
 
+    pub(crate) fn as_latex(&self) -> String {
+        let mut num = self
+            .single_units
+            .iter()
+            .filter(|x| *x.1 > 0.0)
+            .map(|x| {
+                if *x.1 != 1.0 {
+                    x.0.abbr.clone() + "^" + &x.1.to_string()
+                } else {
+                    x.0.abbr.clone()
+                }
+            })
+            .collect::<Vec<String>>();
+        num.sort();
+        let num = num.join("~");
+
+        let mut denom = self
+            .single_units
+            .iter()
+            .filter(|x| *x.1 < 0.0)
+            .map(|x| {
+                if *x.1 != -1.0 {
+                    x.0.abbr.clone() + "^" + &(-x.1).to_string()
+                } else {
+                    x.0.abbr.clone()
+                }
+            })
+            .collect::<Vec<String>>();
+        denom.sort();
+        let denom = denom.join("~");
+
+        if denom != "" {
+            if num == "" {
+                return format!("\\mathrm{{\\frac{{1}}{{{}}}}}", denom);
+            } else {
+                return format!("\\mathrm{{\\frac{{{}}}{{{}}}}}", num, denom);
+            }
+        } else {
+            return format!("\\mathrm{{{}}}", num);
+        }
+    }
+
     pub(crate) fn equivalent_scale_diff(&self, other: &Self) -> Option<ScaleDiff> {
         if self.base_units != other.base_units {
             None

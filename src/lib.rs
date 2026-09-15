@@ -347,6 +347,14 @@ mod firkin {
                 self.unit_collection.as_descriptive_string()
             ))
         }
+
+        fn latex(&self) -> PyResult<String> {
+            Ok(format!(
+                "{}~{}",
+                self.value,
+                self.unit_collection.as_latex()
+            ))
+        }
     }
 
     impl Firkin {
