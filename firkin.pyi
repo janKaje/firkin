@@ -277,7 +277,7 @@ class Firkin:
         ...
 
     @classmethod
-    def custom(cls, name:str, abbr:str, definition:Self|float|int|str) -> Self:
+    def custom(cls, name:str, abbr:str, definition:Self|LogFirkin|float|int|str) -> Self:
         """
         Defines a custom Firkin unit. 
         
@@ -298,7 +298,7 @@ class Firkin:
         abbr : str
             The abbreviation or unit symbol for the new unit.
 
-        definition : Firkin, float, int, str
+        definition : Firkin, LogFirkin, float, int, str
             The definition of the custom unit.
 
         Returns
@@ -317,13 +317,13 @@ class Firkin:
         """
         ...
 
-    def as_unit(self, other:Self|float|int|str) -> Self: 
+    def as_unit(self, other:Self|LogFirkin|float|int|str) -> Self: 
         """
         Returns a unit idential to self, but with the units of other.
 
         Parameters
         ----------
-        other : Firkin, float, int, str
+        other : Firkin, LogFirkin, float, int, str
             The units to coerce self into. Strings will attempt to use .unit()
             algorithm, and numbers will be considered unitless.
 
@@ -339,13 +339,13 @@ class Firkin:
         """
         ...
 
-    def as_number(self, other:Self|float|int|str|None=None, scale:bool=False) -> float: 
+    def as_number(self, other:Self|LogFirkin|float|int|str|None=None, scale:bool=False) -> float: 
         """
         Similar to the .as_unit() method, but returns itself as a number.
 
         Parameters
         ----------
-        other : Firkin, float, int, str, None, default None
+        other : Firkin, LogFirkin, float, int, str, None, default None
             The units to coerce self into. If None, will return without 
             altering the units. Strings will attempt to use .unit() algorithm, 
             and numbers will be considered unitless.
@@ -411,6 +411,12 @@ class Firkin:
         """
         ...
 
+    def latex(self) -> str: 
+        """
+        Returns a LaTeX-formatted string representing the object.
+        """
+        ...
+
     def round_sfig(self, n_sig_figs:int) -> Self: 
         """
         Returns a copy of self, with the value rounded to n_sig_figs
@@ -422,45 +428,45 @@ class Firkin:
 
     def __repr__(self) -> str: ...
 
-    def __mul__(self, other:Self|float|int|str) -> Self: ...
+    def __mul__(self, other:Self|LogFirkin|float|int|str) -> Self: ...
 
-    def __rmul__(self, other:Self|float|int|str) -> Self: ...
+    def __rmul__(self, other:Self|LogFirkin|float|int|str) -> Self: ...
 
-    def __div__(self, other:Self|float|int|str) -> Self: ...
+    def __div__(self, other:Self|LogFirkin|float|int|str) -> Self: ...
 
-    def __truediv__(self, other:Self|float|int|str) -> Self: ...
+    def __truediv__(self, other:Self|LogFirkin|float|int|str) -> Self: ...
 
-    def __rdiv__(self, other:Self|float|int|str) -> Self: ...
+    def __rdiv__(self, other:Self|LogFirkin|float|int|str) -> Self: ...
 
-    def __rtruediv__(self, other:Self|float|int|str) -> Self: ...
+    def __rtruediv__(self, other:Self|LogFirkin|float|int|str) -> Self: ...
 
     def __pos__(self) -> Self: ...
 
     def __neg__(self) -> Self: ...
 
-    def __add__(self, other:Self|float|int|str) -> Self: ...
+    def __add__(self, other:Self|LogFirkin|float|int|str) -> Self: ...
 
-    def __radd__(self, other:Self|float|int|str) -> Self: ...
+    def __radd__(self, other:Self|LogFirkin|float|int|str) -> Self: ...
 
-    def __sub__(self, other:Self|float|int|str) -> Self: ...
+    def __sub__(self, other:Self|LogFirkin|float|int|str) -> Self: ...
 
-    def __rsub__(self, other:Self|float|int|str) -> Self: ...
+    def __rsub__(self, other:Self|LogFirkin|float|int|str) -> Self: ...
 
-    def __pow__(self, other:Self|float|int|str, modulus:float|int|None=None) -> Self: ...
+    def __pow__(self, other:Self|LogFirkin|float|int|str, modulus:float|int|None=None) -> Self: ...
 
-    def __rpow__(self, other:Self|float|int|str, modulus:float|int|None=None) -> Self: ...
+    def __rpow__(self, other:Self|LogFirkin|float|int|str, modulus:float|int|None=None) -> Self: ...
 
-    def __lt__(self, other:Self|float|int|str) -> Self: ...
+    def __lt__(self, other:Self|LogFirkin|float|int|str) -> bool: ...
 
-    def __le__(self, other:Self|float|int|str) -> Self: ...
+    def __le__(self, other:Self|LogFirkin|float|int|str) -> bool: ...
 
-    def __gt__(self, other:Self|float|int|str) -> Self: ...
+    def __gt__(self, other:Self|LogFirkin|float|int|str) -> bool: ...
 
-    def __ge__(self, other:Self|float|int|str) -> Self: ...
+    def __ge__(self, other:Self|LogFirkin|float|int|str) -> bool: ...
 
-    def __eq__(self, other:Self|float|int|str) -> Self: ...
+    def __eq__(self, other:Self|LogFirkin|float|int|str) -> bool: ...
 
-    def __ne__(self, other:Self|float|int|str) -> Self: ...
+    def __ne__(self, other:Self|LogFirkin|float|int|str) -> bool: ...
 
     def __abs__(self) -> Self: ...
 
@@ -469,6 +475,136 @@ class Firkin:
     def __float__(self) -> float: ...
 
     def __round__(self, ndigits:int=None) -> Self: ...
+
+    def __exp__(self) -> float: ...
+
+    def __log__(self) -> float: ...
+
+    def __log10__(self) -> float: ...
+
+class LogFirkin:
+
+    """
+    A unit-attached number specifically for units of logarithmic ratios. Can
+    only contain one unit at a time.
+
+    When multiplied or divided by a number, or when added to or subtracted from
+    another LogFirkin instance, remains a LogFirkin. In any other case,
+    resolves the logarithmic ratio and turns into a float.
+
+    Examples
+    --------
+    >>> from firkin.units import decibel as dB, bel, neper
+    >>> ratio = 21*dB
+    >>> ratio
+    21 [dB]
+    >>> ratio2 = 2*bel
+    >>> ratio + ratio2
+    41 [dB]
+    >>> 2*ratio2
+    4 [B]
+    >>> ratio3 = 1.5*neper
+    >>> ratio3/1.5
+    1 [Np]
+    >>> ratio.as_unitless()
+    125.89254117941687
+    >>> ratio - 100
+    25.89254117941687
+    >>> 1.0/ratio
+    0.007943282347242805
+    >>> ratio2**2
+    10000.0
+    """
+
+    @classmethod
+    def unit(cls, query:str) -> Self:
+        """
+        Create a new LogFirkin instance by searching for a unit name or symbol.
+
+        Parameters
+        ----------
+        query : str
+            The query by which to look up the unit. Currently, only the neper
+            (Np), bel (B), and decibel (dB) are supported.
+
+        Returns
+        -------
+        LogFirkin
+            The new LogFirkin instance.
+        """
+        ...
+
+    def as_unitless(self) -> float:
+        """
+        Returns the instance as a unitless number, converting the unit into an
+        appropriate logarithmic ratio.
+
+        Examples
+        --------
+        >>> from firkin.units import decibel as dB
+        >>> ratio = 21*dB
+        >>> ratio.as_unitless()
+        125.89254117941687
+        """
+        ...
+
+    def round_sfig(self, n_sig_figs:int) -> float:
+        """
+        Returns the equivalent of `as_unitless`, rounded to the given number of
+        significant figures.
+        """
+
+    def __str__(self) -> str: ...
+
+    def __repr__(self) -> str: ...
+
+    def __mul__(self, other:Self|float|int) -> Self|float: ...
+
+    def __rmul__(self, other:Self|float|int) -> Self|float: ...
+
+    def __div__(self, other:Self|float|int) -> Self|float: ...
+
+    def __truediv__(self, other:Self|float|int) -> Self|float: ...
+
+    def __rdiv__(self, other:Self|float|int) -> float: ...
+
+    def __rtruediv__(self, other:Self|float|int) -> float: ...
+
+    def __pos__(self) -> Self: ...
+
+    def __neg__(self) -> Self: ...
+
+    def __add__(self, other:Self|float|int) -> Self|float: ...
+
+    def __radd__(self, other:Self|float|int) -> Self|float: ...
+
+    def __sub__(self, other:Self|float|int) -> Self|float: ...
+
+    def __rsub__(self, other:Self|float|int) -> Self|float: ...
+
+    def __pow__(self, other:Self|float|int, modulus:float|int|None=None) -> float: ...
+
+    def __rpow__(self, other:Self|float|int, modulus:float|int|None=None) -> float: ...
+
+    def __lt__(self, other:Self|float|int) -> bool: ...
+
+    def __le__(self, other:Self|float|int) -> bool: ...
+
+    def __gt__(self, other:Self|float|int) -> bool: ...
+
+    def __ge__(self, other:Self|float|int) -> bool: ...
+
+    def __eq__(self, other:Self|float|int) -> bool: ...
+
+    def __ne__(self, other:Self|float|int) -> bool: ...
+
+    def __abs__(self) -> float: ...
+
+    def __int__(self) -> int: ...
+
+    def __float__(self) -> float: ...
+
+    def __round__(self, ndigits:int=None) -> float: ...
 
     def __exp__(self) -> float: ...
 

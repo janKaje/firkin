@@ -468,6 +468,7 @@ mod firkin {
         Float(f64),
         Int(i32),
         StrQuery(String),
+        LogFirkin(LogFirkin),
     }
 
     impl std::convert::From<UnitCoercible> for Firkin {
@@ -494,6 +495,10 @@ mod firkin {
                             value: 1.0,
                         }
                     }
+                },
+                UnitCoercible::LogFirkin(l) => Firkin {
+                    unit_collection: UnitCollection::empty_collection(),
+                    value: l.resolve(),
                 }
             }
         }
@@ -505,6 +510,8 @@ mod firkin {
         fn extract(obj: Borrowed<'_, '_, PyAny>) -> Result<Self, Self::Error> {
             if let Ok(f) = obj.cast::<Firkin>() {
                 Ok(UnitCoercible::Firkin(f.extract::<Firkin>()?))
+            } else if let Ok(f) = obj.cast::<LogFirkin>() {
+                Ok(UnitCoercible::LogFirkin(f.extract::<LogFirkin>()?))
             } else if let Ok(f) = obj.cast::<PyFloat>() {
                 Ok(UnitCoercible::Float(f.extract::<f64>()?))
             } else if let Ok(i) = obj.cast::<PyInt>() {
