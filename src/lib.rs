@@ -495,11 +495,11 @@ mod firkin {
                             value: 1.0,
                         }
                     }
-                },
+                }
                 UnitCoercible::LogFirkin(l) => Firkin {
                     unit_collection: UnitCollection::empty_collection(),
                     value: l.resolve(),
-                }
+                },
             }
         }
     }
@@ -582,6 +582,18 @@ mod firkin {
                 }
             };
             Ok(LogFirkin { unit, value: 1.0 })
+        }
+
+        fn as_unit(&self, other: LogFirkin) -> PyResult<LogFirkin> {
+            Ok(self.as_unit_internal(other))
+        }
+
+        #[pyo3(signature = (other=None))]
+        fn as_number(&self, other: Option<LogFirkin>) -> PyResult<f64> {
+            match other {
+                Some(l) => Ok(self.as_unit_internal(l).value),
+                None => Ok(self.value),
+            }
         }
 
         fn as_unitless(&self) -> PyResult<f64> {
@@ -789,6 +801,13 @@ mod firkin {
     impl LogFirkin {
         fn resolve(&self) -> f64 {
             self.unit.scale.powf(self.value)
+        }
+
+        fn as_unit_internal(&self, other: LogFirkin) -> LogFirkin {
+            LogFirkin {
+                value: self.resolve().log(other.unit.scale),
+                unit: other.unit,
+            }
         }
     }
 

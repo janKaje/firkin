@@ -130,6 +130,24 @@ Physical constants can be accessed through `Firkin.constant` as mentioned previo
 0.000001073545754277516 [amu]
 ```
 
+Units such as the decibel, that are logarithmic ratios, are treated differently from normal units. They use a separate class called the LogFirkin, and each instance can only have one unit at a time. Generally, you will use these by importing `bel`, `decibel`, or `neper` from `firkin.units`. When multiplied or divided by a number, or when added to or subtracted from another LogFirkin instance, it remains a LogFirkin. In any other case, the logarithmic ratio is resolved and it is used as a floating-point number.
+
+```pycon
+>>> from firkin.units import decibel as dB, bel
+>>> ratio = 21*dB
+>>> ratio
+21 [dB]
+>>> ratio2 = 2*bel
+>>> ratio + ratio2
+41 [dB]
+>>> ratio.as_unitless()
+125.89254117941687
+>>> ratio - 100
+25.89254117941687
+>>> 1.0/ratio
+0.007943282347242805
+```
+
 See the inbuilt documentation for more detailed information.
 
 ## Real-world example

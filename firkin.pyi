@@ -1,4 +1,4 @@
-from typing import Self
+from typing import Optional, Self
 
 class Firkin:
 
@@ -533,6 +533,31 @@ class LogFirkin:
             The new LogFirkin instance.
         """
         ...
+
+    def as_unit(self, other:Self) -> Self:
+        """
+        Converts self into the unit of other.
+        """
+
+    def as_number(self, other:Optional[Self]=None) -> float:
+        """
+        Returns the unit value of self, optionally converted to another unit
+        using the other parameter. Note that this does not resolve the
+        logarithmic ratio like as_unitless does.
+
+        Examples
+        --------
+        >>> from firkin.units import decibel as dB, bel
+        >>> my_ratio = 12*dB
+        >>> my_ratio
+        12 [dB]
+        >>> my_ratio.as_unitless()
+        15.848931924611145
+        >>> my_ratio.as_number()
+        12.0
+        >>> my_ratio.as_number(bel)
+        1.2000000000000002
+        """
 
     def as_unitless(self) -> float:
         """
