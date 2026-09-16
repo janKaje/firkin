@@ -12,3 +12,8 @@ scaling_factor = 10.0
 abbr = "dB"
 python_var_name = "decibel"
 scaling_factor = 1.2589254117941672104239541063958
+
+[semitone]
+abbr = "stn"
+python_var_name = "semitone"
+scaling_factor = 1.0594630943592952645618252949463
