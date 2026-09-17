@@ -493,7 +493,7 @@ impl UnitCollection {
         result
     }
 
-    pub(crate) fn complex_simplify(&self) -> UnitCollection {
+    pub(crate) fn simplify(&self) -> UnitCollection {
         // different approach this time
         // find the smallest subset of self's single units that maps to the same base units
 
@@ -555,6 +555,14 @@ impl UnitCollection {
         let mut units_i32 = HashMap::new();
         for (unit, value) in &self.single_units {
             units_i32.insert(unit, *value as i32);
+        }
+
+        if check_satisfies_base_units(&starting_holes, &self.base_units) {
+            let mut new_map = HashMap::new();
+            for (key, value) in starting_holes {
+                new_map.insert(key.clone(), value as f64);
+            }
+            return UnitCollection::from_single_unit_hashmap(new_map);
         }
 
         // pass to mapping algorithm
@@ -625,16 +633,19 @@ fn simplify_mapping_algorithm<'a>(
     starting_holes: &HashMap<&'a SingleUnit, i32>,
     base_units: &[f64; NUMBER_OF_BASE_UNITS],
 ) -> Option<HashMap<&'a SingleUnit, i32>> {
+    let mut return_options = vec![];
+
+    // iterate through possible options
     for (&hole, &value) in starting_holes.iter() {
         if value < units[hole] && units[hole] > 0 {
             // value less than maximum, can be dropped into hole
             let mut new_holes = starting_holes.clone();
             *new_holes.get_mut(hole).unwrap() += 1;
             if check_satisfies_base_units(&new_holes, base_units) {
-                return Some(new_holes);
+                return_options.push(new_holes);
             } else {
                 match simplify_mapping_algorithm(units, &new_holes, base_units) {
-                    Some(h) => return Some(h),
+                    Some(h) => return_options.push(h),
                     None => (),
                 }
             }
@@ -642,17 +653,31 @@ fn simplify_mapping_algorithm<'a>(
             let mut new_holes = starting_holes.clone();
             *new_holes.get_mut(hole).unwrap() -= 1;
             if check_satisfies_base_units(&new_holes, base_units) {
-                return Some(new_holes);
+                return_options.push(new_holes);
             } else {
                 match simplify_mapping_algorithm(units, &new_holes, base_units) {
-                    Some(h) => return Some(h),
+                    Some(h) => return_options.push(h),
                     None => (),
                 }
             }
         }
     }
-    // none found
-    None
+
+    // find best of available options
+    let mut best = u32::MAX;
+    let mut best_idx = usize::MAX;
+    for (i, option) in return_options.iter().enumerate() {
+        let sum = option.values().map(|x| x.abs() as u32).sum();
+        if sum < best {
+            best = sum;
+            best_idx = i;
+        }
+    }
+
+    match best_idx {
+        usize::MAX => None,
+        _ => Some(return_options.remove(best_idx)),
+    }
 }
 
 fn check_satisfies_base_units(

@@ -118,14 +118,7 @@ mod firkin {
         }
 
         fn simplify_test(&self) -> PyResult<Firkin> {
-            match self.simple_simplify_internal() {
-                Ok(i) => Ok(i),
-                Err(e) => Err(e.into()),
-            }
-        }
-
-        fn complex_simplify_test(&self) -> PyResult<Firkin> {
-            match self.complex_simplify_internal() {
+            match self.simplify_internal() {
                 Ok(i) => Ok(i),
                 Err(e) => Err(e.into()),
             }
@@ -429,13 +422,8 @@ mod firkin {
             }
         }
 
-        fn simple_simplify_internal(&self) -> Result<Firkin, FirkinError> {
-            self.as_unit_internal(&self.unit_collection.simple_simplify())
-        }
-
-        fn complex_simplify_internal(&self) -> Result<Firkin, FirkinError> {
-            // panic!("unit: {}", self.unit_collection.complex_simplify());
-            self.as_unit_internal(&self.unit_collection.complex_simplify())
+        fn simplify_internal(&self) -> Result<Firkin, FirkinError> {
+            self.as_unit_internal(&self.unit_collection.simplify())
         }
     }
 
