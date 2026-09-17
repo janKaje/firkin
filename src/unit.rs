@@ -401,6 +401,115 @@ impl UnitCollection {
             base_units: self.base_units,
         }
     }
+
+    /// Remove any pairs of units that can be canceled out
+    pub(crate) fn simple_simplify(&self) -> UnitCollection {
+        let mut hashmap_new = self.single_units.clone();
+        let mut done = false;
+
+        'wl: while !done {
+            // Slowly iterate through single units, restarting when any changes to hashmap_new occur
+            for (key1, exp1) in self.single_units.iter() {
+                if !hashmap_new.contains_key(key1) {
+                    continue;
+                }
+                for (key2, exp2) in self.single_units.iter() {
+                    if key1 == key2 || !hashmap_new.contains_key(key2) {
+                        continue;
+                    }
+                    if key1.base_units == key2.base_units {
+                        // Same base units, now check if signs are opposite (num/denom split)
+                        if exp1.is_sign_positive() && exp2.is_sign_negative() {
+                            let min = exp1.min(exp2.abs());
+                            let x1 = hashmap_new.get_mut(key1).unwrap();
+                            match *x1 - min {
+                                0.0 => {
+                                    hashmap_new.remove(key1);
+                                }
+                                _ => *x1 -= min,
+                            }
+                            let x2 = hashmap_new.get_mut(key2).unwrap();
+                            match *x2 + min {
+                                0.0 => {
+                                    hashmap_new.remove(key2);
+                                }
+                                _ => *x2 += min,
+                            }
+                            continue 'wl; // when changes are made, restart for loop
+                        } else if exp1.is_sign_negative() && exp2.is_sign_positive() {
+                            let min = exp1.abs().min(*exp2);
+                            let x1 = hashmap_new.get_mut(key1).unwrap();
+                            match *x1 + min {
+                                0.0 => {
+                                    hashmap_new.remove(key1);
+                                }
+                                _ => *x1 += min,
+                            }
+                            let x2 = hashmap_new.get_mut(key2).unwrap();
+                            match *x2 - min {
+                                0.0 => {
+                                    hashmap_new.remove(key2);
+                                }
+                                _ => *x2 -= min,
+                            }
+                            continue 'wl;
+                        }
+                    } else if key1.base_units == key2.base_units.map(|x| -x) {
+                        // Opposite base units, now check if signs are same
+                        // panic!("got into opposite base units!!");
+                        if exp1.is_sign_positive() == exp2.is_sign_positive() {
+                            let min = exp1.min(*exp2);
+                            let x1 = hashmap_new.get_mut(key1).unwrap();
+                            match *x1 - min {
+                                0.0 => {
+                                    hashmap_new.remove(key1);
+                                }
+                                _ => *x1 -= min,
+                            }
+                            let x2 = hashmap_new.get_mut(key2).unwrap();
+                            match *x2 - min {
+                                0.0 => {
+                                    hashmap_new.remove(key2);
+                                }
+                                _ => *x2 -= min,
+                            }
+                            continue 'wl;
+                        }
+                    }
+                }
+            }
+            done = true;
+        }
+
+        let result = UnitCollection::from_single_unit_hashmap(hashmap_new);
+
+        if result.base_units != self.base_units {
+            panic!(
+                "Error on simple_simplify\nStarted with: {self}, {:?}\nEnded with: {result}, {:?}",
+                self.base_units, result.base_units
+            )
+        }
+
+        result
+    }
+
+    fn from_single_unit_hashmap(single_units: HashMap<SingleUnit, f64>) -> UnitCollection {
+        let mut scale = 1.0;
+        let mut base_units = [0.0; NUMBER_OF_BASE_UNITS];
+
+        for (unit, exponent) in single_units.iter() {
+            scale *= unit.scale;
+            for i in 0..NUMBER_OF_BASE_UNITS {
+                base_units[i] += unit.base_units[i] * exponent;
+            }
+        }
+
+        UnitCollection {
+            single_units,
+            base_units,
+            scale,
+        }
+    }
 }
 
 impl fmt::Display for UnitCollection {
