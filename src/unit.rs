@@ -493,12 +493,91 @@ impl UnitCollection {
         result
     }
 
+    pub(crate) fn complex_simplify(&self) -> UnitCollection {
+        // different approach this time
+        // find the smallest subset of self's single units that maps to the same base units
+
+        let units: Vec<&SingleUnit> = self.single_units.keys().collect();
+        // if only one unit, don't bother trying to simplify
+        if units.len() == 1 {
+            return self.clone();
+        }
+
+        // if base unit only shows up once, that unit retains its exponent
+        let mut retained = vec![];
+        'bunits: for i in 0..NUMBER_OF_BASE_UNITS {
+            if self.base_units[i] != 0.0 {
+                let mut unit = None;
+                for &single_unit in &units {
+                    if single_unit.base_units[i] != 0.0 {
+                        match unit {
+                            Some(_) => {
+                                continue 'bunits;
+                            }
+                            None => {
+                                unit = Some(single_unit);
+                            }
+                        };
+                    }
+                }
+                let unit = unit.expect(
+                    format!(
+                        "Error in simplify - unit {} has mismatch between single and base units",
+                        self
+                    )
+                    .as_str(),
+                );
+                if !retained.contains(&unit) {
+                    retained.push(unit);
+                }
+            }
+        }
+        // if all units are constrained by this, return self
+        if retained.len() == units.len() {
+            return self.clone();
+        }
+
+        // if any non-integer exponents, use simple_simplify
+        for exp in self.single_units.values() {
+            if *exp != exp.round() {
+                return self.simple_simplify();
+            }
+        }
+
+        // clone hashmap with retained units
+        let mut starting_holes = HashMap::new();
+        for unit in units {
+            starting_holes.insert(unit, 0);
+        }
+        for unit in retained {
+            *starting_holes.get_mut(unit).unwrap() = *self.single_units.get(unit).unwrap() as i32;
+        }
+        let mut units_i32 = HashMap::new();
+        for (unit, value) in &self.single_units {
+            units_i32.insert(unit, *value as i32);
+        }
+
+        // pass to mapping algorithm
+        match simplify_mapping_algorithm(&units_i32, &starting_holes, &self.base_units) {
+            Some(map) => {
+                let mut new_map = HashMap::new();
+                for (key, value) in map {
+                    new_map.insert(key.clone(), value as f64);
+                }
+                UnitCollection::from_single_unit_hashmap(new_map)
+            }
+            None => {
+                self.clone() // no suitable simplificaton found
+            }
+        }
+    }
+
     fn from_single_unit_hashmap(single_units: HashMap<SingleUnit, f64>) -> UnitCollection {
         let mut scale = 1.0;
         let mut base_units = [0.0; NUMBER_OF_BASE_UNITS];
 
         for (unit, exponent) in single_units.iter() {
-            scale *= unit.scale;
+            scale *= unit.scale.powf(*exponent);
             for i in 0..NUMBER_OF_BASE_UNITS {
                 base_units[i] += unit.base_units[i] * exponent;
             }
@@ -539,6 +618,54 @@ impl Div<ScaleDiff> for f64 {
     fn div(self, rhs: ScaleDiff) -> f64 {
         self * rhs.self_scale / rhs.other_scale
     }
+}
+
+fn simplify_mapping_algorithm<'a>(
+    units: &HashMap<&'a SingleUnit, i32>,
+    starting_holes: &HashMap<&'a SingleUnit, i32>,
+    base_units: &[f64; NUMBER_OF_BASE_UNITS],
+) -> Option<HashMap<&'a SingleUnit, i32>> {
+    for (&hole, &value) in starting_holes.iter() {
+        if value < units[hole] && units[hole] > 0 {
+            // value less than maximum, can be dropped into hole
+            let mut new_holes = starting_holes.clone();
+            *new_holes.get_mut(hole).unwrap() += 1;
+            if check_satisfies_base_units(&new_holes, base_units) {
+                return Some(new_holes);
+            } else {
+                match simplify_mapping_algorithm(units, &new_holes, base_units) {
+                    Some(h) => return Some(h),
+                    None => (),
+                }
+            }
+        } else if value > units[hole] && units[hole] < 0 {
+            let mut new_holes = starting_holes.clone();
+            *new_holes.get_mut(hole).unwrap() -= 1;
+            if check_satisfies_base_units(&new_holes, base_units) {
+                return Some(new_holes);
+            } else {
+                match simplify_mapping_algorithm(units, &new_holes, base_units) {
+                    Some(h) => return Some(h),
+                    None => (),
+                }
+            }
+        }
+    }
+    // none found
+    None
+}
+
+fn check_satisfies_base_units(
+    units: &HashMap<&SingleUnit, i32>,
+    base_units: &[f64; NUMBER_OF_BASE_UNITS],
+) -> bool {
+    let mut base_units_copy = base_units.clone();
+    for (&unit, &exp) in units {
+        for i in 0..NUMBER_OF_BASE_UNITS {
+            base_units_copy[i] -= unit.base_units[i] * (exp as f64);
+        }
+    }
+    base_units_copy == [0.0; NUMBER_OF_BASE_UNITS]
 }
 
 #[cfg(test)]

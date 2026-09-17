@@ -20,14 +20,14 @@ pub(crate) use derived_units::OTHER_UNITS;
 type PrefixDef = (&'static str, &'static str, f64);
 
 const STANDARD_PREFIXES: &[PrefixDef] = &[
-    ("kibi", "Ki", (2 << 10) as f64),
-    ("mebi", "Mi", (2 << 20) as f64),
-    ("gibi", "Gi", (2 << 30) as f64),
-    ("tebi", "Ti", (2i64 << 40) as f64),
-    ("pebi", "Pi", (2i64 << 50) as f64),
-    ("exbi", "Ei", (2i64 << 60) as f64),
-    ("zebi", "Zi", (2i128 << 70) as f64),
-    ("yobi", "Yi", (2i128 << 80) as f64),
+    ("kibi", "Ki", (1 << 10) as f64),
+    ("mebi", "Mi", (1 << 20) as f64),
+    ("gibi", "Gi", (1 << 30) as f64),
+    ("tebi", "Ti", (1i64 << 40) as f64),
+    ("pebi", "Pi", (1i64 << 50) as f64),
+    ("exbi", "Ei", (1i64 << 60) as f64),
+    ("zebi", "Zi", (1i128 << 70) as f64),
+    ("yobi", "Yi", (1i128 << 80) as f64),
     ("quetta", "Q", 1e30),
     ("ronna", "R", 1e27),
     ("yotta", "Y", 1e24),
