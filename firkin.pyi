@@ -424,6 +424,11 @@ class Firkin:
         """
         ...
 
+    def simplify(self) -> Self:
+        """
+        Simplifies the units of self, removing any dimensionless unit subsets.
+        """
+
     def __str__(self) -> str: ...
 
     def __repr__(self) -> str: ...
@@ -577,11 +582,6 @@ class LogFirkin:
         """
         Returns the equivalent of `as_unitless`, rounded to the given number of
         significant figures.
-        """
-
-    def simplify(self) -> Self:
-        """
-        Simplifies the units of self, removing any dimensionless unit subsets.
         """
 
     def __str__(self) -> str: ...

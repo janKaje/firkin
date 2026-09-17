@@ -637,27 +637,19 @@ fn simplify_mapping_algorithm<'a>(
 
     // iterate through possible options
     for (&hole, &value) in starting_holes.iter() {
-        if value < units[hole] && units[hole] > 0 {
+        if (value < units[hole] && units[hole] > 0) || (value > units[hole] && units[hole] < 0) {
             // value less than maximum, can be dropped into hole
             let mut new_holes = starting_holes.clone();
-            *new_holes.get_mut(hole).unwrap() += 1;
-            if check_satisfies_base_units(&new_holes, base_units) {
-                return_options.push(new_holes);
+            if units[hole] > 0 {
+                *new_holes.get_mut(hole).unwrap() += 1;
             } else {
-                match simplify_mapping_algorithm(units, &new_holes, base_units) {
-                    Some(h) => return_options.push(h),
-                    None => (),
-                }
+                *new_holes.get_mut(hole).unwrap() -= 1;
             }
-        } else if value > units[hole] && units[hole] < 0 {
-            let mut new_holes = starting_holes.clone();
-            *new_holes.get_mut(hole).unwrap() -= 1;
             if check_satisfies_base_units(&new_holes, base_units) {
                 return_options.push(new_holes);
             } else {
-                match simplify_mapping_algorithm(units, &new_holes, base_units) {
-                    Some(h) => return_options.push(h),
-                    None => (),
+                if let Some(h) = simplify_mapping_algorithm(units, &new_holes, base_units) {
+                    return_options.push(h)
                 }
             }
         }
