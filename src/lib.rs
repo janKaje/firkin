@@ -137,7 +137,7 @@ mod firkin {
             Ok(Firkin {
                 unit_collection: self.unit_collection.clone() * other.unit_collection.clone(),
                 value: self.value * other.value,
-            }.simplify_internal()?)
+            })
         }
 
         fn __rmul__(&self, other: UnitCoercible) -> PyResult<Firkin> {
@@ -149,7 +149,7 @@ mod firkin {
             Ok(Firkin {
                 unit_collection: self.unit_collection.clone() / other.unit_collection.clone(),
                 value: self.value / other.value,
-            }.simplify_internal()?)
+            })
         }
 
         fn __truediv__(&self, other: UnitCoercible) -> PyResult<Firkin> {
@@ -161,7 +161,7 @@ mod firkin {
             Ok(Firkin {
                 unit_collection: other.unit_collection.clone() / self.unit_collection.clone(),
                 value: other.value / self.value,
-            }.simplify_internal()?)
+            })
         }
 
         fn __rtruediv__(&self, other: UnitCoercible) -> PyResult<Firkin> {
@@ -246,7 +246,7 @@ mod firkin {
             Ok(Firkin {
                 unit_collection: self.unit_collection.pow(exponent),
                 value: self.value.powf(exponent),
-            }.simplify_internal()?)
+            })
         }
 
         fn __rpow__(&self, other: UnitCoercible, _modulus: Option<PyNumber>) -> PyResult<Firkin> {
@@ -255,7 +255,7 @@ mod firkin {
             Ok(Firkin {
                 unit_collection: other.unit_collection.pow(exponent),
                 value: other.value.powf(exponent),
-            }.simplify_internal()?)
+            })
         }
 
         fn __lt__(&self, other: UnitCoercible) -> PyResult<bool> {
@@ -349,18 +349,20 @@ mod firkin {
         }
 
         fn descriptive(&self) -> PyResult<String> {
+            let simplified = self.simplify_internal()?;
             Ok(format!(
                 "{} {}",
-                self.value,
-                self.unit_collection.as_descriptive_string()
+                simplified.value,
+                simplified.unit_collection.as_descriptive_string()
             ))
         }
 
         fn latex(&self) -> PyResult<String> {
+            let simplified = self.simplify_internal()?;
             Ok(format!(
                 "{}~{}",
-                self.value,
-                self.unit_collection.as_latex()
+                simplified.value,
+                simplified.unit_collection.as_latex()
             ))
         }
     }
@@ -459,7 +461,17 @@ mod firkin {
 
     impl fmt::Display for Firkin {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            write!(f, "{} {}", self.value, self.unit_collection.as_string())?;
+            let simplified = match self.simplify_internal() {
+                Ok(f) => f,
+                Err(_) => return Err(fmt::Error),
+            };
+
+            write!(
+                f,
+                "{} {}",
+                simplified.value,
+                simplified.unit_collection.as_string()
+            )?;
 
             Ok(())
         }

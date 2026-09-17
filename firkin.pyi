@@ -579,6 +579,11 @@ class LogFirkin:
         significant figures.
         """
 
+    def simplify(self) -> Self:
+        """
+        Simplifies the units of self, removing any dimensionless unit subsets.
+        """
+
     def __str__(self) -> str: ...
 
     def __repr__(self) -> str: ...

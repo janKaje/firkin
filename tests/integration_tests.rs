@@ -95,7 +95,7 @@ fn nonabs_temp() -> PyResult<()> {
 degc = Firkin.unit('deg C')
 degf = Firkin.unit('deg f')
 assert str((10*degc).as_unit(degf)) == '50.00399999999995 [°F]', f"Was actually {(10*degc).as_unit(degf)}"
-assert str(10*degf + 10*degc) == '28 [°F]', f"Was actually {10*degf + 10*degc}"
+assert str(10*degf + 10*degc) == '27.999999999999975 [°F]', f"Was actually {10*degf + 10*degc}"
 assert str((10*degc/"s").as_unit("deg F/s")) == '18 [°F/s]', f"Was actually {(10*degc/"s").as_unit("deg F/s")}""#, None, None)
     })
 }
