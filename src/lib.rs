@@ -117,7 +117,7 @@ mod firkin {
             ))
         }
 
-        fn simplify_test(&self) -> PyResult<Firkin> {
+        fn simplify(&self) -> PyResult<Firkin> {
             match self.simplify_internal() {
                 Ok(i) => Ok(i),
                 Err(e) => Err(e.into()),
@@ -137,7 +137,7 @@ mod firkin {
             Ok(Firkin {
                 unit_collection: self.unit_collection.clone() * other.unit_collection.clone(),
                 value: self.value * other.value,
-            })
+            }.simplify_internal()?)
         }
 
         fn __rmul__(&self, other: UnitCoercible) -> PyResult<Firkin> {
@@ -149,7 +149,7 @@ mod firkin {
             Ok(Firkin {
                 unit_collection: self.unit_collection.clone() / other.unit_collection.clone(),
                 value: self.value / other.value,
-            })
+            }.simplify_internal()?)
         }
 
         fn __truediv__(&self, other: UnitCoercible) -> PyResult<Firkin> {
@@ -161,7 +161,7 @@ mod firkin {
             Ok(Firkin {
                 unit_collection: other.unit_collection.clone() / self.unit_collection.clone(),
                 value: other.value / self.value,
-            })
+            }.simplify_internal()?)
         }
 
         fn __rtruediv__(&self, other: UnitCoercible) -> PyResult<Firkin> {
@@ -246,7 +246,7 @@ mod firkin {
             Ok(Firkin {
                 unit_collection: self.unit_collection.pow(exponent),
                 value: self.value.powf(exponent),
-            })
+            }.simplify_internal()?)
         }
 
         fn __rpow__(&self, other: UnitCoercible, _modulus: Option<PyNumber>) -> PyResult<Firkin> {
@@ -255,7 +255,7 @@ mod firkin {
             Ok(Firkin {
                 unit_collection: other.unit_collection.pow(exponent),
                 value: other.value.powf(exponent),
-            })
+            }.simplify_internal()?)
         }
 
         fn __lt__(&self, other: UnitCoercible) -> PyResult<bool> {
@@ -305,17 +305,18 @@ mod firkin {
 
         #[pyo3(signature=(ndigits=None))]
         fn __round__(&self, ndigits: Option<i32>) -> PyResult<Firkin> {
+            let simplified = self.simplify_internal()?;
             match ndigits {
                 Some(n) => {
                     let mul = 10.0f64.powi(n);
                     Ok(Firkin {
-                        unit_collection: self.unit_collection.clone(),
-                        value: (self.value * mul).round() / mul,
+                        unit_collection: simplified.unit_collection.clone(),
+                        value: (simplified.value * mul).round() / mul,
                     })
                 }
                 None => Ok(Firkin {
-                    unit_collection: self.unit_collection.clone(),
-                    value: self.value.round(),
+                    unit_collection: simplified.unit_collection.clone(),
+                    value: simplified.value.round(),
                 }),
             }
         }
