@@ -1,6 +1,6 @@
 use std::{
     cmp::{Ord, Ordering},
-    fmt::Debug,
+    fmt::{Debug, Display},
     ops,
 };
 
@@ -22,7 +22,7 @@ pub(crate) struct SmallRat {
 
 impl SmallRat {
     pub(crate) fn new(numerator: u64, denominator: u64, is_positive: bool) -> Self {
-        let mut result = SmallRat {
+        let result = SmallRat {
             numerator,
             denominator,
             sign: { if is_positive { Positive } else { Negative } },
@@ -54,13 +54,31 @@ impl SmallRat {
         }
     }
 
+    fn is_positive(&self) -> bool {
+        return self.sign == Positive;
+    }
+
+    fn is_negative(&self) -> bool {
+        return self.sign == Negative;
+    }
+
     fn reduce_inplace(mut self) -> Self {
-        let min = (self.numerator.min(self.denominator) as f64).sqrt().floor() as u64;
+        if self.numerator % self.denominator == 0 {
+            self.numerator /= self.denominator;
+            self.denominator = 1;
+            return self;
+        } else if self.denominator % self.numerator == 0 {
+            self.denominator /= self.numerator;
+            self.numerator = 1;
+            return self;
+        }
+        let min = (self.numerator.min(self.denominator) as f64).sqrt().floor() as u64 + 1;
         let mut i = 2_u64;
         while i <= min {
             while self.numerator % i == 0 && self.denominator % i == 0 {
                 self.numerator /= i;
                 self.denominator /= i;
+                dbg!(&i);
             }
             i += 1;
         }
@@ -233,6 +251,20 @@ impl From<f64> for SmallRat {
             denom *= 2;
         }
         SmallRat::new(value1 as u64, denom, value > 0.0)
+    }
+}
+
+impl From<SmallRat> for f64 {
+    fn from(value: SmallRat) -> Self {
+        let sign = if value.is_positive() { 1.0 } else { -1.0 };
+        sign * (value.numerator as f64) / (value.denominator as f64)
+    }
+}
+
+impl From<SmallRat> for f32 {
+    fn from(value: SmallRat) -> Self {
+        let sign = if value.is_positive() { 1.0 } else { -1.0 };
+        sign * (value.numerator as f32) / (value.denominator as f32)
     }
 }
 
@@ -467,9 +499,29 @@ impl Debug for SmallRat {
     }
 }
 
+impl Display for Sign {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if *self == Negative {
+            write!(f, "-")?;
+        }
+        Ok(())
+    }
+}
+
+impl Display for SmallRat {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.sign)?;
+        if self.denominator != 1 {
+        write!(f, "{}/{}", self.numerator, self.denominator)?;} else {
+            write!(f, "{}", self.numerator)?;
+        }
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::num::smallrat::SmallRat;
+    use super::SmallRat;
 
     #[test]
     fn new() {
@@ -552,5 +604,16 @@ mod tests {
         assert_eq!(a / b, SmallRat::new(125, 12, true));
         let c = SmallRat::new(1, 2, false);
         assert_eq!(a / c, SmallRat::new(25, 2, false));
+    }
+
+    #[test]
+    fn to_float() {
+        assert_eq!(3.4_f64, f64::from(SmallRat::from(3.4)))
+    }
+
+    #[test]
+    fn display() {
+        assert_eq!(format!("{}", SmallRat::new(48,37,false)), "-48/37");
+        assert_eq!(format!("{}", SmallRat::new(48,3,true)), "16");
     }
 }
