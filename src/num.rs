@@ -1,7 +1,7 @@
 // big ol number things hahahha
 
 mod sign;
-mod smallrat;
+mod smallrational;
 // mod number;
 
 // use number::Number;

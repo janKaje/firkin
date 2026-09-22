@@ -10,33 +10,36 @@ use super::sign::Sign::{self, Negative, Positive};
 
 /// Small rational number, to be used in unit powers and Number enum
 #[derive(Clone, Copy)]
-pub(crate) struct SmallRat {
+pub(crate) struct SmallRational {
     numerator: u64,
     denominator: u64,
     sign: Sign,
 }
 
-impl SmallRat {
-    const MAX: SmallRat = SmallRat {
+impl SmallRational {
+    const MAX: SmallRational = SmallRational {
         numerator: u64::MAX,
         denominator: 1,
         sign: Positive,
     };
 
-    const MIN: SmallRat = SmallRat {
+    const MIN: SmallRational = SmallRational {
         numerator: u64::MAX,
         denominator: 1,
         sign: Negative,
     };
 
-    const ZERO: SmallRat = SmallRat {
+    const ZERO: SmallRational = SmallRational {
         numerator: 0,
         denominator: 1,
         sign: Positive,
     };
 
     pub(crate) fn new(numerator: u64, denominator: u64, is_positive: bool) -> Self {
-        let result = SmallRat {
+        if denominator == 0 {
+            panic!("denominator cannot be zero");
+        }
+        let result = SmallRational {
             numerator,
             denominator,
             sign: { if is_positive { Positive } else { Negative } },
@@ -45,6 +48,9 @@ impl SmallRat {
     }
 
     pub(crate) fn try_new(numerator: u128, denominator: u128, is_positive: bool) -> Option<Self> {
+        if denominator == 0 {
+            panic!("denominator cannot be zero");
+        }
         let mut numerator = numerator;
         let mut denominator = denominator;
         if numerator % denominator == 0 {
@@ -68,7 +74,7 @@ impl SmallRat {
         if numerator > u64::MAX.into() || denominator > u64::MAX.into() {
             None // overflow
         } else {
-            Some(SmallRat {
+            Some(SmallRational {
                 numerator: numerator as u64,
                 denominator: denominator as u64,
                 sign: { if is_positive { Positive } else { Negative } },
@@ -114,13 +120,13 @@ impl SmallRat {
 
     pub(crate) fn pow(&self, other: i32) -> Option<Self> {
         if other >= 0 {
-            SmallRat::try_new(
+            SmallRational::try_new(
                 (self.numerator as u128).pow(other.unsigned_abs()),
                 (self.denominator as u128).pow(other.unsigned_abs()),
                 self.is_positive() || other % 2 == 0,
             )
         } else {
-            SmallRat::try_new(
+            SmallRational::try_new(
                 (self.denominator as u128).pow(other.unsigned_abs()),
                 (self.numerator as u128).pow(other.unsigned_abs()),
                 self.is_positive() || other % 2 == 0,
@@ -134,7 +140,7 @@ impl SmallRat {
     }
 
     pub(crate) fn get_remainder(&self) -> Self {
-        SmallRat::new(
+        SmallRational::new(
             self.numerator % self.denominator,
             self.denominator,
             self.is_positive(),
@@ -166,8 +172,8 @@ impl SmallRat {
             self.get_whole_number_part()
         } else {
             let rem = self.get_remainder();
-            if (rem > 0.into() && rem < SmallRat::new(1, 2, true)
-                || rem < 0.into() && rem > SmallRat::new(1, 2, false))
+            if (rem > 0.into() && rem < SmallRational::new(1, 2, true)
+                || rem < 0.into() && rem > SmallRational::new(1, 2, false))
             {
                 self.get_whole_number_part()
             } else {
@@ -177,13 +183,13 @@ impl SmallRat {
     }
 
     pub(crate) fn abs(&self) -> Self {
-        SmallRat { numerator: self.numerator, denominator: self.denominator, sign: Positive }
+        SmallRational { numerator: self.numerator, denominator: self.denominator, sign: Positive }
     }
 }
 
-impl From<i8> for SmallRat {
+impl From<i8> for SmallRational {
     fn from(value: i8) -> Self {
-        SmallRat {
+        SmallRational {
             numerator: value.unsigned_abs().into(),
             denominator: 1,
             sign: {
@@ -197,9 +203,9 @@ impl From<i8> for SmallRat {
     }
 }
 
-impl From<i16> for SmallRat {
+impl From<i16> for SmallRational {
     fn from(value: i16) -> Self {
-        SmallRat {
+        SmallRational {
             numerator: value.unsigned_abs().into(),
             denominator: 1,
             sign: {
@@ -213,9 +219,9 @@ impl From<i16> for SmallRat {
     }
 }
 
-impl From<i32> for SmallRat {
+impl From<i32> for SmallRational {
     fn from(value: i32) -> Self {
-        SmallRat {
+        SmallRational {
             numerator: value.unsigned_abs().into(),
             denominator: 1,
             sign: {
@@ -229,9 +235,9 @@ impl From<i32> for SmallRat {
     }
 }
 
-impl From<i64> for SmallRat {
+impl From<i64> for SmallRational {
     fn from(value: i64) -> Self {
-        SmallRat {
+        SmallRational {
             numerator: value.unsigned_abs(),
             denominator: 1,
             sign: {
@@ -245,9 +251,9 @@ impl From<i64> for SmallRat {
     }
 }
 
-impl From<isize> for SmallRat {
+impl From<isize> for SmallRational {
     fn from(value: isize) -> Self {
-        SmallRat {
+        SmallRational {
             numerator: value.unsigned_abs() as u64,
             denominator: 1,
             sign: {
@@ -261,9 +267,9 @@ impl From<isize> for SmallRat {
     }
 }
 
-impl From<u8> for SmallRat {
+impl From<u8> for SmallRational {
     fn from(value: u8) -> Self {
-        SmallRat {
+        SmallRational {
             numerator: value.into(),
             denominator: 1,
             sign: Positive,
@@ -271,9 +277,9 @@ impl From<u8> for SmallRat {
     }
 }
 
-impl From<u16> for SmallRat {
+impl From<u16> for SmallRational {
     fn from(value: u16) -> Self {
-        SmallRat {
+        SmallRational {
             numerator: value.into(),
             denominator: 1,
             sign: Positive,
@@ -281,9 +287,9 @@ impl From<u16> for SmallRat {
     }
 }
 
-impl From<u32> for SmallRat {
+impl From<u32> for SmallRational {
     fn from(value: u32) -> Self {
-        SmallRat {
+        SmallRational {
             numerator: value.into(),
             denominator: 1,
             sign: Positive,
@@ -291,9 +297,9 @@ impl From<u32> for SmallRat {
     }
 }
 
-impl From<u64> for SmallRat {
+impl From<u64> for SmallRational {
     fn from(value: u64) -> Self {
-        SmallRat {
+        SmallRational {
             numerator: value,
             denominator: 1,
             sign: Positive,
@@ -301,9 +307,9 @@ impl From<u64> for SmallRat {
     }
 }
 
-impl From<usize> for SmallRat {
+impl From<usize> for SmallRational {
     fn from(value: usize) -> Self {
-        SmallRat {
+        SmallRational {
             numerator: value as u64,
             denominator: 1,
             sign: Positive,
@@ -311,7 +317,7 @@ impl From<usize> for SmallRat {
     }
 }
 
-impl From<f32> for SmallRat {
+impl From<f32> for SmallRational {
     fn from(value: f32) -> Self {
         let mut value1 = value.abs();
         let mut denom = 1_u64;
@@ -319,11 +325,11 @@ impl From<f32> for SmallRat {
             value1 *= 2.0;
             denom *= 2;
         }
-        SmallRat::new(value1 as u64, denom, value > 0.0)
+        SmallRational::new(value1 as u64, denom, value > 0.0)
     }
 }
 
-impl From<f64> for SmallRat {
+impl From<f64> for SmallRational {
     fn from(value: f64) -> Self {
         let mut value1 = value.abs();
         let mut denom = 1_u64;
@@ -331,32 +337,32 @@ impl From<f64> for SmallRat {
             value1 *= 2.0;
             denom *= 2;
         }
-        SmallRat::new(value1 as u64, denom, value > 0.0)
+        SmallRational::new(value1 as u64, denom, value > 0.0)
     }
 }
 
-impl From<SmallRat> for f64 {
-    fn from(value: SmallRat) -> Self {
+impl From<SmallRational> for f64 {
+    fn from(value: SmallRational) -> Self {
         f64::from(value.sign) * (value.numerator as f64) / (value.denominator as f64)
     }
 }
 
-impl From<SmallRat> for f32 {
-    fn from(value: SmallRat) -> Self {
+impl From<SmallRational> for f32 {
+    fn from(value: SmallRational) -> Self {
         f32::from(value.sign) * (value.numerator as f32) / (value.denominator as f32)
     }
 }
 
-impl PartialEq for SmallRat {
+impl PartialEq for SmallRational {
     fn eq(&self, other: &Self) -> bool {
         self.numerator * other.denominator == other.numerator * self.denominator
             && (self.sign == other.sign || (self.numerator == 0 && other.numerator == 0))
     }
 }
 
-impl Eq for SmallRat {}
+impl Eq for SmallRational {}
 
-impl PartialOrd for SmallRat {
+impl PartialOrd for SmallRational {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         if self.numerator == 0 && other.numerator == 0 {
             return Some(Ordering::Equal); // -0 and 0 are equal
@@ -386,7 +392,7 @@ impl PartialOrd for SmallRat {
     }
 }
 
-impl Ord for SmallRat {
+impl Ord for SmallRational {
     fn cmp(&self, other: &Self) -> Ordering {
         if self.numerator == 0 && other.numerator == 0 {
             return Ordering::Equal; // -0 and 0 are equal
@@ -435,19 +441,19 @@ impl Ord for SmallRat {
     }
 }
 
-impl ops::Add<SmallRat> for SmallRat {
+impl ops::Add<SmallRational> for SmallRational {
     type Output = Self;
 
-    fn add(self, rhs: SmallRat) -> Self::Output {
+    fn add(self, rhs: SmallRational) -> Self::Output {
         match (&self.sign, &rhs.sign) {
-            (Positive, Positive) => SmallRat::new(
+            (Positive, Positive) => SmallRational::new(
                 self.numerator * rhs.denominator + rhs.numerator * self.denominator,
                 self.denominator * rhs.denominator,
                 true,
             ),
             (Positive, Negative) => self - -rhs,
             (Negative, Positive) => rhs - -self,
-            (Negative, Negative) => SmallRat::new(
+            (Negative, Negative) => SmallRational::new(
                 self.numerator * rhs.denominator + rhs.numerator * self.denominator,
                 self.denominator * rhs.denominator,
                 false,
@@ -456,57 +462,57 @@ impl ops::Add<SmallRat> for SmallRat {
     }
 }
 
-impl ops::Sub<SmallRat> for SmallRat {
+impl ops::Sub<SmallRational> for SmallRational {
     type Output = Self;
 
-    fn sub(self, rhs: SmallRat) -> Self::Output {
+    fn sub(self, rhs: SmallRational) -> Self::Output {
         match (&self.sign, &rhs.sign) {
             (Positive, Positive) => {
                 if self == rhs {
-                    SmallRat {
+                    SmallRational {
                         numerator: 0,
                         denominator: 1,
                         sign: Positive,
                     }
                 } else if self > rhs {
-                    SmallRat::new(
+                    SmallRational::new(
                         self.numerator * rhs.denominator - rhs.numerator * self.denominator,
                         self.denominator * rhs.denominator,
                         true,
                     )
                 } else {
-                    SmallRat::new(
+                    SmallRational::new(
                         rhs.numerator * self.denominator - self.numerator * rhs.denominator,
                         self.denominator * rhs.denominator,
                         false,
                     )
                 }
             }
-            (Positive, Negative) => SmallRat::new(
+            (Positive, Negative) => SmallRational::new(
                 self.numerator * rhs.denominator + rhs.numerator * self.denominator,
                 self.denominator * rhs.denominator,
                 true,
             ),
-            (Negative, Positive) => SmallRat::new(
+            (Negative, Positive) => SmallRational::new(
                 self.numerator * rhs.denominator + rhs.numerator * self.denominator,
                 self.denominator * rhs.denominator,
                 false,
             ),
             (Negative, Negative) => {
                 if self == rhs {
-                    SmallRat {
+                    SmallRational {
                         numerator: 0,
                         denominator: 1,
                         sign: Positive,
                     }
                 } else if self < rhs {
-                    SmallRat::new(
+                    SmallRational::new(
                         self.numerator * rhs.denominator - rhs.numerator * self.denominator,
                         self.denominator * rhs.denominator,
                         false,
                     )
                 } else {
-                    SmallRat::new(
+                    SmallRational::new(
                         rhs.numerator * self.denominator - self.numerator * rhs.denominator,
                         self.denominator * rhs.denominator,
                         true,
@@ -517,11 +523,11 @@ impl ops::Sub<SmallRat> for SmallRat {
     }
 }
 
-impl ops::Mul<SmallRat> for SmallRat {
+impl ops::Mul<SmallRational> for SmallRational {
     type Output = Self;
 
-    fn mul(self, rhs: SmallRat) -> Self::Output {
-        SmallRat::new(
+    fn mul(self, rhs: SmallRational) -> Self::Output {
+        SmallRational::new(
             self.numerator * rhs.numerator,
             self.denominator * rhs.denominator,
             self.sign == rhs.sign,
@@ -529,11 +535,11 @@ impl ops::Mul<SmallRat> for SmallRat {
     }
 }
 
-impl ops::Div<SmallRat> for SmallRat {
+impl ops::Div<SmallRational> for SmallRational {
     type Output = Self;
 
-    fn div(self, rhs: SmallRat) -> Self::Output {
-        SmallRat::new(
+    fn div(self, rhs: SmallRational) -> Self::Output {
+        SmallRational::new(
             self.numerator * rhs.denominator,
             self.denominator * rhs.numerator,
             self.sign == rhs.sign,
@@ -541,11 +547,11 @@ impl ops::Div<SmallRat> for SmallRat {
     }
 }
 
-impl ops::Neg for SmallRat {
+impl ops::Neg for SmallRational {
     type Output = Self;
 
     fn neg(self) -> Self::Output {
-        SmallRat {
+        SmallRational {
             numerator: self.numerator,
             denominator: self.denominator,
             sign: {
@@ -568,7 +574,7 @@ impl Debug for Sign {
     }
 }
 
-impl Debug for SmallRat {
+impl Debug for SmallRational {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("SmallRat")
             .field("numerator", &self.numerator)
@@ -587,7 +593,7 @@ impl Display for Sign {
     }
 }
 
-impl Display for SmallRat {
+impl Display for SmallRational {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.sign)?;
         if self.denominator != 1 {
@@ -601,20 +607,20 @@ impl Display for SmallRat {
 
 #[cfg(test)]
 mod tests {
-    use super::SmallRat;
+    use super::SmallRational;
 
     #[test]
     fn new() {
-        let a = SmallRat::new(25, 5, true);
-        let b = SmallRat::new(5, 1, true);
+        let a = SmallRational::new(25, 5, true);
+        let b = SmallRational::new(5, 1, true);
         assert_eq!(a, b);
-        let c = SmallRat::new(875, 175, true);
+        let c = SmallRational::new(875, 175, true);
         assert_eq!(a, c);
     }
 
     #[test]
     fn from_int() {
-        let smallrat = SmallRat::new(1, 1, true);
+        let smallrat = SmallRational::new(1, 1, true);
         assert_eq!(smallrat, 1_u8.into());
         assert_eq!(smallrat, 1_u16.into());
         assert_eq!(smallrat, 1_u32.into());
@@ -626,94 +632,94 @@ mod tests {
         assert_eq!(smallrat, 1_i64.into());
         assert_eq!(smallrat, 1_isize.into());
         assert_ne!(smallrat, (-5_i32).into());
-        let smallrat = SmallRat::new(5, 1, false);
+        let smallrat = SmallRational::new(5, 1, false);
         assert_eq!(smallrat, (-5_i32).into());
     }
 
     #[test]
     fn from_float() {
-        let smallrat = SmallRat::new(1, 1, true);
+        let smallrat = SmallRational::new(1, 1, true);
         assert_eq!(smallrat, 1.0_f32.into());
         assert_eq!(smallrat, 1.0_f64.into());
         assert_ne!(smallrat, 2.0_f64.into());
-        let smallrat = SmallRat::new(17, 4, true);
+        let smallrat = SmallRational::new(17, 4, true);
         assert_eq!(smallrat, 4.25_f64.into());
-        let smallrat = SmallRat::new(17, 4, false);
+        let smallrat = SmallRational::new(17, 4, false);
         assert_eq!(smallrat, (-4.25_f64).into());
     }
 
     #[test]
     fn add() {
-        let smallpos = SmallRat::new(17, 5, true);
-        let bigpos = SmallRat::new(27, 5, true);
-        let smallneg = SmallRat::new(17, 5, false);
-        let bigneg = SmallRat::new(27, 5, false);
+        let smallpos = SmallRational::new(17, 5, true);
+        let bigpos = SmallRational::new(27, 5, true);
+        let smallneg = SmallRational::new(17, 5, false);
+        let bigneg = SmallRational::new(27, 5, false);
         assert_eq!(smallpos + smallneg, 0.into());
-        assert_eq!(smallpos + bigpos, SmallRat::new(44, 5, true));
-        assert_eq!(smallpos + bigneg, SmallRat::new(10, 5, false));
-        assert_eq!(bigpos + smallneg, SmallRat::new(10, 5, true));
-        assert_eq!(smallneg + bigneg, SmallRat::new(44, 5, false));
+        assert_eq!(smallpos + bigpos, SmallRational::new(44, 5, true));
+        assert_eq!(smallpos + bigneg, SmallRational::new(10, 5, false));
+        assert_eq!(bigpos + smallneg, SmallRational::new(10, 5, true));
+        assert_eq!(smallneg + bigneg, SmallRational::new(44, 5, false));
     }
 
     #[test]
     fn sub() {
-        let smallpos = SmallRat::new(17, 5, true);
-        let bigpos = SmallRat::new(27, 5, true);
-        let smallneg = SmallRat::new(17, 5, false);
-        let bigneg = SmallRat::new(27, 5, false);
+        let smallpos = SmallRational::new(17, 5, true);
+        let bigpos = SmallRational::new(27, 5, true);
+        let smallneg = SmallRational::new(17, 5, false);
+        let bigneg = SmallRational::new(27, 5, false);
         assert_eq!(smallpos - smallneg, smallpos + smallpos);
-        assert_eq!(smallpos - bigpos, SmallRat::new(10, 5, false));
-        assert_eq!(smallpos - bigneg, SmallRat::new(44, 5, true));
-        assert_eq!(bigpos - smallneg, SmallRat::new(44, 5, true));
-        assert_eq!(smallneg - bigneg, SmallRat::new(10, 5, true));
+        assert_eq!(smallpos - bigpos, SmallRational::new(10, 5, false));
+        assert_eq!(smallpos - bigneg, SmallRational::new(44, 5, true));
+        assert_eq!(bigpos - smallneg, SmallRational::new(44, 5, true));
+        assert_eq!(smallneg - bigneg, SmallRational::new(10, 5, true));
     }
 
     #[test]
     fn mul() {
-        let a = SmallRat::new(25, 4, true);
-        let b = SmallRat::new(3, 5, true);
-        assert_eq!(a * b, SmallRat::new(15, 4, true));
-        let c = SmallRat::new(1, 2, false);
-        assert_eq!(a * c, SmallRat::new(25, 8, false));
+        let a = SmallRational::new(25, 4, true);
+        let b = SmallRational::new(3, 5, true);
+        assert_eq!(a * b, SmallRational::new(15, 4, true));
+        let c = SmallRational::new(1, 2, false);
+        assert_eq!(a * c, SmallRational::new(25, 8, false));
     }
 
     #[test]
     fn div() {
-        let a = SmallRat::new(25, 4, true);
-        let b = SmallRat::new(3, 5, true);
-        assert_eq!(a / b, SmallRat::new(125, 12, true));
-        let c = SmallRat::new(1, 2, false);
-        assert_eq!(a / c, SmallRat::new(25, 2, false));
+        let a = SmallRational::new(25, 4, true);
+        let b = SmallRational::new(3, 5, true);
+        assert_eq!(a / b, SmallRational::new(125, 12, true));
+        let c = SmallRational::new(1, 2, false);
+        assert_eq!(a / c, SmallRational::new(25, 2, false));
     }
 
     #[test]
     fn to_float() {
-        assert_eq!(3.4_f64, f64::from(SmallRat::from(3.4)))
+        assert_eq!(3.4_f64, f64::from(SmallRational::from(3.4)))
     }
 
     #[test]
     fn display() {
-        assert_eq!(format!("{}", SmallRat::new(48, 37, false)), "-48/37");
-        assert_eq!(format!("{}", SmallRat::new(48, 3, true)), "16");
+        assert_eq!(format!("{}", SmallRational::new(48, 37, false)), "-48/37");
+        assert_eq!(format!("{}", SmallRational::new(48, 3, true)), "16");
     }
 
     #[test]
     fn pow() {
         assert_eq!(
-            SmallRat::new(3, 2, false).pow(2).unwrap(),
-            SmallRat::new(9, 4, true)
+            SmallRational::new(3, 2, false).pow(2).unwrap(),
+            SmallRational::new(9, 4, true)
         );
         assert_eq!(
-            SmallRat::new(3, 2, false).pow(3).unwrap(),
-            SmallRat::new(27, 8, false)
+            SmallRational::new(3, 2, false).pow(3).unwrap(),
+            SmallRational::new(27, 8, false)
         );
     }
 
     #[test]
     fn floor_ceil_round() {
-        assert_eq!(SmallRat::new(4, 5, true).floor(), 0);
-        assert_eq!(SmallRat::new(4, 5, true).ceil(), 1);
-        assert_eq!(SmallRat::new(4, 5, false).round(), -1);
-        assert_eq!(SmallRat::new(u64::MAX, 1, true).round(), u64::MAX as i128);
+        assert_eq!(SmallRational::new(4, 5, true).floor(), 0);
+        assert_eq!(SmallRational::new(4, 5, true).ceil(), 1);
+        assert_eq!(SmallRational::new(4, 5, false).round(), -1);
+        assert_eq!(SmallRational::new(u64::MAX, 1, true).round(), u64::MAX as i128);
     }
 }
