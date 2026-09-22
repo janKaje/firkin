@@ -47,14 +47,22 @@ impl SmallRat {
     pub(crate) fn try_new(numerator: u128, denominator: u128, is_positive: bool) -> Option<Self> {
         let mut numerator = numerator;
         let mut denominator = denominator;
-        let min = (numerator.min(denominator) as f64).sqrt().floor() as u128;
-        let mut i = 2_u128;
-        while i <= min {
-            while numerator % i == 0 && denominator % i == 0 {
-                numerator /= i;
-                denominator /= i;
+        if numerator % denominator == 0 {
+            numerator /= denominator;
+            denominator = 1;
+        } else if denominator % numerator == 0 {
+            denominator /= numerator;
+            numerator = 0;
+        } else {
+            let min = (numerator.min(denominator) as f64).sqrt().floor() as u128;
+            let mut i = 2_u128;
+            while i <= min {
+                while numerator % i == 0 && denominator % i == 0 {
+                    numerator /= i;
+                    denominator /= i;
+                }
+                i += 1;
             }
-            i += 1;
         }
 
         if numerator > u64::MAX.into() || denominator > u64::MAX.into() {
@@ -68,11 +76,11 @@ impl SmallRat {
         }
     }
 
-    fn is_positive(&self) -> bool {
+    pub(crate) fn is_positive(&self) -> bool {
         return self.sign == Positive;
     }
 
-    fn is_negative(&self) -> bool {
+    pub(crate) fn is_negative(&self) -> bool {
         return self.sign == Negative;
     }
 
@@ -86,7 +94,7 @@ impl SmallRat {
             self.numerator = 1;
             return self;
         }
-        let min = (self.numerator.min(self.denominator) as f64).sqrt().floor() as u64 + 1;
+        let min = (self.numerator.min(self.denominator) as f64).sqrt().floor() as u64;
         let mut i = 2_u64;
         while i <= min {
             while self.numerator % i == 0 && self.denominator % i == 0 {
@@ -99,18 +107,9 @@ impl SmallRat {
         self
     }
 
-    fn reduce(&self) -> Self {
+    pub(crate) fn reduce(&self) -> Self {
         let mut new = self.clone();
-        let min = (new.numerator.min(new.denominator) as f64).sqrt().floor() as u64;
-        let mut i = 2_u64;
-        while i <= min {
-            while new.numerator % i == 0 && new.denominator % i == 0 {
-                new.numerator /= i;
-                new.denominator /= i;
-            }
-            i += 1;
-        }
-        new
+        new.reduce_inplace()
     }
 
     pub(crate) fn pow(&self, other: i32) -> Option<Self> {
@@ -129,12 +128,12 @@ impl SmallRat {
         }
     }
 
-    fn get_whole_number_part(&self) -> i128 {
+    pub(crate) fn get_whole_number_part(&self) -> i128 {
         ((self.numerator - (self.numerator % self.denominator)) / self.denominator) as i128
             * i128::from(self.sign)
     }
 
-    fn get_remainder(&self) -> Self {
+    pub(crate) fn get_remainder(&self) -> Self {
         SmallRat::new(
             self.numerator % self.denominator,
             self.denominator,
@@ -175,6 +174,10 @@ impl SmallRat {
                 self.get_whole_number_part() + i128::from(self.sign)
             }
         }
+    }
+
+    pub(crate) fn abs(&self) -> Self {
+        SmallRat { numerator: self.numerator, denominator: self.denominator, sign: Positive }
     }
 }
 
