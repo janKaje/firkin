@@ -98,6 +98,22 @@ impl SmallRat {
         }
         new
     }
+
+    pub(crate) fn pow(&self, other: i32) -> Option<Self> {
+        if other >= 0 {
+            SmallRat::try_new(
+                (self.numerator as u128).pow(other.unsigned_abs()),
+                (self.denominator as u128).pow(other.unsigned_abs()),
+                self.is_positive() || other % 2 == 0,
+            )
+        } else {
+            SmallRat::try_new(
+                (self.denominator as u128).pow(other.unsigned_abs()),
+                (self.numerator as u128).pow(other.unsigned_abs()),
+                self.is_positive() || other % 2 == 0,
+            )
+        }
+    }
 }
 
 impl From<i8> for SmallRat {
@@ -512,7 +528,8 @@ impl Display for SmallRat {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.sign)?;
         if self.denominator != 1 {
-        write!(f, "{}/{}", self.numerator, self.denominator)?;} else {
+            write!(f, "{}/{}", self.numerator, self.denominator)?;
+        } else {
             write!(f, "{}", self.numerator)?;
         }
         Ok(())
@@ -613,7 +630,19 @@ mod tests {
 
     #[test]
     fn display() {
-        assert_eq!(format!("{}", SmallRat::new(48,37,false)), "-48/37");
-        assert_eq!(format!("{}", SmallRat::new(48,3,true)), "16");
+        assert_eq!(format!("{}", SmallRat::new(48, 37, false)), "-48/37");
+        assert_eq!(format!("{}", SmallRat::new(48, 3, true)), "16");
+    }
+
+    #[test]
+    fn pow() {
+        assert_eq!(
+            SmallRat::new(3, 2, false).pow(2).unwrap(),
+            SmallRat::new(9, 4, true)
+        );
+        assert_eq!(
+            SmallRat::new(3, 2, false).pow(3).unwrap(),
+            SmallRat::new(27, 8, false)
+        );
     }
 }
