@@ -1,16 +1,12 @@
+#![allow(unused)]
+
 use std::{
     cmp::{Ord, Ordering},
     fmt::{Debug, Display},
     ops,
 };
 
-#[derive(Clone, Eq, PartialEq, Copy)]
-pub enum Sign {
-    Positive,
-    Negative,
-}
-
-use Sign::{Negative, Positive};
+use super::sign::Sign::{self, Negative, Positive};
 
 /// Small rational number, to be used in unit powers and Number enum
 #[derive(Clone, Copy)]
@@ -21,6 +17,24 @@ pub(crate) struct SmallRat {
 }
 
 impl SmallRat {
+    const MAX: SmallRat = SmallRat {
+        numerator: u64::MAX,
+        denominator: 1,
+        sign: Positive,
+    };
+
+    const MIN: SmallRat = SmallRat {
+        numerator: u64::MAX,
+        denominator: 1,
+        sign: Negative,
+    };
+
+    const ZERO: SmallRat = SmallRat {
+        numerator: 0,
+        denominator: 1,
+        sign: Positive,
+    };
+
     pub(crate) fn new(numerator: u64, denominator: u64, is_positive: bool) -> Self {
         let result = SmallRat {
             numerator,
@@ -112,6 +126,54 @@ impl SmallRat {
                 (self.numerator as u128).pow(other.unsigned_abs()),
                 self.is_positive() || other % 2 == 0,
             )
+        }
+    }
+
+    fn get_whole_number_part(&self) -> i128 {
+        ((self.numerator - (self.numerator % self.denominator)) / self.denominator) as i128
+            * i128::from(self.sign)
+    }
+
+    fn get_remainder(&self) -> Self {
+        SmallRat::new(
+            self.numerator % self.denominator,
+            self.denominator,
+            self.is_positive(),
+        )
+    }
+
+    pub(crate) fn floor(&self) -> i128 {
+        if self.numerator % self.denominator == 0 {
+            self.get_whole_number_part()
+        } else if *self >= 0.into() {
+            self.get_whole_number_part()
+        } else {
+            self.get_whole_number_part() - 1
+        }
+    }
+
+    pub(crate) fn ceil(&self) -> i128 {
+        if self.numerator % self.denominator == 0 {
+            self.get_whole_number_part()
+        } else if *self >= 0.into() {
+            self.get_whole_number_part() + 1
+        } else {
+            self.get_whole_number_part()
+        }
+    }
+
+    pub(crate) fn round(&self) -> i128 {
+        if self.numerator % self.denominator == 0 {
+            self.get_whole_number_part()
+        } else {
+            let rem = self.get_remainder();
+            if (rem > 0.into() && rem < SmallRat::new(1, 2, true)
+                || rem < 0.into() && rem > SmallRat::new(1, 2, false))
+            {
+                self.get_whole_number_part()
+            } else {
+                self.get_whole_number_part() + i128::from(self.sign)
+            }
         }
     }
 }
@@ -272,15 +334,13 @@ impl From<f64> for SmallRat {
 
 impl From<SmallRat> for f64 {
     fn from(value: SmallRat) -> Self {
-        let sign = if value.is_positive() { 1.0 } else { -1.0 };
-        sign * (value.numerator as f64) / (value.denominator as f64)
+        f64::from(value.sign) * (value.numerator as f64) / (value.denominator as f64)
     }
 }
 
 impl From<SmallRat> for f32 {
     fn from(value: SmallRat) -> Self {
-        let sign = if value.is_positive() { 1.0 } else { -1.0 };
-        sign * (value.numerator as f32) / (value.denominator as f32)
+        f32::from(value.sign) * (value.numerator as f32) / (value.denominator as f32)
     }
 }
 
@@ -644,5 +704,13 @@ mod tests {
             SmallRat::new(3, 2, false).pow(3).unwrap(),
             SmallRat::new(27, 8, false)
         );
+    }
+
+    #[test]
+    fn floor_ceil_round() {
+        assert_eq!(SmallRat::new(4, 5, true).floor(), 0);
+        assert_eq!(SmallRat::new(4, 5, true).ceil(), 1);
+        assert_eq!(SmallRat::new(4, 5, false).round(), -1);
+        assert_eq!(SmallRat::new(u64::MAX, 1, true).round(), u64::MAX as i128);
     }
 }
