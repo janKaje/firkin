@@ -4,6 +4,7 @@ use pyo3::prelude::*;
 
 mod constant;
 mod error;
+mod num;
 mod unit;
 
 /// A Python module implemented in Rust.
