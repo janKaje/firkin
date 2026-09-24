@@ -6,6 +6,8 @@ use std::{
     thread,
 };
 
+use rayon::prelude::*;
+
 mod log_unit;
 mod single_unit;
 mod unit_defs;
@@ -499,16 +501,25 @@ impl UnitCollection {
         // different approach this time
         // find the smallest subset of self's single units that maps to the same base units
 
-        let units: Vec<&SingleUnit> = self.single_units.keys().collect();
+        let psd = self.simple_simplify(); // partially simplified
+
+        let units: Vec<&SingleUnit> = psd.single_units.keys().collect();
         // if only one unit, don't bother trying to simplify
         if units.len() == 1 {
-            return self.clone();
+            return psd;
+        }
+
+        // if any non-integer exponents, use simple_simplify
+        for exp in psd.single_units.values() {
+            if *exp != exp.round() {
+                return psd;
+            }
         }
 
         // if base unit only shows up once, that unit retains its exponent
         let mut retained = vec![];
         'bunits: for i in 0..NUMBER_OF_BASE_UNITS {
-            if self.base_units[i] != 0.0 {
+            if psd.base_units[i] != 0.0 {
                 let mut unit = None;
                 for &single_unit in &units {
                     if single_unit.base_units[i] != 0.0 {
@@ -525,7 +536,7 @@ impl UnitCollection {
                 let unit = unit.expect(
                     format!(
                         "Error in simplify - unit {} has mismatch between single and base units",
-                        self
+                        psd
                     )
                     .as_str(),
                 );
@@ -536,15 +547,54 @@ impl UnitCollection {
         }
         // if all units are constrained by this, return self
         if retained.len() == units.len() {
-            return self.clone();
+            return psd;
         }
 
-        // if any non-integer exponents, use simple_simplify
-        for exp in self.single_units.values() {
-            if *exp != exp.round() {
-                return self.simple_simplify();
+        let mut non_retained = vec![];
+        for unit in units.iter() {
+            if !retained.contains(unit) {
+                non_retained.push(*unit)
             }
         }
+
+        // Possible future optimization: only check combinations that have correct dimensionality
+        // let mut base_units_check = [0; NUMBER_OF_BASE_UNITS];
+        // for unit in retained.iter() {
+        //     for i in 0..NUMBER_OF_BASE_UNITS {
+        //         if unit.base_units[i] != 0.0 {
+        //             base_units_check[i] += 1;
+        //         }
+        //     }
+        // }
+
+        // let mut possible_combinations = vec![];
+        // // check combinations of non retained units for correct dimensionality
+        // for i in 0_usize..1 << non_retained.len() {
+        //     // convert bit mask into vector of things
+        //     println!("i flag: {i}; {i:08b}");
+        //     let mut buc = base_units_check.clone();
+        //     let mut combo = vec![];
+        //     for k in 0..non_retained.len() {
+        //         println!("flag: {}; k: {}; i: {:08b}, i shift: {:08b}, and: {}", i >> k % 2 == 1, k, i, i >> k, i >> k & 1 == 1);
+        //         if i >> k & 1 == 1 {
+        //             for j in 0..NUMBER_OF_BASE_UNITS {
+        //                 if non_retained[k].base_units[j] != 0.0 {
+        //                     buc[j] += 1;
+        //                 }
+        //             }
+        //             combo.push(non_retained[k])
+        //         }
+        //     }
+        //     let mut is_possible = true;
+        //     for j in 0..NUMBER_OF_BASE_UNITS {
+        //         if (psd.base_units[j] == 0.0) != (buc[j] == 0) {
+        //             is_possible = false;
+        //         }
+        //     }
+        //     if is_possible {
+        //         possible_combinations.push(combo);
+        //     }
+        // }
 
         // clone hashmap with retained units
         let mut starting_holes = HashMap::new();
@@ -552,18 +602,19 @@ impl UnitCollection {
             starting_holes.insert(unit, 0);
         }
         for unit in retained {
-            *starting_holes.get_mut(unit).unwrap() = *self.single_units.get(unit).unwrap() as i32;
+            *starting_holes.get_mut(unit).unwrap() = *psd.single_units.get(unit).unwrap() as i32;
         }
+
         let mut starting_holes_new = HashMap::new();
         for (k, v) in starting_holes {
             starting_holes_new.insert(Arc::new(k.clone()), v);
         }
         let mut units_i32 = HashMap::new();
-        for (unit, value) in &self.single_units {
+        for (unit, value) in &psd.single_units {
             units_i32.insert(unit.clone(), *value as i32);
         }
 
-        if check_satisfies_base_units(&starting_holes_new, &self.base_units) {
+        if check_satisfies_base_units(&starting_holes_new, &psd.base_units) {
             let mut new_map = HashMap::new();
             for (key, value) in starting_holes_new.iter() {
                 new_map.insert((**key).clone(), *value as f64);
@@ -575,7 +626,7 @@ impl UnitCollection {
         match simplify_mapping_algorithm(
             Arc::new(units_i32),
             starting_holes_new,
-            Arc::new(self.base_units),
+            Arc::new(psd.base_units),
             Arc::new(Mutex::new(false)),
         ) {
             Some(map) => {
@@ -586,7 +637,7 @@ impl UnitCollection {
                 UnitCollection::from_single_unit_hashmap(new_map)
             }
             None => {
-                self.clone() // no suitable simplificaton found
+                psd // no suitable simplificaton found
             }
         }
     }
@@ -639,7 +690,7 @@ impl Div<ScaleDiff> for f64 {
     }
 }
 
-fn simplify_mapping_algorithm<'a>(
+fn simplify_mapping_algorithm(
     units: Arc<HashMap<SingleUnit, i32>>,
     starting_holes: HashMap<Arc<SingleUnit>, i32>,
     base_units: Arc<[f64; NUMBER_OF_BASE_UNITS]>,
@@ -769,5 +820,14 @@ mod tests {
 
         let joule_meter2 = (joule / meter).pow(2.0);
         assert_eq!(format!("{}", joule_meter2), "[J2/m2]");
+    }
+
+    #[test]
+    fn test_simplify() {
+        let new = UnitCollection::from_unit_name("km.A.s.N.Sv/C.m2")
+            .unwrap()
+            .simplify();
+        assert_eq!(new.to_string(), String::from("[1/m]"));
+        panic!("")
     }
 }

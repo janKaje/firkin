@@ -3,6 +3,8 @@ use std::hash::{Hash, Hasher};
 use crate::unit::unit_defs::NUMBER_OF_BASE_UNITS;
 use crate::unit::unit_defs::UnitDefStatic;
 
+// TODO: rewrite impl of prefixes so uses less memory, is faster to clone?
+// being able to implement copy would be incredibly helpful for simplify speed i think
 #[derive(Clone, PartialEq, Debug)]
 pub(crate) struct SingleUnit {
     pub(crate) name: String,

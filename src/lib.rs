@@ -124,6 +124,13 @@ mod firkin {
             }
         }
 
+        fn simple_simplify(&self) -> PyResult<Firkin> {
+            match self.simple_simplify_internal() {
+                Ok(i) => Ok(i),
+                Err(e) => Err(e.into()),
+            }
+        }
+
         fn __str__(&self) -> PyResult<String> {
             Ok(format!("{}", self))
         }
@@ -427,6 +434,10 @@ mod firkin {
 
         fn simplify_internal(&self) -> Result<Firkin, FirkinError> {
             self.as_unit_internal(&self.unit_collection.simplify())
+        }
+
+        fn simple_simplify_internal(&self) -> Result<Firkin, FirkinError> {
+            self.as_unit_internal(&self.unit_collection.simple_simplify())
         }
     }
 
