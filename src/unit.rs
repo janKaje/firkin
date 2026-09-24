@@ -2,6 +2,8 @@ use std::{
     collections::HashMap,
     fmt,
     ops::{Div, Mul},
+    sync::{Arc, Mutex},
+    thread,
 };
 
 mod log_unit;
@@ -552,25 +554,34 @@ impl UnitCollection {
         for unit in retained {
             *starting_holes.get_mut(unit).unwrap() = *self.single_units.get(unit).unwrap() as i32;
         }
+        let mut starting_holes_new = HashMap::new();
+        for (k, v) in starting_holes {
+            starting_holes_new.insert(Arc::new(k.clone()), v);
+        }
         let mut units_i32 = HashMap::new();
         for (unit, value) in &self.single_units {
-            units_i32.insert(unit, *value as i32);
+            units_i32.insert(unit.clone(), *value as i32);
         }
 
-        if check_satisfies_base_units(&starting_holes, &self.base_units) {
+        if check_satisfies_base_units(&starting_holes_new, &self.base_units) {
             let mut new_map = HashMap::new();
-            for (key, value) in starting_holes {
-                new_map.insert(key.clone(), value as f64);
+            for (key, value) in starting_holes_new.iter() {
+                new_map.insert((**key).clone(), *value as f64);
             }
             return UnitCollection::from_single_unit_hashmap(new_map);
         }
 
         // pass to mapping algorithm
-        match simplify_mapping_algorithm(&units_i32, &starting_holes, &self.base_units) {
+        match simplify_mapping_algorithm(
+            Arc::new(units_i32),
+            starting_holes_new,
+            Arc::new(self.base_units),
+            Arc::new(Mutex::new(false)),
+        ) {
             Some(map) => {
                 let mut new_map = HashMap::new();
                 for (key, value) in map {
-                    new_map.insert(key.clone(), value as f64);
+                    new_map.insert((*key).clone(), value as f64);
                 }
                 UnitCollection::from_single_unit_hashmap(new_map)
             }
@@ -629,14 +640,15 @@ impl Div<ScaleDiff> for f64 {
 }
 
 fn simplify_mapping_algorithm<'a>(
-    units: &HashMap<&'a SingleUnit, i32>,
-    starting_holes: &HashMap<&'a SingleUnit, i32>,
-    base_units: &[f64; NUMBER_OF_BASE_UNITS],
-) -> Option<HashMap<&'a SingleUnit, i32>> {
-    let mut return_options = vec![];
+    units: Arc<HashMap<SingleUnit, i32>>,
+    starting_holes: HashMap<Arc<SingleUnit>, i32>,
+    base_units: Arc<[f64; NUMBER_OF_BASE_UNITS]>,
+    is_completed: Arc<Mutex<bool>>,
+) -> Option<HashMap<Arc<SingleUnit>, i32>> {
+    let mut thread_options = vec![];
 
     // iterate through possible options
-    for (&hole, &value) in starting_holes.iter() {
+    for (hole, &value) in starting_holes.iter() {
         if (value < units[hole] && units[hole] > 0) || (value > units[hole] && units[hole] < 0) {
             // value less than maximum, can be dropped into hole
             let mut new_holes = starting_holes.clone();
@@ -645,41 +657,60 @@ fn simplify_mapping_algorithm<'a>(
             } else {
                 *new_holes.get_mut(hole).unwrap() -= 1;
             }
-            if check_satisfies_base_units(&new_holes, base_units) {
-                return_options.push(new_holes);
+            if check_satisfies_base_units(&new_holes, &base_units) {
+                let mut x = is_completed.lock().unwrap();
+                *x = true;
+                return Some(new_holes);
             } else {
-                if let Some(h) = simplify_mapping_algorithm(units, &new_holes, base_units) {
-                    return_options.push(h)
-                }
+                thread_options.push(new_holes);
+            }
+        }
+        if let Ok(compl) = is_completed.try_lock() {
+            if *compl {
+                return None;
             }
         }
     }
 
-    // find best of available options
-    let mut best = u32::MAX;
-    let mut best_idx = usize::MAX;
-    for (i, option) in return_options.iter().enumerate() {
-        let sum = option.values().map(|x| x.abs() as u32).sum();
-        if sum < best {
-            best = sum;
-            best_idx = i;
+    // none found in available scope, spawn threads to check recursively
+    let mut handles = vec![];
+
+    for option in thread_options {
+        let u = Arc::clone(&units);
+        let b = Arc::clone(&base_units);
+        let i = Arc::clone(&is_completed);
+        handles.push(thread::spawn(|| {
+            simplify_mapping_algorithm(u, option, b, i)
+        }));
+    }
+
+    for handle in handles {
+        if let Ok(result) = handle.join() {
+            if let Some(result) = result {
+                let mut x = is_completed.lock().unwrap();
+                *x = true;
+                return Some(result);
+            }
         }
     }
 
-    match best_idx {
-        usize::MAX => None,
-        _ => Some(return_options.remove(best_idx)),
-    }
+    None
 }
 
 fn check_satisfies_base_units(
-    units: &HashMap<&SingleUnit, i32>,
+    units: &HashMap<Arc<SingleUnit>, i32>,
     base_units: &[f64; NUMBER_OF_BASE_UNITS],
 ) -> bool {
     let mut base_units_copy = base_units.clone();
-    for (&unit, &exp) in units {
+    for (unit, &exp) in units {
         for i in 0..NUMBER_OF_BASE_UNITS {
-            base_units_copy[i] -= unit.base_units[i] * (exp as f64);
+            if exp == 1 {
+                base_units_copy[i] -= unit.base_units[i]
+            } else if exp == -1 {
+                base_units_copy[i] += unit.base_units[i]
+            } else {
+                base_units_copy[i] -= unit.base_units[i] * (exp as f64);
+            }
         }
     }
     base_units_copy == [0.0; NUMBER_OF_BASE_UNITS]
