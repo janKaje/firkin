@@ -1,10 +1,10 @@
 use std::ops::{self, AddAssign, MulAssign};
-// use rug::{Float, Integer, Rational, ops::Pow};
-// use rug::{Assign, float};
-// use rug::float::{FreeCache, Round};
-// use rug::ops::{AddAssignRound, AssignRound, MulAssignRound};
+use rug::{Float, Integer, Rational, ops::Pow};
+use rug::{Assign, float};
+use rug::float::{FreeCache, Round};
+use rug::ops::{AddAssignRound, AssignRound, MulAssignRound};
 
-use super::smallrat::SmallRat;
+use super::smallrational::SmallRational;
 
 const DEFAULT_PREC: u32 = 53;
 
@@ -13,113 +13,121 @@ const DEFAULT_PREC: u32 = 53;
 pub(crate) enum Number {
     SmallInt(i64),
     Int(Integer),
-    SmallRat(SmallRat),
+    SmallRat(SmallRational),
     Rat(Rational),
-    Float(Float),
+    Flt(Float),
 }
+
+use Number::{SmallInt, Int, SmallRat, Rat, Flt};
 
 impl Number {
 
     pub(crate) fn add(&self, other: &Number, prec: Option<u32>) -> Number {
         let prec = prec.unwrap_or(DEFAULT_PREC);
         match self {
-            Number::Int(integer) => match other {
-                Number::Int(integer1) => Number::Int(Integer::from(integer + integer1)),
-                Number::Rat(rational) => Number::Rat(Rational::from(rational + integer)),
+            SmallInt(integer) => match other {
+                SmallInt(_) => todo!(),
+                Int(_) => todo!(),
+                SmallRat(small_rational) => todo!(),
+                Rat(_) => todo!(),
+                Flt(_) => todo!(),
+            },
+            Int(integer) => match other {
+                Int(integer1) => Int((integer + integer1).into()),
+                Rat(rational) => Rat((rational + integer).into()),
                 _ => other.add(self, Some(prec))
             },
-            Number::Rat(rational) => match other {
-                Number::Rat(rational1) => Number::Rat(Rational::from(rational + rational1)),
+            SmallRat(small_rat) => todo!(),
+            Rat(rational) => match other {
+                Rat(rational1) => Rat((rational + rational1).into()),
                 _ => other.add(self, Some(prec))
             },
-            Number::Float(float) => Number::Float(Float::from(float + other.to_float(prec))),
-            Number::SmallInt(integer) => todo!(),
-            Number::SmallRat(small_rat) => todo!(),
+            Flt(float) => Flt((float + other.to_float(prec)).into()),
         }
     }
 
     pub(crate) fn sub(&self, other: &Number, prec: Option<u32>) -> Number {
         let prec = prec.unwrap_or(DEFAULT_PREC);
         match self {
-            Number::Int(integer) => match other {
-                Number::Int(integer1) => Number::Int(Integer::from(integer-integer1)),
-                Number::Rat(rational) => Number::Rat(Rational::from(integer-rational)),
-                Number::Float(float) => Number::Float(Float::from(integer - float)),
-                Number::SmallInt(_) => todo!(),
-                Number::SmallRat(small_rat) => todo!(),
+            SmallInt(int) => todo!(),
+            Int(integer) => match other {
+                SmallInt(int) => todo!(),
+                Int(integer1) => Int((integer-integer1).into()),
+                SmallRat(small_rat) => todo!(),
+                Rat(rational) => Rat((integer-rational).into()),
+                Flt(float) => Flt((integer - float).into()),
             },
-            Number::Rat(rational) => match other {
-                Number::Int(integer) => Number::Rat(Rational::from(rational - integer)),
-                Number::Rat(rational1) => Number::Rat(Rational::from(rational - rational1)),
-                Number::Float(float) => Number::Float(Float::from(rational - float)),
-                Number::SmallInt(_) => todo!(),
-                Number::SmallRat(small_rat) => todo!(),
+            SmallRat(small_rat) => todo!(),
+            Rat(rational) => match other {
+                SmallInt(int) => todo!(),
+                Int(integer) => Rat((rational - integer).into()),
+                SmallRat(small_rat) => todo!(),
+                Rat(rational1) => Rat((rational - rational1).into()),
+                Flt(float) => Flt((rational - float).into()),
             },
-            Number::Float(float) => Number::Float(Float::from(float - other.to_float(prec))),
-            Number::SmallInt(_) => todo!(),
-            Number::SmallRat(small_rat) => todo!(),
+            Flt(float) => Flt((float - other.to_float(prec)).into()),
         }
     }
 
     pub(crate) fn mul(&self, other: &Number, prec: Option<u32>) -> Number {
         let prec = prec.unwrap_or(DEFAULT_PREC);
         match self {
-            Number::Int(integer) => match other {
-                Number::Int(integer1) => Number::Int(Integer::from(integer * integer1)),
-                Number::Rat(rational) => Number::Rat(Rational::from(rational * integer)),
+            SmallInt(int) => todo!(),
+            Int(integer) => match other {
+                Int(integer1) => Int((integer * integer1).into()),
+                Rat(rational) => Rat((rational * integer).into()),
                 _ => other.mul(self, Some(prec))
             },
-            Number::Rat(rational) => match other {
-                Number::Rat(rational1) => Number::Rat(Rational::from(rational * rational1)),
+            SmallRat(small_rat) => todo!(),
+            Rat(rational) => match other {
+                Rat(rational1) => Rat((rational * rational1).into()),
                 _ => other.mul(self, Some(prec))
             },
-            Number::Float(float) => Number::Float(Float::from(float * other.to_float(prec))),
-            Number::SmallInt(_) => todo!(),
-            Number::SmallRat(small_rat) => todo!(),
+            Flt(float) => Flt((float * other.to_float(prec)).into()),
         }
     }
 
     pub(crate) fn div(&self, other: &Number, prec: Option<u32>) -> Number {
         let prec: u32 = prec.unwrap_or(DEFAULT_PREC);
         match self {
-            Number::Int(integer) => match other {
-                Number::Int(integer1) => Number::Int(Integer::from(integer/integer1)),
-                Number::Rat(rational) => Number::Rat(Rational::from(integer/rational)),
-                Number::Float(float) => Number::Float(Float::from(integer/float)),
-                Number::SmallInt(_) => todo!(),
-                Number::SmallRat(small_rat) => todo!(),
+            SmallInt(int) => todo!(),
+            Int(integer) => match other {
+                SmallInt(int) => todo!(),
+                Int(integer1) => Int((integer/integer1).into()),
+                SmallRat(small_rat) => todo!(),
+                Rat(rational) => Rat((integer/rational).into()),
+                Flt(float) => Flt((integer/float).into()),
             },
-            Number::Rat(rational) => match other {
-                Number::Int(integer) => Number::Rat(Rational::from(rational/integer)),
-                Number::Rat(rational1) => Number::Rat(Rational::from(rational / rational1)),
-                Number::Float(float) => Number::Float(Float::from(rational / float)),
-                Number::SmallInt(_) => todo!(),
-                Number::SmallRat(small_rat) => todo!(),
+            SmallRat(small_rat) => todo!(),
+            Rat(rational) => match other {
+                SmallInt(int) => todo!(),
+                Int(integer) => Rat((rational/integer).into()),
+                SmallRat(small_rat) => todo!(),
+                Rat(rational1) => Rat((rational / rational1).into()),
+                Flt(float) => Flt((rational / float).into()),
             },
-            Number::Float(float) => Number::Float(Float::from(float / other.to_float(prec))),
-            Number::SmallInt(_) => todo!(),
-            Number::SmallRat(small_rat) => todo!(),
+            Flt(float) => Flt((float / other.to_float(prec)).into()),
         }
     }
 
     pub(crate) fn pow(&self, other: &Number, prec: Option<u32>) -> Number {
         let prec: u32 = prec.unwrap_or(DEFAULT_PREC);
         match other {
-            Number::Int(integer) => match self {
-                Number::Int(integer1) => Number::Int(Integer::from(integer1.pow(integer))),
-                Number::Rat(rational) => Number::Rat(Rational::from(rational.pow(integer))),
-                Number::Float(float) => Number::Float(Float::from(float.pow(integer))),
-                Number::SmallInt(_) => todo!(),
-                Number::SmallRat(small_rat) => todo!(),
+            SmallInt(i) => todo!(),
+            Int(integer) => match self {
+                SmallInt(int) => todo!(),
+                Int(integer1) => Int((integer1.pow(integer)).into()),
+                SmallRat(small_rat) => todo!(),
+                Rat(rational) => Rat((rational.pow(integer)).into()),
+                Flt(float) => Flt((float.pow(integer)).into()),
             },
-            _ => Number::Float(self.to_float(prec).pow(other.to_float(prec)))
+            _ => Flt(self.to_float(prec).pow(other.to_float(prec)))
         }
     }
 
     pub(crate) fn log(&self, base: &Number, prec: Option<u32>) -> Number {
         let prec: u32 = prec.unwrap_or(DEFAULT_PREC);
         match self {
-            Number::EToThe(number) => todo!(),
             _ => todo!(),
         }
     }
@@ -127,45 +135,52 @@ impl Number {
     pub(crate) fn abs(&self, prec: Option<u32>) -> Number {
         let prec: u32 = prec.unwrap_or(DEFAULT_PREC);
         match self {
-            Number::Int(integer) => Number::Int(integer.abs()),
-            Number::Rat(rational) => Number::Rat(rational.abs()),
-            Number::Float(float) => Number::Float(float.abs()),
-            Number::SmallInt(_) => todo!(),
-            Number::SmallRat(small_rat) => todo!(),
+            SmallInt(int) => todo!(),
+            Int(integer) => Int(integer.abs()),
+            SmallRat(small_rat) => todo!(),
+            Rat(rational) => Rat(rational.abs()),
+            Flt(float) => Flt(float.abs()),
         }
     }
     pub(crate) fn floor(&self, prec: Option<u32>) -> Number {
         let prec: u32 = prec.unwrap_or(DEFAULT_PREC);
         match self {
-            Number::Int(integer) => self.clone(),
-            Number::Rat(rational) => Number::Int(rational.floor().into()),
-            _ => Number::Int(self.to_float(prec).floor().into())
+            SmallInt(int) => todo!(),
+            Int(integer) => self.clone(),
+            SmallRat(small_rat) => todo!(),
+            Rat(rational) => Int(rational.floor().into()),
+            _ => Int(self.to_float(prec).floor().into())
         }
     }
     pub(crate) fn ceil(&self, prec: Option<u32>) -> Number {
         let prec: u32 = prec.unwrap_or(DEFAULT_PREC);
         match self {
-            Number::Int(integer) => self.clone(),
-            Number::Rat(rational) => Number::Int(rational.ceil().into()),
-            _ => Number::Int(self.to_float(prec).ceil().into())
+            SmallInt(int) => todo!(),
+            Int(integer) => self.clone(),
+            SmallRat(small_rat) => todo!(),
+            Rat(rational) => Int(rational.ceil().into()),
+            _ => Int(self.to_float(prec).ceil().into())
         }
     }
     pub(crate) fn round(&self, prec: Option<u32>) -> Number {
         let prec: u32 = prec.unwrap_or(DEFAULT_PREC);
         match self {
-            Number::Int(integer) => self.clone(),
-            Number::Rat(rational) => Number::Int(rational.round().into()),
-            _ => Number::Int(self.to_float(prec).round().into())
+            SmallInt(int) => todo!(),
+            Int(integer) => self.clone(),
+            SmallRat(small_rat) => todo!(),
+            Rat(rational) => Int(rational.round().into()),
+            _ => Int(self.to_float(prec).round().into())
         }
     }
     pub(crate) fn fac(&self, prec: Option<u32>) -> Number {
         let prec: u32 = prec.unwrap_or(DEFAULT_PREC);
         match self {
-            Number::Int(integer) => {
+            SmallInt(int) => todo!(),
+            Int(integer) => {
                 if integer <= &0 {
-                    Number::Float(self.to_float(prec).gamma())
+                    Flt(self.to_float(prec).gamma())
                 } else {
-                    Number::Int({
+                    Int({
                         let mut result = Integer::from(1);
                         let mut i = Integer::from(1);
                         while i < integer {
@@ -176,19 +191,49 @@ impl Number {
                     })
                 }
             },
-            _ => Number::Float(self.to_float(prec).gamma())
+            _ => Flt(self.to_float(prec).gamma())
         }
     }
 
     pub(crate) fn to_float(&self, prec:u32) -> Float {
         let mut result = Float::new(prec);
         match self {
-            Number::Int(integer) => result.assign(integer),
-            Number::Rat(rational) => result.assign(rational),
-            Number::Float(float) => result.assign(float),
-            Number::SmallInt(_) => todo!(),
-            Number::SmallRat(small_rat) => todo!(),
+            SmallInt(int) => todo!(),
+            Int(integer) => result.assign(integer),
+            SmallRat(small_rat) => todo!(),
+            Rat(rational) => result.assign(rational),
+            Flt(float) => result.assign(float),
         }
         result
+    }
+}
+
+impl From<i64> for Number {
+    fn from(value: i64) -> Self {
+        Number::SmallInt(value)
+    }
+}
+
+impl From<Integer> for Number {
+    fn from(value: Integer) -> Self {
+        Number::Int(value)
+    }
+}
+
+impl From<SmallRational> for Number {
+    fn from(value: SmallRational) -> Self {
+        Number::SmallRat(value)
+    }
+}
+
+impl From<Rational> for Number {
+    fn from(value: Rational) -> Self {
+        Number::Rat(value)
+    }
+}
+
+impl From<Float> for Number {
+    fn from(value: Float) -> Self {
+        Number::Flt(value)
     }
 }

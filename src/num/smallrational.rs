@@ -71,7 +71,7 @@ impl SmallRational {
             }
         }
 
-        if numerator > u64::MAX.into() || denominator > u64::MAX.into() {
+        if numerator > u64::MAX as u128 || denominator > u64::MAX as u128 {
             None // overflow
         } else {
             Some(SmallRational {

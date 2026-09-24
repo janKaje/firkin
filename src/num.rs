@@ -2,6 +2,7 @@
 
 mod sign;
 mod smallrational;
+mod int;
 // mod number;
 
 // use number::Number;
