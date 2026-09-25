@@ -6,8 +6,6 @@ use std::{
     thread,
 };
 
-use rayon::prelude::*;
-
 mod log_unit;
 mod single_unit;
 mod unit_defs;
@@ -557,45 +555,6 @@ impl UnitCollection {
             }
         }
 
-        // Possible future optimization: only check combinations that have correct dimensionality
-        // let mut base_units_check = [0; NUMBER_OF_BASE_UNITS];
-        // for unit in retained.iter() {
-        //     for i in 0..NUMBER_OF_BASE_UNITS {
-        //         if unit.base_units[i] != 0.0 {
-        //             base_units_check[i] += 1;
-        //         }
-        //     }
-        // }
-
-        // let mut possible_combinations = vec![];
-        // // check combinations of non retained units for correct dimensionality
-        // for i in 0_usize..1 << non_retained.len() {
-        //     // convert bit mask into vector of things
-        //     println!("i flag: {i}; {i:08b}");
-        //     let mut buc = base_units_check.clone();
-        //     let mut combo = vec![];
-        //     for k in 0..non_retained.len() {
-        //         println!("flag: {}; k: {}; i: {:08b}, i shift: {:08b}, and: {}", i >> k % 2 == 1, k, i, i >> k, i >> k & 1 == 1);
-        //         if i >> k & 1 == 1 {
-        //             for j in 0..NUMBER_OF_BASE_UNITS {
-        //                 if non_retained[k].base_units[j] != 0.0 {
-        //                     buc[j] += 1;
-        //                 }
-        //             }
-        //             combo.push(non_retained[k])
-        //         }
-        //     }
-        //     let mut is_possible = true;
-        //     for j in 0..NUMBER_OF_BASE_UNITS {
-        //         if (psd.base_units[j] == 0.0) != (buc[j] == 0) {
-        //             is_possible = false;
-        //         }
-        //     }
-        //     if is_possible {
-        //         possible_combinations.push(combo);
-        //     }
-        // }
-
         // clone hashmap with retained units
         let mut starting_holes = HashMap::new();
         for unit in units {
@@ -827,7 +786,6 @@ mod tests {
         let new = UnitCollection::from_unit_name("km.A.s.N.Sv/C.m2")
             .unwrap()
             .simplify();
-        assert_eq!(new.to_string(), String::from("[1/m]"));
-        panic!("")
+        assert_eq!(new.to_string(), String::from("[N.Sv/m]"));
     }
 }
