@@ -2,6 +2,8 @@ use std::{
     collections::HashMap,
     fmt,
     ops::{Div, Mul},
+    sync::{Arc, Mutex},
+    thread,
 };
 
 mod log_unit;
@@ -401,6 +403,221 @@ impl UnitCollection {
             base_units: self.base_units,
         }
     }
+
+    /// Remove any pairs of units that can be canceled out
+    pub(crate) fn simple_simplify(&self) -> UnitCollection {
+        let mut hashmap_new = self.single_units.clone();
+        let mut done = false;
+
+        'wl: while !done {
+            // Slowly iterate through single units, restarting when any changes to hashmap_new occur
+            for (key1, exp1) in self.single_units.iter() {
+                if !hashmap_new.contains_key(key1) {
+                    continue;
+                }
+                for (key2, exp2) in self.single_units.iter() {
+                    if key1 == key2 || !hashmap_new.contains_key(key2) {
+                        continue;
+                    }
+                    if key1.base_units == key2.base_units {
+                        // Same base units, now check if signs are opposite (num/denom split)
+                        if exp1.is_sign_positive() && exp2.is_sign_negative() {
+                            let min = exp1.min(exp2.abs());
+                            let x1 = hashmap_new.get_mut(key1).unwrap();
+                            match *x1 - min {
+                                0.0 => {
+                                    hashmap_new.remove(key1);
+                                }
+                                _ => *x1 -= min,
+                            }
+                            let x2 = hashmap_new.get_mut(key2).unwrap();
+                            match *x2 + min {
+                                0.0 => {
+                                    hashmap_new.remove(key2);
+                                }
+                                _ => *x2 += min,
+                            }
+                            continue 'wl; // when changes are made, restart for loop
+                        } else if exp1.is_sign_negative() && exp2.is_sign_positive() {
+                            let min = exp1.abs().min(*exp2);
+                            let x1 = hashmap_new.get_mut(key1).unwrap();
+                            match *x1 + min {
+                                0.0 => {
+                                    hashmap_new.remove(key1);
+                                }
+                                _ => *x1 += min,
+                            }
+                            let x2 = hashmap_new.get_mut(key2).unwrap();
+                            match *x2 - min {
+                                0.0 => {
+                                    hashmap_new.remove(key2);
+                                }
+                                _ => *x2 -= min,
+                            }
+                            continue 'wl;
+                        }
+                    } else if key1.base_units == key2.base_units.map(|x| -x) {
+                        // Opposite base units, now check if signs are same
+                        // panic!("got into opposite base units!!");
+                        if exp1.is_sign_positive() == exp2.is_sign_positive() {
+                            let min = exp1.min(*exp2);
+                            let x1 = hashmap_new.get_mut(key1).unwrap();
+                            match *x1 - min {
+                                0.0 => {
+                                    hashmap_new.remove(key1);
+                                }
+                                _ => *x1 -= min,
+                            }
+                            let x2 = hashmap_new.get_mut(key2).unwrap();
+                            match *x2 - min {
+                                0.0 => {
+                                    hashmap_new.remove(key2);
+                                }
+                                _ => *x2 -= min,
+                            }
+                            continue 'wl;
+                        }
+                    }
+                }
+            }
+            done = true;
+        }
+
+        let result = UnitCollection::from_single_unit_hashmap(hashmap_new);
+
+        if result.base_units != self.base_units {
+            panic!(
+                "Error on simple_simplify\nStarted with: {self}, {:?}\nEnded with: {result}, {:?}",
+                self.base_units, result.base_units
+            )
+        }
+
+        result
+    }
+
+    pub(crate) fn simplify(&self) -> UnitCollection {
+        // different approach this time
+        // find the smallest subset of self's single units that maps to the same base units
+
+        let psd = self.simple_simplify(); // partially simplified
+
+        let units: Vec<&SingleUnit> = psd.single_units.keys().collect();
+        // if only one unit, don't bother trying to simplify
+        if units.len() == 1 {
+            return psd;
+        }
+
+        // if any non-integer exponents, use simple_simplify
+        for exp in psd.single_units.values() {
+            if *exp != exp.round() {
+                return psd;
+            }
+        }
+
+        // if base unit only shows up once, that unit retains its exponent
+        let mut retained = vec![];
+        'bunits: for i in 0..NUMBER_OF_BASE_UNITS {
+            if psd.base_units[i] != 0.0 {
+                let mut unit = None;
+                for &single_unit in &units {
+                    if single_unit.base_units[i] != 0.0 {
+                        match unit {
+                            Some(_) => {
+                                continue 'bunits;
+                            }
+                            None => {
+                                unit = Some(single_unit);
+                            }
+                        };
+                    }
+                }
+                let unit = unit.expect(
+                    format!(
+                        "Error in simplify - unit {} has mismatch between single and base units",
+                        psd
+                    )
+                    .as_str(),
+                );
+                if !retained.contains(&unit) {
+                    retained.push(unit);
+                }
+            }
+        }
+        // if all units are constrained by this, return self
+        if retained.len() == units.len() {
+            return psd;
+        }
+
+        let mut non_retained = vec![];
+        for unit in units.iter() {
+            if !retained.contains(unit) {
+                non_retained.push(*unit)
+            }
+        }
+
+        // clone hashmap with retained units
+        let mut starting_holes = HashMap::new();
+        for unit in units {
+            starting_holes.insert(unit, 0);
+        }
+        for unit in retained {
+            *starting_holes.get_mut(unit).unwrap() = *psd.single_units.get(unit).unwrap() as i32;
+        }
+
+        let mut starting_holes_new = HashMap::new();
+        for (k, v) in starting_holes {
+            starting_holes_new.insert(Arc::new(k.clone()), v);
+        }
+        let mut units_i32 = HashMap::new();
+        for (unit, value) in &psd.single_units {
+            units_i32.insert(unit.clone(), *value as i32);
+        }
+
+        if check_satisfies_base_units(&starting_holes_new, &psd.base_units) {
+            let mut new_map = HashMap::new();
+            for (key, value) in starting_holes_new.iter() {
+                new_map.insert((**key).clone(), *value as f64);
+            }
+            return UnitCollection::from_single_unit_hashmap(new_map);
+        }
+
+        // pass to mapping algorithm
+        match simplify_mapping_algorithm(
+            Arc::new(units_i32),
+            starting_holes_new,
+            Arc::new(psd.base_units),
+            Arc::new(Mutex::new(false)),
+        ) {
+            Some(map) => {
+                let mut new_map = HashMap::new();
+                for (key, value) in map {
+                    new_map.insert((*key).clone(), value as f64);
+                }
+                UnitCollection::from_single_unit_hashmap(new_map)
+            }
+            None => {
+                psd // no suitable simplificaton found
+            }
+        }
+    }
+
+    fn from_single_unit_hashmap(single_units: HashMap<SingleUnit, f64>) -> UnitCollection {
+        let mut scale = 1.0;
+        let mut base_units = [0.0; NUMBER_OF_BASE_UNITS];
+
+        for (unit, exponent) in single_units.iter() {
+            scale *= unit.scale.powf(*exponent);
+            for i in 0..NUMBER_OF_BASE_UNITS {
+                base_units[i] += unit.base_units[i] * exponent;
+            }
+        }
+
+        UnitCollection {
+            single_units,
+            base_units,
+            scale,
+        }
+    }
 }
 
 impl fmt::Display for UnitCollection {
@@ -430,6 +647,83 @@ impl Div<ScaleDiff> for f64 {
     fn div(self, rhs: ScaleDiff) -> f64 {
         self * rhs.self_scale / rhs.other_scale
     }
+}
+
+fn simplify_mapping_algorithm(
+    units: Arc<HashMap<SingleUnit, i32>>,
+    starting_holes: HashMap<Arc<SingleUnit>, i32>,
+    base_units: Arc<[f64; NUMBER_OF_BASE_UNITS]>,
+    is_completed: Arc<Mutex<bool>>,
+) -> Option<HashMap<Arc<SingleUnit>, i32>> {
+    let mut thread_options = vec![];
+
+    // iterate through possible options
+    for (hole, &value) in starting_holes.iter() {
+        if (value < units[hole] && units[hole] > 0) || (value > units[hole] && units[hole] < 0) {
+            // value less than maximum, can be dropped into hole
+            let mut new_holes = starting_holes.clone();
+            if units[hole] > 0 {
+                *new_holes.get_mut(hole).unwrap() += 1;
+            } else {
+                *new_holes.get_mut(hole).unwrap() -= 1;
+            }
+            if check_satisfies_base_units(&new_holes, &base_units) {
+                let mut x = is_completed.lock().unwrap();
+                *x = true;
+                return Some(new_holes);
+            } else {
+                thread_options.push(new_holes);
+            }
+        }
+        if let Ok(compl) = is_completed.try_lock() {
+            if *compl {
+                return None;
+            }
+        }
+    }
+
+    // none found in available scope, spawn threads to check recursively
+    let mut handles = vec![];
+
+    for option in thread_options {
+        let u = Arc::clone(&units);
+        let b = Arc::clone(&base_units);
+        let i = Arc::clone(&is_completed);
+        handles.push(thread::spawn(|| {
+            simplify_mapping_algorithm(u, option, b, i)
+        }));
+    }
+
+    for handle in handles {
+        if let Ok(result) = handle.join() {
+            if let Some(result) = result {
+                let mut x = is_completed.lock().unwrap();
+                *x = true;
+                return Some(result);
+            }
+        }
+    }
+
+    None
+}
+
+fn check_satisfies_base_units(
+    units: &HashMap<Arc<SingleUnit>, i32>,
+    base_units: &[f64; NUMBER_OF_BASE_UNITS],
+) -> bool {
+    let mut base_units_copy = base_units.clone();
+    for (unit, &exp) in units {
+        for i in 0..NUMBER_OF_BASE_UNITS {
+            if exp == 1 {
+                base_units_copy[i] -= unit.base_units[i]
+            } else if exp == -1 {
+                base_units_copy[i] += unit.base_units[i]
+            } else {
+                base_units_copy[i] -= unit.base_units[i] * (exp as f64);
+            }
+        }
+    }
+    base_units_copy == [0.0; NUMBER_OF_BASE_UNITS]
 }
 
 #[cfg(test)]
@@ -485,5 +779,13 @@ mod tests {
 
         let joule_meter2 = (joule / meter).pow(2.0);
         assert_eq!(format!("{}", joule_meter2), "[J2/m2]");
+    }
+
+    #[test]
+    fn test_simplify() {
+        let new = UnitCollection::from_unit_name("km.A.s.N.Sv/C.m2")
+            .unwrap()
+            .simplify();
+        assert_eq!(new.to_string(), String::from("[N.Sv/m]"));
     }
 }

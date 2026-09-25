@@ -424,6 +424,17 @@ class Firkin:
         """
         ...
 
+    def simplify(self) -> Self:
+        """
+        Simplifies the units of self, removing any dimensionless unit subsets.
+        """
+
+    def simplify_inplace(self) -> None:
+        """
+        Simplifies the units of self, removing any dimensionless unit subsets.
+        Modifies self in place without returning anything.
+        """
+
     def __str__(self) -> str: ...
 
     def __repr__(self) -> str: ...
