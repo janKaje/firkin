@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.0] - 2026-09-25
+
+### Added
+
+- Support for logarithmic ratio units through `LogFirkin`
+- More units, including British Imperial units
+- Rudimentary LaTeX formatting support
+- Automatic and manual unit simplification
+
 ## [0.2.0] - 2026-08-29
 
 ### Added
