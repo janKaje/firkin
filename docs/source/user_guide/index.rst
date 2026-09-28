@@ -1,11 +1,15 @@
 User Guide
 ==========
 
-Sections
+The User Guide is meant to be a mostly comprehensive description of Firkin's features, excluding the information found in :ref:`Getting Started <getting_started>`.
 
-* String queries, prefixes
-* Temperatures
-* Log units
-* Non-arithmetic functions (numpy preferred)
-* Custom units
-* Formatting options (latex, descriptive, round_sfig, simplify)
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+
+   Querying Unit Names <string_queries>
+   Temperatures <temperatures>
+   Logarithmic Units <log_units>
+   Non-arithmetic Functions <non_arithmetics>
+   Custom Units <custom>
+   Formatting <format>
