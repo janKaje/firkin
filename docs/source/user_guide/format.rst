@@ -11,12 +11,12 @@ Generally, when a Firkin is printed or otherwise turned into a string, it uses t
 You can use the ``descriptive`` method to instead use the unit names:
 
 >>> energy_consumption.descriptive()
-15 [hour.watt]
+'15 [hour.watt]'
 
 Or, to get the unit in LaTeX format:
 
 >>> energy_consumption.latex()
-15~\mathrm{W~hr}
+'15~\mathrm{W~hr}'
 
 Python's ``round`` function works well with Firkins, or you can use the ``round_sfig`` method to round to some number of significant figures:
 

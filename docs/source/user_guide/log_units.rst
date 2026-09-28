@@ -23,7 +23,7 @@ In any other case, it resolves the logarithmic ratio and turns into a floating p
 >>> ratio.as_unitless()
 125.89254117941687
 >>> ratio - 100
-25.89254117941687
+25.892541179416867
 >>> 1.0/ratio
 0.007943282347242805
 >>> ratio2**2

@@ -87,7 +87,7 @@ The primary way to convert a Firkin to a different unit is the ``as_unit`` metho
 String queries can also be collections of units, formatted like so:
 
 >>> kJ.as_unit("g.mile2/minute2")
-1389.967770752805 [g.mi2/min2]
+1389.9677707528049 [g.mi2/min2]
 
 as_number, as_unitless
 ^^^^^^^^^^^^^^^^^^^^^^
