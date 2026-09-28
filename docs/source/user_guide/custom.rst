@@ -3,6 +3,7 @@ Custom Units
 
 Custom Firkin units can be created with the `custom` classmethod:
 
+>>> from firkin import Firkin
 >>> usd = Firkin.unit("USD")
 >>> eur = Firkin.custom("euro", "EUR", 1.16537 * usd)
 >>> eur
