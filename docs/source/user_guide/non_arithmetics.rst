@@ -5,6 +5,7 @@ Non-arithmetic functions generally require their inputs to be unitless (i.e. tri
 For such cases, you will need to either ensure the Firkin has no units. 
 You can also call the ``as_number`` method to force-remove the units, but this isn't recommended.
 
+>>> from firkin import Firkin
 >>> inch = Firkin.unit("inch")
 >>> cm = Firkin.unit("cm")
 >>> inch**2 # an example of allowed exponentiation
