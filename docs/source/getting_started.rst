@@ -1,7 +1,9 @@
+.. _getting_started:
+
 Getting Started
 ===============
 
-.. installation
+.. _installation:
 
 Installation
 ------------
@@ -46,6 +48,8 @@ Firkin also comes with several physical constants built in, which can be accesse
 >>> Firkin.constant("avogadro")
 602214076000000000000000 [mol]
 
+.. _convert_string_arith:
+
 Firkin can also convert strings into units on the fly, like so:
 
 >>> volume/10/"kilometer"
@@ -66,6 +70,8 @@ TypeError: unsupported operand type(s) for ** or pow(): 'str' and 'int'
 
 Unit Conversions
 ----------------
+
+.. _as_unit:
 
 as_unit
 ^^^^^^^
