@@ -13,7 +13,7 @@ const CONSTANTS: &[ConstantDef] = &[
     ("proton mass", 1.67262192369e-27, "kg"),
     ("neutron mass", 1.67492749804e-27, "kg"),
     ("avogadro's constant", 6.02214076e23, "mol"),
-    ("gravitational constant", 6.67430e-11, "N.m2/kg.2"),
+    ("gravitational constant", 6.67430e-11, "N.m2/kg2"),
     ("earth gravity", 9.80665, "m/s2"),
     ("stefan-boltzmann constant", 5.670374419e-8, "W/m2.K4"),
     ("ideal gas constant", 8.31446261815324, "J/K.mol"),
