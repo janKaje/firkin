@@ -117,4 +117,4 @@ This method converts the Firkin into the 8 base units that represent the basic d
 >>> horsepower.as_base_units()
 745.6998715822701 [kg.m2/s3]
 
-That should be enough information to get you started with using Firkin. For more in-depth information, see the :doc:`user_guide/index` or :doc:`api/index`
+That should be enough information to get you started with using Firkin. For more in-depth information, see the :doc:`user_guide/index` or :doc:`api/firkin`

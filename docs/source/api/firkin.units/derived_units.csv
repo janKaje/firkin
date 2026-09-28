@@ -1,0 +1,159 @@
+Name,Abbreviation or Symbol,Python Variable Name,Aliases
+gram,g,gram,
+radian,rad,radian,
+steradian,sr,steradian,
+hertz,Hz,hertz,
+newton,N,newton,
+pascal,Pa,pascal,
+joule,J,joule,
+watt,W,watt,
+coulomb,C,coulomb,
+volt,V,volt,
+farad,F,farad,
+ohm,Ω,ohm,
+siemens,S,siemens,
+weber,Wb,weber,
+tesla,T,tesla,
+hour,hr,hour,
+henry,H,henry,
+degree Celsius,°C,deg_C,"
+- deg C
+- deg c
+- Celsius
+- celsius"
+lumen,lm,lumen,
+lux,lx,lux,
+becquerel,Bq,becquerel,
+gray,Gy,gray,
+sievert,Sv,sievert,
+katal,kat,katal,
+minute,min,minute,
+day,d,day,"
+- da"
+degree (angle),°,arcdegree,"
+- deg
+- degree
+- arc degree"
+minute (angle),',arcminute,"
+- arc minute"
+second (angle),'',arcsecond,"
+- arc second"
+liter,L,liter,
+metric ton,t,metric_ton,"
+- tonne"
+electronvolt,eV,electronvolt,
+unified atomic mass unit,amu,amu,"
+- dalton"
+foot,ft,foot,
+mile,mi,mile,"
+- statute mile"
+nautical mile,nmi,nautical_mile,
+knot,kn,knot,
+are,are,are,
+bar,bar,bar,
+angstrom,Å,angstrom,
+barn,b,barn,
+curie,Ci,curie,
+roentgen,R,roentgen,
+rem,rem,rem,
+pound,lb,pound,"
+- pound mass
+- pound-mass"
+inch,in,inch,
+yard,yd,yard,
+pound-mol,lbmol,lbmol,
+gallon,gal,gallon,
+pound-force,lbf,lbf,
+grain,gr,grain,
+slug,slug,slug,
+fluid ounce,fl oz,fluid_ounce,
+quart,qt,quart,
+pint,pt,pint,
+cup,cup,cup,
+tablespoon,tbsp,tablespoon,
+teaspoon,tsp,teaspoon,
+ton,ton,ton,
+ounce,oz,ounce,
+atmosphere,atm,atmosphere,
+torr,torr,torr,
+pounds per square inch,psi,psi,
+calorie,cal,calorie,
+erg,erg,erg,
+british thermal unit,BTU,BTU,
+horsepower,hp,horsepower,
+Hartree,hartree,Hartree,
+poise,P,poise,
+Rankine,°R,Rankine,"
+- rankine"
+degree Fahrenheit,°F,deg_F,"
+- deg F
+- deg f
+- Fahrenheit
+- fahrenheit"
+year,y,year,"
+- tropical year
+- solar year"
+week,wk,week,
+month,mo,month,
+lightyear,ly,lightyear,
+acre,ac,acre,
+hectare,ha,hectare,
+carat,ct,carat,
+watt hour,Wh,watt_hour,
+cent,¢,cent,
+darcy,d,darcy,
+dyne,dyn,dyne,
+astronomical unit,ua,astronomical_unit,"
+- AU"
+sidereal year,syr,sidereal_year,
+anomalistic year,ayr,anomalistic_year,
+decade,decade,decade,
+century,century,century,
+millennium,millenium,millennium,
+calendar year,calendar year,calendar_year,"
+- common year"
+leap year,leap year,leap_year,
+julian year,julian year,julian_year,
+gregorian year,gregorian year,gregorian_year,
+parsec,pc,parsec,
+meter of mercury,mHg,meter_of_mercury,
+inch of mercury,inHg,inch_of_mercury,
+firkin (vol),frknv,firkin_vol,
+firkin (mass),frknm,firkin_mass,"
+- firkin"
+furlong,flg,furlong,
+fortnight,ftnt,fortnight,
+outhouse,ouths,outhouse,
+shed,shed,shed,
+martian sol,sol,martian_sol,
+jiffy,jfy,jiffy,
+light speed,c,light_speed,"
+- speed of light
+- lightspeed"
+fluid ounce (food),fl oz (food),fl_oz_food,
+fluid ounce (imperial),fl oz (imp),fl_oz_imperial,
+pint (imperial),pt (imp),pint_imperial,
+pint (dry),pt (dry),pint_dry,
+quart (imperial),qt (imp),quart_imperial,
+quart (dry),qt (dry),quart_dry,
+gallon (imperial),gal (imp),gallon_imperial,
+survey foot,survey ft,survey_foot,
+stone,st,stone,
+troy ounce,oz t,troy_ounce,
+troy pound,lb t,troy_pound,
+pennyweight,dwt,pennyweight,
+long ton,long ton,long_ton,
+hundredweight,hundredweight,hundredweight,
+hundredweight (imperial),hundredweight (imp),hundredweight_imperial,
+gill,gill,gill,"
+- teacup"
+gill (imperial),gill (imp),gill_imperial,
+chain,ch,chain,
+rod,rod,rod,"
+- pole
+- perch"
+poundal,pdl,poundal,
+barye,Ba,barye,
+kilogram force,kgf,kilogram_force,
+horsepower (metric),PS,horsepower_metric,
+link,li,link,

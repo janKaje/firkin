@@ -5,10 +5,10 @@ Submodules
 -----------
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
-   firkin.units
-   firkin.constants
+   firkin.units/firkin.units
+   firkin.constants/firkin.constants
 
 Module contents
 ---------------
