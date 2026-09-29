@@ -1,0 +1,17 @@
+name,value,units,python_var_name
+"light speed",299792458.0,"m/s",light_speed
+"planck's constant",6.62607015e-34,"J.s",planck_const
+"reduced planck's constant",1.054571817e-34,"J.s",reduced_planck_const
+"boltzmann's constant",1.380649e-23,"J/K",boltzmann_const
+"electron charge",1.602176634e-19,"coulomb",electron_charge
+"electron mass",9.1093837015e-31,"kg",electron_mass
+"proton mass",1.67262192369e-27,"kg",proton_mass
+"neutron mass",1.67492749804e-27,"kg",neutron_mass
+"avogadro's constant",6.02214076e23,"mol",avogadro_const
+"gravitational constant",6.67430e-11,"N.m2/kg2",grav_const
+"earth gravity",9.80665,"m/s2",earth_gravity
+"stefan-boltzmann constant",5.670374419e-8,"W/m2.K4",stefan_boltzmann_const
+"ideal gas constant",8.31446261815324,"J/K.mol",gas_const
+"faraday constant",9.64853321233100184e4,"coulomb/mol",faraday_const
+"vacuum permittivity",8.8541878188e-12,"farad/m",vacuum_permittivity
+"vacuum permeability",1.25663706127e-6,"N/A2",vacuum_permeability

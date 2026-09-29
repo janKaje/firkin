@@ -15,6 +15,8 @@ use csv;
 const UNIT_DEFINITONS_PATH: &str = "unit_definitions";
 const PY_UNITS_PATH: [&str; 3] = ["python", "firkin", "units"];
 const RS_UNITS_PATH: [&str; 3] = ["src", "unit", "unit_defs"];
+const PY_CONST_PATH: [&str; 2] = ["python", "firkin"];
+const RS_CONST_PATH: [&str; 2] = ["src", "constant"];
 
 fn get_cfg_path(file_name: &str) -> PathBuf {
     [
@@ -50,10 +52,33 @@ fn get_rs_path(file_name: &str) -> PathBuf {
     .collect()
 }
 
+fn get_py_const_path(file_name: &str) -> PathBuf {
+    [
+        Component::CurDir,
+        Component::Normal(PY_CONST_PATH[0].as_ref()),
+        Component::Normal(PY_CONST_PATH[1].as_ref()),
+        Component::Normal(file_name.as_ref()),
+    ]
+    .iter()
+    .collect()
+}
+
+fn get_rs_const_path(file_name: &str) -> PathBuf {
+    [
+        Component::CurDir,
+        Component::Normal(RS_CONST_PATH[0].as_ref()),
+        Component::Normal(RS_CONST_PATH[1].as_ref()),
+        Component::Normal(file_name.as_ref()),
+    ]
+    .iter()
+    .collect()
+}
+
 /// these definitions have three strings, since the third is for python variable name
 type DerivUnitConfigLine = (String, String, String, f64, f64, String);
 type BaseUnitConfigLine = (String, String, String);
 type LogUnitConfigLine = (String, String, String, f64, f64);
+type ConstConfigLine = (String, f64, String, String);
 
 struct UnitDefNumbers {
     scale: f64,
@@ -239,7 +264,6 @@ fn write_derived_units_rs(unit_def_vec: &Vec<UnitDef>) {
 /// This file was generated automatically by the build script.
 /// If you want to add units, edit `unit_definitions\\derived_units.csv`
 /// If you want to change file layout, edit `build.rs`
-
 use super::base_units::UnitDefStatic;
 
 #[rustfmt::skip]
@@ -338,7 +362,7 @@ pub(crate) const LOG_UNITS: &[(&'static str, &'static str, f64, f64)] = &["
         );
     }
 
-    log_units_rs.push_str("\n];");
+    log_units_rs.push_str("\n];\n");
 
     fs::write(get_rs_path("log_units.rs"), log_units_rs);
 }
@@ -371,6 +395,77 @@ fn write_log_units() {
     write_log_units_py(&unit_def_vec);
 }
 
+fn write_constant_defs_rs(const_def_vec: &Vec<ConstConfigLine>) {
+    let mut const_defs_rs = "\
+/// This file was generated automatically by the build script.
+/// If you want to add units, edit `unit_definitions\\constants.csv`
+/// If you want to change file layout, edit `build.rs`
+
+#[rustfmt::skip]
+pub(crate) const CONSTANTS: &[(&'static str, f64, &'static str)] = &["
+        .to_string();
+
+    for (name, value, units, python_var_name) in const_def_vec.iter() {
+        const_defs_rs
+            .push_str(format!("\n    (\"{}\", {:?}, \"{}\"),", name, value, units,).as_str());
+    }
+
+    const_defs_rs.push_str("\n];\n");
+
+    fs::write(get_rs_const_path("constant_defs.rs"), const_defs_rs);
+}
+
+fn write_constant_defs_py(const_def_vec: &Vec<ConstConfigLine>) {
+    let mut log_units_py = "from firkin import Firkin\n".to_string();
+
+    for (name, value, units, python_var_name) in const_def_vec.iter() {
+        log_units_py
+            .push_str(format!("\n{} = Firkin.constant(\"{}\")", python_var_name, name,).as_str());
+    }
+
+    fs::write(get_py_const_path("constants.py"), log_units_py);
+}
+
+fn write_constant_defs() {
+    let mut const_def_vec: Vec<ConstConfigLine> = vec![];
+
+    let mut const_def_reader = csv::Reader::from_path(get_cfg_path("constants.csv"))
+        .expect("Could not locate log units config");
+
+    for line in const_def_reader.deserialize() {
+        let line: ConstConfigLine = line.expect("Could not parse line");
+
+        const_def_vec.push(line);
+    }
+
+    write_constant_defs_rs(&const_def_vec);
+
+    write_constant_defs_py(&const_def_vec);
+}
+
+fn write_constant_aliases() {
+    let mut aliases_reader = csv::Reader::from_path(get_cfg_path("constant_aliases.csv"))
+        .expect("Could not locate aliases config");
+
+    let mut aliases_rs = "\
+/// This file was generated automatically by the build script.
+/// If you want to add units, edit `unit_definitions\\aliases.csv`
+/// If you want to change file layout, edit `build.rs`
+
+pub(crate) const CONSTANT_ALIASES: &[(&'static str, &'static str)] = &["
+        .to_string();
+
+    for line in aliases_reader.deserialize() {
+        let (alias, name): (String, String) =
+            line.expect("Could not parse line of constant_aliases.csv");
+        aliases_rs.push_str(format!("\n    (\"{}\", \"{}\"),", alias, name).as_str());
+    }
+
+    aliases_rs.push_str("\n];\n");
+
+    fs::write(get_rs_const_path("aliases.rs"), aliases_rs);
+}
+
 fn main() {
     let cfg_path: PathBuf = [
         Component::CurDir,
@@ -392,4 +487,8 @@ fn main() {
     write_aliases();
 
     write_log_units();
+
+    write_constant_defs();
+
+    write_constant_aliases();
 }

@@ -1,7 +1,6 @@
 /// This file was generated automatically by the build script.
 /// If you want to add units, edit `unit_definitions\derived_units.csv`
 /// If you want to change file layout, edit `build.rs`
-
 use super::base_units::UnitDefStatic;
 
 #[rustfmt::skip]
