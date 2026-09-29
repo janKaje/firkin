@@ -1,5 +1,5 @@
 /// This file was generated automatically by the build script.
-/// If you want to add units, edit `unit_definitions\derived_units.toml`
+/// If you want to add units, edit `unit_definitions\aliases.csv`
 /// If you want to change file layout, edit `build.rs`
 
 pub(crate) const UNIT_ALIASES: &[(&'static str, &'static str)] = &[

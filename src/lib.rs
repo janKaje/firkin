@@ -642,13 +642,13 @@ mod firkin {
         }
 
         fn as_unit(&self, other: LogFirkin) -> PyResult<LogFirkin> {
-            Ok(self.as_unit_internal(other))
+            Ok(self.as_unit_internal(&other))
         }
 
         #[pyo3(signature = (other=None))]
         fn as_number(&self, other: Option<LogFirkin>) -> PyResult<f64> {
             match other {
-                Some(l) => Ok(self.as_unit_internal(l).value),
+                Some(l) => Ok(self.as_unit_internal(&l).value),
                 None => Ok(self.value),
             }
         }
@@ -736,7 +736,7 @@ mod firkin {
                 PyNumber::Int(i) => Ok(PyNumber::Float(i as f64 + self.resolve())),
                 PyNumber::LogFirkin(l) => Ok(PyNumber::LogFirkin(LogFirkin {
                     unit: self.unit.clone(),
-                    value: self.value + l.resolve().log(self.unit.scale),
+                    value: self.value + l.as_unit_internal(self).value,
                 })),
             }
         }
@@ -751,7 +751,7 @@ mod firkin {
                 PyNumber::Int(i) => Ok(PyNumber::Float(self.resolve() - i as f64)),
                 PyNumber::LogFirkin(l) => Ok(PyNumber::LogFirkin(LogFirkin {
                     unit: self.unit.clone(),
-                    value: self.value - l.resolve().log(self.unit.scale),
+                    value: self.value - l.as_unit_internal(self).value,
                 })),
             }
         }
@@ -762,7 +762,7 @@ mod firkin {
                 PyNumber::Int(i) => Ok(PyNumber::Float(i as f64 - self.resolve())),
                 PyNumber::LogFirkin(l) => Ok(PyNumber::LogFirkin(LogFirkin {
                     unit: self.unit.clone(),
-                    value: l.resolve().log(self.unit.scale) - self.value,
+                    value: l.as_unit_internal(self).value - self.value,
                 })),
             }
         }
@@ -857,13 +857,13 @@ mod firkin {
 
     impl LogFirkin {
         fn resolve(&self) -> f64 {
-            self.unit.scale.powf(self.value)
+            self.unit.scale.powf(self.value / self.unit.scale_per)
         }
 
-        fn as_unit_internal(&self, other: LogFirkin) -> LogFirkin {
+        fn as_unit_internal(&self, other: &LogFirkin) -> LogFirkin {
             LogFirkin {
-                value: self.resolve().log(other.unit.scale),
-                unit: other.unit,
+                value: self.resolve().log(other.unit.scale) * other.unit.scale_per,
+                unit: other.unit.clone(),
             }
         }
     }

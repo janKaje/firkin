@@ -1,10 +1,10 @@
 from firkin import Firkin
 
-USD = Firkin.unit('USD')
-ampere = Firkin.unit('ampere')
-candela = Firkin.unit('candela')
-kelvin = Firkin.unit('kelvin')
-kilogram = Firkin.unit('kilogram')
-meter = Firkin.unit('meter')
-mole = Firkin.unit('mole')
 second = Firkin.unit('second')
+meter = Firkin.unit('meter')
+kilogram = Firkin.unit('kilogram')
+ampere = Firkin.unit('ampere')
+kelvin = Firkin.unit('kelvin')
+mole = Firkin.unit('mole')
+candela = Firkin.unit('candela')
+USD = Firkin.unit('USD')

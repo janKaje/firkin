@@ -1,0 +1,7 @@
+name,abbr,python_var_name,scale_factor,scale_factor_per
+neper,Np,neper,2.7182818284590452353602874713527,1.0
+bel,B,bel,10.0,1.0
+decibel,dB,decibel,10.0,10.0
+semitone,stn,semitone,2.0,12.0
+octave,octave,octave,2.0,1.0
+cent (music),cent (music),cent_music,2.0,1200.0

@@ -11,7 +11,6 @@ use std::{
 };
 
 use csv;
-use toml;
 
 const UNIT_DEFINITONS_PATH: &str = "unit_definitions";
 const PY_UNITS_PATH: [&str; 3] = ["python", "firkin", "units"];
@@ -53,6 +52,8 @@ fn get_rs_path(file_name: &str) -> PathBuf {
 
 /// these definitions have three strings, since the third is for python variable name
 type DerivUnitConfigLine = (String, String, String, f64, f64, String);
+type BaseUnitConfigLine = (String, String, String);
+type LogUnitConfigLine = (String, String, String, f64, f64);
 
 struct UnitDefNumbers {
     scale: f64,
@@ -69,17 +70,26 @@ struct UnitDef {
 }
 
 /// Gathers information found in base_units.toml
-fn read_base_units() -> toml::Table {
-    let config_str =
-        fs::read_to_string(get_cfg_path("base_units.toml")).expect("Failed to read file");
-    toml::from_str(&config_str).expect("Failed to parse toml")
+fn read_base_units() -> Vec<BaseUnitConfigLine> {
+    let mut unit_def_vec: Vec<BaseUnitConfigLine> = vec![];
+
+    let mut base_unit_reader = csv::Reader::from_path(get_cfg_path("base_units.csv"))
+        .expect("Could not locate base units config");
+
+    for line in base_unit_reader.deserialize() {
+        let line: BaseUnitConfigLine = line.expect("Could not parse line");
+
+        unit_def_vec.push(line);
+    }
+
+    unit_def_vec
 }
 
 /// Write to base_units.rs
 /// Returns a vector of the base unit names in the order they appear
-fn write_base_units_rs(config: &toml::Table) -> HashMap<String, UnitDefNumbers> {
+fn write_base_units_rs(base_unit_vec: &Vec<BaseUnitConfigLine>) -> HashMap<String, UnitDefNumbers> {
     // get number of base units and create type_str
-    let n_base_units = config.len();
+    let n_base_units = base_unit_vec.len();
 
     let type_str = format!("&'static str, &'static str, f64, f64, [f64; {n_base_units}]");
 
@@ -88,7 +98,7 @@ fn write_base_units_rs(config: &toml::Table) -> HashMap<String, UnitDefNumbers> 
 
     let mut unit_def_hashmap: HashMap<String, UnitDefNumbers> = HashMap::new();
 
-    for (i, (key, value)) in config.iter().enumerate() {
+    for (i, item) in base_unit_vec.iter().enumerate() {
         // get unit def numbers
         let mut numbers = vec![];
 
@@ -99,21 +109,14 @@ fn write_base_units_rs(config: &toml::Table) -> HashMap<String, UnitDefNumbers> 
         *numbers.get_mut(i).unwrap() = 1.0;
 
         // extract abbr from toml
-        let as_table = value
-            .as_table()
-            .expect("base_units.toml should not have root table");
-        let abbr = as_table
-            .get("abbr")
-            .expect(("Unit ".to_string() + &key + "  does not have abbr").as_str());
+        let name = &item.0;
+        let abbr = &item.1;
 
         // write to string buffer
         base_units_str.push_str("\n    (\"");
-        base_units_str.push_str(key);
+        base_units_str.push_str(name);
         base_units_str.push_str("\", \"");
-        base_units_str.push_str(
-            abbr.as_str()
-                .expect(("Unit ".to_string() + &key + "  abbr is not string").as_str()),
-        );
+        base_units_str.push_str(abbr);
         base_units_str.push_str("\", 0.0, 1.0, [");
         for n in numbers.iter() {
             base_units_str.push_str(format!("{:?}, ", n).as_str());
@@ -122,7 +125,7 @@ fn write_base_units_rs(config: &toml::Table) -> HashMap<String, UnitDefNumbers> 
 
         // add numbers to hashmap
         unit_def_hashmap.insert(
-            key.clone(),
+            name.clone(),
             UnitDefNumbers {
                 scale: 1.0,
                 base_units: numbers,
@@ -133,13 +136,12 @@ fn write_base_units_rs(config: &toml::Table) -> HashMap<String, UnitDefNumbers> 
     let base_units_rs = format!(
         "\
 /// This file was generated automatically by the build script.
-/// If you want to add units, edit `unit_definitions\\base_units.toml`
+/// If you want to add units, edit `unit_definitions\\base_units.csv`
 /// If you want to change file layout, edit `build.rs`
 
-#[allow(unused)]
 pub(crate) const NUMBER_OF_BASE_UNITS: usize = {};
 
-#[allow(unused)]
+#[rustfmt::skip]
 pub(crate) type UnitDefStatic = (&'static str, &'static str, f64, f64, [f64; NUMBER_OF_BASE_UNITS]);
 
 #[rustfmt::skip]
@@ -154,26 +156,15 @@ pub(crate) const BASE_UNITS: &[UnitDefStatic] = &[{}
     unit_def_hashmap
 }
 
-fn write_base_units_py(config: &toml::Table) {
+fn write_base_units_py(base_unit_vec: &Vec<BaseUnitConfigLine>) {
     let mut base_units_str = "from firkin import Firkin\n".to_string();
 
-    for (key, value) in config.iter() {
-        // extract python_var_name from toml
-        let as_table = value
-            .as_table()
-            .expect("base_units.toml should not have root table");
-        let value = as_table
-            .get("python_var_name")
-            .expect(("Unit ".to_string() + &key + "  does not have python_var_name").as_str());
-        let python_var_name = value
-            .as_str()
-            .expect(("Unit ".to_string() + &key + "  python_var_name not a string").as_str());
-
+    for (name, abbr, python_var_name) in base_unit_vec.iter() {
         // write to string buffer
         base_units_str.push('\n');
         base_units_str.push_str(python_var_name);
         base_units_str.push_str(" = Firkin.unit('");
-        base_units_str.push_str(key.as_str());
+        base_units_str.push_str(name.as_str());
         base_units_str.push_str("')");
     }
 
@@ -246,7 +237,7 @@ fn get_unit_def_from_csv_line(
 fn write_derived_units_rs(unit_def_vec: &Vec<UnitDef>) {
     let mut derived_units_rs = "\
 /// This file was generated automatically by the build script.
-/// If you want to add units, edit `unit_definitions\\derived_units.toml`
+/// If you want to add units, edit `unit_definitions\\derived_units.csv`
 /// If you want to change file layout, edit `build.rs`
 
 use super::base_units::UnitDefStatic;
@@ -311,7 +302,7 @@ fn write_aliases() {
 
     let mut aliases_rs = "\
 /// This file was generated automatically by the build script.
-/// If you want to add units, edit `unit_definitions\\derived_units.toml`
+/// If you want to add units, edit `unit_definitions\\aliases.csv`
 /// If you want to change file layout, edit `build.rs`
 
 pub(crate) const UNIT_ALIASES: &[(&'static str, &'static str)] = &["
@@ -327,33 +318,21 @@ pub(crate) const UNIT_ALIASES: &[(&'static str, &'static str)] = &["
     fs::write(get_rs_path("aliases.rs"), aliases_rs);
 }
 
-fn write_log_units_rs(config: &toml::Table) {
+fn write_log_units_rs(log_unit_vec: &Vec<LogUnitConfigLine>) {
     let mut log_units_rs = "\
 /// This file was generated automatically by the build script.
-/// If you want to add units, edit `unit_definitions\\log_units.toml`
+/// If you want to add units, edit `unit_definitions\\log_units.csv`
 /// If you want to change file layout, edit `build.rs`
 
 #[rustfmt::skip]
-pub(crate) const LOG_UNITS: &[(&'static str, &'static str, f64)] = &["
+pub(crate) const LOG_UNITS: &[(&'static str, &'static str, f64, f64)] = &["
         .to_string();
 
-    for (key, value) in config.iter() {
-        let as_table = value
-            .as_table()
-            .expect("base_units.toml should not have root table");
-        let abbr = as_table
-            .get("abbr")
-            .expect(("Unit ".to_string() + &key + "  does not have abbr").as_str());
-        let scaling_factor = as_table
-            .get("scaling_factor")
-            .expect(("Unit ".to_string() + &key + "  does not have scaling_factor").as_str());
-
+    for (name, abbr, python_var_name, scale_factor, scale_factor_per) in log_unit_vec.iter() {
         log_units_rs.push_str(
             format!(
-                "\n    (\"{}\", \"{}\", {:?}),",
-                key,
-                abbr.as_str().expect("Not a string"),
-                scaling_factor.as_float().expect("Not a float")
+                "\n    (\"{}\", \"{}\", {:?}, {:?}),",
+                name, abbr, scale_factor, scale_factor_per
             )
             .as_str(),
         );
@@ -364,38 +343,32 @@ pub(crate) const LOG_UNITS: &[(&'static str, &'static str, f64)] = &["
     fs::write(get_rs_path("log_units.rs"), log_units_rs);
 }
 
-fn write_log_units_py(config: &toml::Table) {
+fn write_log_units_py(log_unit_vec: &Vec<LogUnitConfigLine>) {
     let mut log_units_py = "from firkin import LogFirkin\n".to_string();
 
-    for (key, value) in config.iter() {
-        let as_table = value
-            .as_table()
-            .expect("base_units.toml should not have root table");
-        let python_var_name = as_table
-            .get("python_var_name")
-            .expect(("Unit ".to_string() + &key + "  does not have python_var_name").as_str());
-
-        log_units_py.push_str(
-            format!(
-                "\n{} = LogFirkin.unit(\"{}\")",
-                key,
-                python_var_name.as_str().expect("Not a string"),
-            )
-            .as_str(),
-        );
+    for (name, abbr, python_var_name, scale_factor, scale_factor_per) in log_unit_vec.iter() {
+        log_units_py
+            .push_str(format!("\n{} = LogFirkin.unit(\"{}\")", python_var_name, name,).as_str());
     }
 
     fs::write(get_py_path("log_units.py"), log_units_py);
 }
 
 fn write_log_units() {
-    let config_str =
-        fs::read_to_string(get_cfg_path("log_units.toml")).expect("Failed to read file");
-    let log_unit_config: toml::Table = toml::from_str(&config_str).expect("Failed to parse toml");
+    let mut unit_def_vec: Vec<LogUnitConfigLine> = vec![];
 
-    write_log_units_rs(&log_unit_config);
+    let mut derived_unit_reader = csv::Reader::from_path(get_cfg_path("log_units.csv"))
+        .expect("Could not locate log units config");
 
-    write_log_units_py(&log_unit_config);
+    for line in derived_unit_reader.deserialize() {
+        let line: LogUnitConfigLine = line.expect("Could not parse line");
+
+        unit_def_vec.push(line);
+    }
+
+    write_log_units_rs(&unit_def_vec);
+
+    write_log_units_py(&unit_def_vec);
 }
 
 fn main() {
