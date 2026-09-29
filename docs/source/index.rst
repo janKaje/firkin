@@ -30,4 +30,4 @@ Other notable features include:
 
    Getting Started <getting_started>
    User Guide <user_guide/index>
-   API Documentation <api/index>
+   API Documentation <api/firkin>

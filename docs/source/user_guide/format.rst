@@ -28,3 +28,6 @@ Python's ``round`` function works well with Firkins, or you can use the ``round_
 >>> energy_consumption.round_sfig(3)
 2.14 [W.hr]
 
+The automatic simplification that happens during normal arithmetic should be enough to prevent needlessly complicated unit collections.
+However, if it fails, you can try the ``simplify`` or ``simplify_inplace`` methods. 
+This algorithm can be somewhat slow, so avoid using it where performace is important, instead favoring the ``as_unit`` method.
