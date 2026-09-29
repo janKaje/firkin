@@ -93,67 +93,15 @@ class Firkin:
 class LogFirkin:
 
     @classmethod
-    def unit(cls, query:str) -> Self:
-        """
-        Create a new LogFirkin instance by searching for a unit name or symbol.
+    def unit(cls, query:str) -> Self: ...
 
-        Parameters
-        ----------
-        query : str
-            The query by which to look up the unit. Currently, only the neper
-            (Np), bel (B), and decibel (dB) are supported.
+    def as_unit(self, other:Self) -> Self: ...
 
-        Returns
-        -------
-        LogFirkin
-            The new LogFirkin instance.
-        """
-        ...
+    def as_number(self, other:Optional[Self]=None) -> float: ...
 
-    def as_unit(self, other:Self) -> Self:
-        """
-        Converts self into the unit of other.
-        """
+    def as_unitless(self) -> float: ...
 
-    def as_number(self, other:Optional[Self]=None) -> float:
-        """
-        Returns the unit value of self, optionally converted to another unit
-        using the other parameter. Note that this does not resolve the
-        logarithmic ratio like as_unitless does.
-
-        Examples
-        --------
-        >>> from firkin.units import decibel as dB, bel
-        >>> my_ratio = 12*dB
-        >>> my_ratio
-        12 [dB]
-        >>> my_ratio.as_unitless()
-        15.848931924611145
-        >>> my_ratio.as_number()
-        12.0
-        >>> my_ratio.as_number(bel)
-        1.2000000000000002
-        """
-
-    def as_unitless(self) -> float:
-        """
-        Returns the instance as a unitless number, converting the unit into an
-        appropriate logarithmic ratio.
-
-        Examples
-        --------
-        >>> from firkin.units import decibel as dB
-        >>> ratio = 21*dB
-        >>> ratio.as_unitless()
-        125.89254117941687
-        """
-        ...
-
-    def round_sfig(self, n_sig_figs:int) -> float:
-        """
-        Returns the equivalent of `as_unitless`, rounded to the given number of
-        significant figures.
-        """
+    def round_sfig(self, n_sig_figs:int) -> float: ...
 
     def __str__(self) -> str: ...
 
