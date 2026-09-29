@@ -168,6 +168,7 @@ pub(crate) fn search_for_log_unit_name(query: &str) -> Option<LogUnit> {
                 name: log_unit.0.to_string(),
                 abbr: log_unit.1.to_string(),
                 scale: log_unit.2,
+                scale_per: log_unit.3,
             });
         }
     }

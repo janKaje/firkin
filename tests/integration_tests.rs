@@ -313,7 +313,7 @@ assert str(2*test - 0.5*test) == "3 [B]", f"Was actually {2*test - 0.5*test}"
 assert str(test**1.1) == "158.48931924611142", f"Was actually {test**1.1}"
 assert str(1.1**test) == "13780.61233982238", f"Was actually {1.1**test}"
 assert str(120/test) == "1.2", f"Was actually {120/test}"
-assert str(test.as_unit(decibel)) == "19.999999999999996 [dB]", f"Was actually {test.as_unit(decibel)}"
+assert str(test.as_unit(decibel)) == "20 [dB]", f"Was actually {test.as_unit(decibel)}"
 assert str(test.as_number()) == "2.0", f"Was actually {test.as_number()}"
 "#,
             None,
