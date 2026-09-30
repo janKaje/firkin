@@ -82,4 +82,27 @@ def load_unit_definitions():
     derived_units.to_csv(path.join(DIR_PATH, "docs", "source", "api", "firkin.units", "derived_units.csv"), index=False)
     log_units.to_csv(path.join(DIR_PATH, "docs", "source", "api", "firkin.units", "log_units.csv"), index=False)
 
+def load_constant_definitions():
+    constants = pd.read_csv(path.join(DIR_PATH, "unit_definitions", "constants.csv"))
+    aliases = pd.read_csv(path.join(DIR_PATH, "unit_definitions", "constant_aliases.csv"))
+
+    constants = constants.drop(["value", "units"], axis=1)
+    constants["aliases"] = ""
+
+    for i, aliasrow in aliases.iterrows():
+        for j, row in constants.iterrows():
+            if row["name"] == aliasrow["name"]:
+                constants.loc[j, "aliases"] += "\n- " + aliasrow["alias"]
+
+    rename_mapper = {
+        "name": "Name",
+        "python_var_name": "Python Variable Name",
+        "aliases": "Aliases",
+    }
+
+    constants = constants.rename(rename_mapper, axis=1)
+
+    constants.to_csv(path.join(DIR_PATH, "docs", "source", "api", "firkin.constants", "constants.csv"), index=False)
+
 load_unit_definitions()
+load_constant_definitions()

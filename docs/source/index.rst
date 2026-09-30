@@ -25,7 +25,7 @@ Other notable features include:
 * Compatibility for logarithmic units such as the ``decibel`` and ``semitone``
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
    Getting Started <getting_started>

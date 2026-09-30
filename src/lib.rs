@@ -95,7 +95,7 @@ mod firkin {
         8.31446261815324 [J/K.mol]
 
         Due to the fact that the speed of light is sometimes used as a unit in
-        certain fields of physics, it can be used as either a unit or a 
+        certain fields of physics, it can be used as either a unit or a
         constant.
 
         >>> c_unit = Firkin.unit("light speed")
@@ -122,14 +122,14 @@ mod firkin {
             Ok(Firkin::empty_unit())
         }
 
-        /** Defines a custom Firkin unit. 
-        
-        Note that this custom unit cannot be 
-        accessed using string lookups, and is solely tied to the Firkin 
+        /** Defines a custom Firkin unit.
+
+        Note that this custom unit cannot be
+        accessed using string lookups, and is solely tied to the Firkin
         returned by this method. The unit also cannot be a non-absolute
         temperature unit.
-        
-        Base units can not be created using this 
+
+        Base units can not be created using this
         method either—if the definition does not include units, the custom unit
         will be considered dimensionless.
 
@@ -184,9 +184,9 @@ mod firkin {
 
         /** Similar to the .as_unit() method, but returns itself as a number.
 
-        :param other: 
-            The units to coerce self into. If None, will return without 
-            altering the units. Strings will attempt to use .unit() algorithm, 
+        :param other:
+            The units to coerce self into. If None, will return without
+            altering the units. Strings will attempt to use .unit() algorithm,
             and numbers will be considered unitless.
         :type other: Firkin, LogFirkin, float, int, str, None, default None
         :param scale: If true, returns the equivalent of (self/other).as_unitless().
@@ -227,7 +227,7 @@ mod firkin {
             }
         }
 
-        /** If the object is unitless, returns its numerical value. Otherwise an 
+        /** If the object is unitless, returns its numerical value. Otherwise an
         error is raised.
 
         :return: The numerical value of self.
@@ -507,7 +507,7 @@ mod firkin {
             self.__log10__()
         }
 
-        /** Returns a more descriptive version of the usual unit string, with unit 
+        /** Returns a more descriptive version of the usual unit string, with unit
         symbols replaced by unit names. */
         fn descriptive(&mut self) -> PyResult<String> {
             self.ss_inpl_internal()?;
@@ -773,7 +773,7 @@ mod firkin {
     another LogFirkin instance, remains a LogFirkin. In any other case,
     resolves the logarithmic ratio and turns into a float.
 
-    Generally, these will be accessed through ``firkin.units``. If desired, 
+    Generally, these will be accessed through ``firkin.units``. If desired,
     they can also be accessed through the ``LogFirkin.unit`` classmethod.
 
     Examples
@@ -819,9 +819,7 @@ mod firkin {
             let unit = match search_for_log_unit_name(query) {
                 Some(unit) => unit,
                 None => {
-                    return Err(
-                        FirkinError::LogUnitNotFound(query.to_string()).into(),
-                    );
+                    return Err(FirkinError::LogUnitNotFound(query.to_string()).into());
                 }
             };
             Ok(LogFirkin { unit, value: 1.0 })
