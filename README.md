@@ -8,9 +8,9 @@ Unit-attached numbers for scientific or engineering calculations.
 > [!NOTE]
 > These links are broken, but will be fixed after the 0.3.1 release.
 
-* Getting Started
-* User Guide
-* API Documentation
+* [Getting Started](https://firkin.readthedocs.io/en/latest/getting_started.html)
+* [User Guide](https://firkin.readthedocs.io/en/latest/user_guide/index.html)
+* [API Documentation](https://firkin.readthedocs.io/en/latest/api/firkin.html)
 
 ## About
 
