@@ -27,6 +27,6 @@ The name or symbol can be prefixed. A list of examples of this formatting is sho
 
 Many units also have certain inbuilt aliases to make lookups easier, i.e. *micron* is equivalent to *micrometer*, *deg C* is equivalent to *degree Celcius*, etc.
 
-All prefixes from the `SI unit system <https://www.bipm.org/en/measurement-units/si-prefixes>`_ have been implemented, as well as the binary power prefixes *kibi-* through *yobi-*, and the mostly-obsolete decimal prefix *myria-*, which denotes a factor of 10^4.
+All prefixes from the `SI unit system <https://www.bipm.org/en/measurement-units/si-prefixes>`_ have been implemented, as well as the binary power prefixes *kibi-* through *quebi-*, and the mostly-obsolete decimal prefix *myria-*, which denotes a factor of 10\ :sup:`4`.
 
 This algorithm of converting strings into units is also used when :ref:`converting strings on the fly <convert_string_arith>` and in the :ref:`as_unit and as_number methods <as_unit>`.

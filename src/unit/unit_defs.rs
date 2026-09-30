@@ -28,6 +28,8 @@ const STANDARD_PREFIXES: &[PrefixDef] = &[
     ("exbi", "Ei", (1i64 << 60) as f64),
     ("zebi", "Zi", (1i128 << 70) as f64),
     ("yobi", "Yi", (1i128 << 80) as f64),
+    ("robi", "Ri", (1i128 << 90) as f64),
+    ("quebi", "Qi", (1i128 << 100) as f64),
     ("quetta", "Q", 1e30),
     ("ronna", "R", 1e27),
     ("yotta", "Y", 1e24),
