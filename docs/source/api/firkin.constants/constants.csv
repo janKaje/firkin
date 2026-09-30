@@ -1,0 +1,30 @@
+Name,Python Variable Name,Aliases
+light speed,light_speed,"
+- c
+- speed of light
+- lightspeed"
+planck's constant,planck_const,"
+- planck"
+reduced planck's constant,reduced_planck_const,
+boltzmann's constant,boltzmann_const,"
+- boltzmann"
+electron charge,electron_charge,"
+- elementary charge"
+electron mass,electron_mass,
+proton mass,proton_mass,
+neutron mass,neutron_mass,
+avogadro's constant,avogadro_const,"
+- avogadro
+- avogadro's number
+- N_A"
+gravitational constant,grav_const,
+earth gravity,earth_gravity,
+stefan-boltzmann constant,stefan_boltzmann_const,
+ideal gas constant,gas_const,"
+- gas constant
+- molar gas constant"
+faraday constant,faraday_const,"
+- faraday
+- faraday's constant"
+vacuum permittivity,vacuum_permittivity,
+vacuum permeability,vacuum_permeability,

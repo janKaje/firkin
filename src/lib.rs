@@ -1,4 +1,4 @@
-// #![allow(unused)]
+//! Unit-attached numbers for scientific or engineering calculations.
 
 use pyo3::prelude::*;
 
@@ -18,7 +18,10 @@ mod firkin {
     use crate::unit::UnitCollection;
     use crate::unit::search_for_log_unit_name;
 
-    /// Unit! yippee
+    /// A unit-attached number that handles conversions and consistency checks
+    /// during normal arithmetic and general use. Initialize with the ``unit``,
+    /// ``constant``, ``empty``, or ``custom`` classmethods, or by importing
+    /// prebuilt units from ``firkin.units``.
     #[pyclass(from_py_object)]
     #[derive(Clone)]
     struct Firkin {
@@ -28,12 +31,45 @@ mod firkin {
 
     #[pymethods]
     impl Firkin {
+        /// Create a new Firkin instance by searching for a unit name or symbol.
+        ///
+        /// :param query: The query by which to look up units in the database.
+        ///     Unit names and symbols are both allowed. Prefixes such as kilo or
+        ///     milli can be attached to unit names, and prefix symbols such as
+        ///     M or c can be attached to unit symbols.
+        ///
+        ///     The query can also contain multiple units, separated by . and / as
+        ///     unit representations are. See examples below.
+        /// :type query: str
+        /// :return: The new Firkin instance.
+        /// :rtype: Firkin
+        /// :raise LookupError: If the unit name does not correspond to an entry in the database.
+        ///
+        /// Examples
+        /// ^^^^^^^^
+        /// >>> from firkin import Firkin
+        /// >>> Firkin.unit("liter")
+        /// 1 [L]
+        /// >>> Firkin.unit("kilomile")
+        /// 1 [kmi]
+        /// >>> Firkin.unit("megamile").as_unit("mile")
+        /// 1000000 [mi]
+        /// >>> Firkin.unit("eV")
+        /// 1 [eV]
+        ///
+        /// >>> newton = Firkin.unit("kg.m/s2")
+        /// >>> newton
+        /// 1 [kg.m/s2]
+        /// >>> newton.as_unit("N")
+        /// 1 [N]
+        /// >>> newton * Firkin.unit("second")**2
+        /// 1 [kg.m]
         #[classmethod]
-        fn unit(_cls: &Bound<'_, PyType>, unit_name_or_symbol: &str) -> PyResult<Self> {
-            let unit = match UnitCollection::from_unit_name(unit_name_or_symbol) {
+        fn unit(_cls: &Bound<'_, PyType>, query: &str) -> PyResult<Self> {
+            let unit = match UnitCollection::from_unit_name(query) {
                 Some(unit) => unit,
                 None => {
-                    return Err(FirkinError::UnitNotFound(unit_name_or_symbol.to_string()).into());
+                    return Err(FirkinError::UnitNotFound(query.to_string()).into());
                 }
             };
 
@@ -43,19 +79,77 @@ mod firkin {
             })
         }
 
+        /** Create a new Firkin instance by searching for the name of a constant.
+
+        :param query: The query by which to find the constant. Generally the constant's
+            name, but can be an abbreviation (i.e. `c` for `light speed`)
+        :type query: str
+        :return: The new Firkin instance
+        :rtype: Firkin
+        :raise LookupError: If the constant name does not correspond to an entry in the database.
+
+        Examples
+        ^^^^^^^^
+        >>> from firkin import Firkin
+        >>> Firkin.constant("gas constant")
+        8.31446261815324 [J/K.mol]
+
+        Due to the fact that the speed of light is sometimes used as a unit in
+        certain fields of physics, it can be used as either a unit or a
+        constant.
+
+        >>> c_unit = Firkin.unit("light speed")
+        >>> c_unit
+        1 [c]
+        >>> c_constant = Firkin.constant("light speed")
+        >>> c_constant
+        299792458 [m/s]
+        >>> c_constant.as_unit(c_unit)
+        1 [c]
+        >>> ("keV"/c_unit**2).as_unit("amu") # keV/c2 as atomic mass unit
+        0.000001073545754277516 [amu] */
         #[classmethod]
-        fn constant(_cls: &Bound<'_, PyType>, constant_name: &str) -> PyResult<Self> {
-            match Firkin::constant_query_internal(constant_name) {
+        fn constant(_cls: &Bound<'_, PyType>, query: &str) -> PyResult<Self> {
+            match Firkin::constant_query_internal(query) {
                 Ok(r) => Ok(r),
                 Err(e) => Err(e.into()),
             }
         }
 
+        /// Returns a Firkin with value 1 and no units attached.
         #[classmethod]
         fn empty(_cls: &Bound<'_, PyType>) -> PyResult<Self> {
             Ok(Firkin::empty_unit())
         }
 
+        /** Defines a custom Firkin unit.
+
+        Note that this custom unit cannot be
+        accessed using string lookups, and is solely tied to the Firkin
+        returned by this method. The unit also cannot be a non-absolute
+        temperature unit.
+
+        Base units can not be created using this
+        method either—if the definition does not include units, the custom unit
+        will be considered dimensionless.
+
+        :param name: The name of the new unit.
+        :type name: str
+        :param abbr: The abbreviation or unit symbol for the new unit.
+        :type abbr: str
+        :param definition: The definition of the custom unit.
+        :type definition: Firkin, LogFirkin, float, int, or str
+        :return: The newly made custom unit.
+        :rtype: Firkin
+
+        Examples
+        ^^^^^^^^
+        >>> usd = Firkin.unit("USD")
+        >>> eur = Firkin.custom("euro", "EUR", 1.16537 * usd)
+        >>> eur
+        1 [EUR]
+        >>> usd.as_unit(eur)
+        0.858096570188009 [EUR] */
         #[classmethod]
         fn custom(
             _cls: &Bound<'_, PyType>,
@@ -72,6 +166,14 @@ mod firkin {
             })
         }
 
+        /** Returns a unit idential to self, but with the units of other.
+
+        :param other: The units to coerce self into. Strings will attempt to use .unit()
+            algorithm, and numbers will be considered unitless.
+        :type other: Firkin, LogFirkin, float, int, str
+        :return: The unit identical to self with the units of other.
+        :rtype: Firkin
+        :raise TypeError: If the units of self and other are incompatible. */
         fn as_unit(&self, other: UnitCoercible) -> PyResult<Firkin> {
             let other: Firkin = other.into();
             match self.as_unit_internal(&other.unit_collection) {
@@ -80,6 +182,34 @@ mod firkin {
             }
         }
 
+        /** Similar to the .as_unit() method, but returns itself as a number.
+
+        :param other:
+            The units to coerce self into. If None, will return without
+            altering the units. Strings will attempt to use .unit() algorithm,
+            and numbers will be considered unitless.
+        :type other: Firkin, LogFirkin, float, int, str, None, default None
+        :param scale: If true, returns the equivalent of (self/other).as_unitless().
+        :type scale: bool, default False
+        :return: The numerical value of self, in the units of other.
+        :rtype: float
+        :raise TypeError: If the units of self and other are incompatible.
+
+        Examples
+        ^^^^^^^^
+
+        >>> from firkin import Firkin
+        >>> usd = Firkin.unit("USD")
+        >>> gbp = 1.35851 * usd
+        >>> amt = 123.45 * usd
+        >>> amt.as_number(gbp) # trying to convert from usd to gbp
+        123.45
+        >>> amt.as_number(gbp, True) # correct response
+        90.87161669770558
+        >>> (amt/gbp).as_unitless() # equivalent to prev
+        90.87161669770558
+        >>> amt/gbp # returns a unitless Firkin instance
+        90.87161669770558 [] */
         #[pyo3(signature = (other=None, scale=false))]
         fn as_number(&self, other: Option<UnitCoercible>, scale: bool) -> PyResult<f64> {
             match other {
@@ -97,6 +227,12 @@ mod firkin {
             }
         }
 
+        /** If the object is unitless, returns its numerical value. Otherwise an
+        error is raised.
+
+        :return: The numerical value of self.
+        :rtype: float
+        :raise TypeError: If self is not unitless. */
         fn as_unitless(&self) -> PyResult<f64> {
             match self.as_number_internal(&UnitCollection::empty_collection(), 1.0) {
                 Ok(r) => Ok(r),
@@ -104,6 +240,8 @@ mod firkin {
             }
         }
 
+        /** Similar to as_unit, but takes no arguments and instead returns self as
+        base units (SI units + USD for currency) */
         fn as_base_units(&self) -> PyResult<Firkin> {
             match self.as_unit_internal(&self.unit_collection.get_base_units()) {
                 Ok(r) => Ok(r),
@@ -111,12 +249,15 @@ mod firkin {
             }
         }
 
+        /** Returns a copy of self, with the value rounded to n_sig_figs
+        significant figures. Similar to self.__round__(). */
         fn round_sfig(&mut self, n_sig_figs: i32) -> PyResult<Firkin> {
             self.__round__(Some(
                 n_sig_figs - 1 - (self.value.abs().log10().floor() as i32),
             ))
         }
 
+        /// Simplifies the units of self, removing dimensionless unit subsets.
         fn simplify(&self) -> PyResult<Firkin> {
             match self.simplify_internal() {
                 Ok(i) => Ok(i),
@@ -124,6 +265,8 @@ mod firkin {
             }
         }
 
+        /** Simplifies the units of self, removing dimensionless unit subsets.
+        Modifies self in place without returning anything. */
         fn simplify_inplace(&mut self) -> PyResult<()> {
             self.simplify_inplace_internal()?;
             Ok(())
@@ -318,6 +461,7 @@ mod firkin {
             Ok(self.value)
         }
 
+        /// Round the internal value to ndigits decimal places.
         #[pyo3(signature=(ndigits=None))]
         fn __round__(&mut self, ndigits: Option<i32>) -> PyResult<Firkin> {
             self.ss_inpl_internal()?;
@@ -363,6 +507,8 @@ mod firkin {
             self.__log10__()
         }
 
+        /** Returns a more descriptive version of the usual unit string, with unit
+        symbols replaced by unit names. */
         fn descriptive(&mut self) -> PyResult<String> {
             self.ss_inpl_internal()?;
             Ok(format!(
@@ -372,6 +518,7 @@ mod firkin {
             ))
         }
 
+        /// Returns a LaTeX-formatted string representing the object.
         fn latex(&mut self) -> PyResult<String> {
             self.ss_inpl_internal()?;
             Ok(format!(
@@ -619,6 +766,38 @@ mod firkin {
         }
     }
 
+    /** A unit-attached number specifically for units of logarithmic ratios. Can
+    only contain one unit at a time.
+
+    When multiplied or divided by a number, or when added to or subtracted from
+    another LogFirkin instance, remains a LogFirkin. In any other case,
+    resolves the logarithmic ratio and turns into a float.
+
+    Generally, these will be accessed through ``firkin.units``. If desired,
+    they can also be accessed through the ``LogFirkin.unit`` classmethod.
+
+    Examples
+    ^^^^^^^^
+    >>> from firkin.units import decibel as dB, bel, neper
+    >>> ratio = 21*dB
+    >>> ratio
+    21 [dB]
+    >>> ratio2 = 2*bel
+    >>> ratio + ratio2
+    41 [dB]
+    >>> 2*ratio2
+    4 [B]
+    >>> ratio3 = 1.5*neper
+    >>> ratio3/1.5
+    1 [Np]
+    >>> ratio.as_unitless()
+    125.89254117941687
+    >>> ratio - 100
+    25.89254117941687
+    >>> 1.0/ratio
+    0.007943282347242805
+    >>> ratio2**2
+    10000.0 */
     #[pyclass(from_py_object)]
     #[derive(Clone)]
     struct LogFirkin {
@@ -628,23 +807,49 @@ mod firkin {
 
     #[pymethods]
     impl LogFirkin {
+        /** Create a new LogFirkin instance by searching for a unit name or symbol.
+
+        :param query: The query by which to look up the unit. Currently, only the neper
+            (Np), bel (B), and decibel (dB) are supported.
+        :type query: str
+        :return: The new LogFirkin instance.
+        :rtype: LogFirkin */
         #[classmethod]
-        fn unit(_cls: &Bound<'_, PyType>, unit_name_or_symbol: &str) -> PyResult<Self> {
-            let unit = match search_for_log_unit_name(unit_name_or_symbol) {
+        fn unit(_cls: &Bound<'_, PyType>, query: &str) -> PyResult<Self> {
+            let unit = match search_for_log_unit_name(query) {
                 Some(unit) => unit,
                 None => {
-                    return Err(
-                        FirkinError::LogUnitNotFound(unit_name_or_symbol.to_string()).into(),
-                    );
+                    return Err(FirkinError::LogUnitNotFound(query.to_string()).into());
                 }
             };
             Ok(LogFirkin { unit, value: 1.0 })
         }
 
+        /// Converts self into the units of other.
         fn as_unit(&self, other: LogFirkin) -> PyResult<LogFirkin> {
             Ok(self.as_unit_internal(&other))
         }
 
+        /** Returns the unit value of self, optionally converted to another unit
+        using the other parameter. Note that this does not resolve the
+        logarithmic ratio like as_unitless does.
+
+        :param other: The units to coerce self into. If None, will simply
+            return the internal value with no changes.
+        :type other: LogFirkin or None, default None
+
+        Examples
+        ^^^^^^^^
+        >>> from firkin.units import decibel as dB, bel
+        >>> my_ratio = 12*dB
+        >>> my_ratio
+        12 [dB]
+        >>> my_ratio.as_unitless()
+        15.848931924611145
+        >>> my_ratio.as_number()
+        12.0
+        >>> my_ratio.as_number(bel)
+        1.2000000000000002 */
         #[pyo3(signature = (other=None))]
         fn as_number(&self, other: Option<LogFirkin>) -> PyResult<f64> {
             match other {
@@ -653,10 +858,21 @@ mod firkin {
             }
         }
 
+        /** Returns the instance as a unitless number, converting the unit into an
+        appropriate logarithmic ratio.
+
+        Examples
+        ^^^^^^^^
+        >>> from firkin.units import decibel as dB
+        >>> ratio = 21*dB
+        >>> ratio.as_unitless()
+        125.89254117941687 */
         fn as_unitless(&self) -> PyResult<f64> {
             Ok(self.resolve())
         }
 
+        /// Returns the equivalent of `as_unitless`, rounded to the given number of
+        /// significant figures.
         fn round_sfig(&mut self, n_sig_figs: i32) -> PyResult<f64> {
             self.__round__(Some(
                 n_sig_figs - 1 - (self.value.abs().log10().floor() as i32),
