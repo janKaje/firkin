@@ -117,4 +117,54 @@ This method converts the Firkin into the 8 base units that represent the basic d
 >>> horsepower.as_base_units()
 745.6998715822701 [kg.m2/s3]
 
+Practical Example
+^^^^^^^^^^^^^^^^^
+
+Say you want to analyze the rate of heat transfer across a single-pane window. You measure the window's area and thickness, which are 4.5 sq ft and 1/4 inch, respectively. Outside it's 100 °F and inside you keep it cool at 70 °F.
+
+.. code-block:: python
+
+    from firkin import Firkin
+    from firkin.units import foot, inch, deg_F, watt
+
+    # define window area
+    window_area = 4.5 * foot ** 2
+    window_width = 0.25 * inch
+
+    # define temperatures
+    outside_temperature = 100 * deg_F
+    inside_temperature = 70 * deg_F
+
+You find the thermal conductivity of the glass online. Using your engineering judgment, you assume some convection coefficients.
+
+.. code-block:: python
+
+    # define thermal conductivity
+    glass_thermal_conductivity = 1.05 * watt / "m.K" # 1.05 W/m.K
+
+    # assume values for convection coefficients
+    inside_convection_coefficient = 2 * watt / "m2.K" # 2 W/m2.K
+    outside_convection_coefficient = 10 * watt / "m2.K" # 10 W/m2.K
+
+All that's left is the final calculation:
+
+.. code-block:: python
+
+    # calculate thermal resistances 
+    inside_resistance = 1/inside_convection_coefficient/window_area
+    window_resistance = window_width/glass_thermal_conductivity/window_area
+    outside_resistance = 1/outside_convection_coefficient/window_area
+
+    # sum
+    overall_resistance = inside_resistance + window_resistance + outside_resistance
+
+    # calculate heat flow
+    heat_flow = (outside_temperature - inside_temperature)/overall_resistance
+
+    print(heat_flow.as_unit("W"))
+
+    # Output: 11.496997564233522 [W]
+
+Seems like it might be time to invest in some better-insulated windows.
+
 That should be enough information to get you started with using Firkin. For more in-depth information, see the :doc:`user_guide/index` or :doc:`api/firkin`
