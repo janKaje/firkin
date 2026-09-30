@@ -25,7 +25,7 @@ dependencies = [
 
 [[package]]
 name = "firkin_units"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "csv",
  "pyo3",

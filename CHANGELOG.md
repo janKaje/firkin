@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.1] - 2026-09-30
+
+## Fixed
+
+- Gravitational constant units fixed
+- Log units have improved format
+- Unit definitions switched to csv format
+- Constant definitions moved to csv format
+
+## Added
+
+- Documentation through readthedocs.io
+- Two new binary prefixes: roni and quebi
+
 ## [0.3.0] - 2026-09-25
 
 ### Added
