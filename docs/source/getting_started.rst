@@ -73,8 +73,8 @@ Unit Conversions
 
 .. _as_unit:
 
-as_unit
-^^^^^^^
+as_unit, into_unit
+^^^^^^^^^^^^^^^^^^
 
 The primary way to convert a Firkin to a different unit is the ``as_unit`` method. You'll need to supply a set of units, whether it's with variables or a string query.
 
@@ -88,6 +88,12 @@ String queries can also be collections of units, formatted like so:
 
 >>> kJ.as_unit("g.mile2/minute2")
 1389.9677707528049 [g.mi2/min2]
+
+The ``into_unit`` method does not return anything, instead interally modifying the variable to match the new units.
+
+>>> volume.into_unit("gal")
+>>> volume
+26417.205235814843 [gal]
 
 as_number, as_unitless
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -118,7 +124,7 @@ This method converts the Firkin into the 8 base units that represent the basic d
 745.6998715822701 [kg.m2/s3]
 
 Practical Example
-^^^^^^^^^^^^^^^^^
+-----------------
 
 Say you want to analyze the rate of heat transfer across a single-pane window. You measure the window's area and thickness, which are 4.5 sq ft and 1/4 inch, respectively. Outside it's 100 °F and inside you keep it cool at 70 °F.
 

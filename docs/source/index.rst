@@ -24,6 +24,8 @@ Other notable features include:
 * Automatic string parsing: ``meter/"second"`` correctly interprets itself as ``meter/second``
 * Compatibility for logarithmic units such as the ``decibel`` and ``semitone``
 
+The name "Firkin" comes from the firkin, an antiquated unit of volume and mass, used in the humorous `FFF system <https://en.wikipedia.org/wiki/FFF_system>`_ of units.
+
 .. toctree::
    :maxdepth: 3
    :caption: Contents:

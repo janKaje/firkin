@@ -27,6 +27,8 @@ Other notable features include:
 * Automatic string parsing: ``meter/"second"`` correctly interprets itself as ``meter/second``
 * Compatibility for logarithmic units such as the ``decibel`` and ``semitone``
 
+The name "Firkin" comes from the firkin, an antiquated unit of volume and mass, used in the humorous [FFF system](https://en.wikipedia.org/wiki/FFF_system) of units.
+
 ## Thanks to
 
 Firkin has been heavily inspired by both [Unum](https://pypi.org/project/Unum/) and [fend](https://github.com/printfn/fend). Some implementation details were taken or adapted from both, so many thanks to the creators and contributors of those projects.

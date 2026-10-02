@@ -182,6 +182,20 @@ mod firkin {
             }
         }
 
+        /** Modifies the units of self in place and returns None.
+
+        :param other: The units to coerce self into. Strings will attempt to use .unit()
+            algorithm, and numbers will be considered unitless.
+        :type other: Firkin, LogFirkin, float, int, str
+        :raise TypeError: If the units of self and other are incompatible. */
+        fn into_unit(&mut self, other: UnitCoercible) -> PyResult<()> {
+            let other: Firkin = other.into();
+            let new = self.as_unit_internal(&other.unit_collection)?;
+            self.value = new.value;
+            self.unit_collection = new.unit_collection;
+            Ok(())
+        }
+
         /** Similar to the .as_unit() method, but returns itself as a number.
 
         :param other:
