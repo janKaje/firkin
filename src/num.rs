@@ -3,6 +3,7 @@
 mod sign;
 mod smallrational;
 mod int;
+mod rat;
 // mod number;
 
 // use number::Number;

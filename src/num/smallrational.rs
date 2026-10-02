@@ -118,20 +118,118 @@ impl SmallRational {
         new.reduce_inplace()
     }
 
-    pub(crate) fn pow(&self, other: i32) -> Option<Self> {
+    pub(crate) fn checked_pow(&self, other: i32) -> Option<Self> {
         if other >= 0 {
             SmallRational::try_new(
-                (self.numerator as u128).pow(other.unsigned_abs()),
-                (self.denominator as u128).pow(other.unsigned_abs()),
+                (self.numerator as u128).checked_pow(other.unsigned_abs())?,
+                (self.denominator as u128).checked_pow(other.unsigned_abs())?,
                 self.is_positive() || other % 2 == 0,
             )
         } else {
             SmallRational::try_new(
-                (self.denominator as u128).pow(other.unsigned_abs()),
-                (self.numerator as u128).pow(other.unsigned_abs()),
+                (self.denominator as u128).checked_pow(other.unsigned_abs())?,
+                (self.numerator as u128).checked_pow(other.unsigned_abs())?,
                 self.is_positive() || other % 2 == 0,
             )
         }
+    }
+
+    pub(crate) fn checked_add(&self, rhs: &SmallRational) -> Option<Self> {
+        let snum = self.numerator as u128;
+        let sden = self.denominator as u128;
+        let rnum = rhs.numerator as u128;
+        let rden = rhs.denominator as u128;
+        match (&self.sign, &rhs.sign) {
+            (Positive, Positive) => SmallRational::try_new(
+                snum.checked_mul(rden)?.checked_add(rnum.checked_mul(sden)?)?,
+                sden.checked_mul(rden)?,
+                true,
+            ),
+            (Positive, Negative) => self.checked_sub(&-rhs),
+            (Negative, Positive) => rhs.checked_sub(&-self),
+            (Negative, Negative) => SmallRational::try_new(
+                snum.checked_mul(rden)?.checked_add(rnum.checked_mul(sden)?)?,
+                sden.checked_mul(rden)?,
+                false,
+            ),
+        }
+    }
+
+    pub(crate) fn checked_sub(&self, rhs: &SmallRational) -> Option<Self> {
+        let snum = self.numerator as u128;
+        let sden = self.denominator as u128;
+        let rnum = rhs.numerator as u128;
+        let rden = rhs.denominator as u128;
+        match (&self.sign, &rhs.sign) {
+            (Positive, Positive) => {
+                if self == rhs {
+                    Some(SmallRational {
+                        numerator: 0,
+                        denominator: 1,
+                        sign: Positive,
+                    })
+                } else if self > rhs {
+                    SmallRational::try_new(
+                        snum.checked_mul(rden)?.checked_sub(rnum.checked_mul(sden)?)?,
+                        sden.checked_mul(rden)?,
+                        true,
+                    )
+                } else {
+                    SmallRational::try_new(
+                        rnum.checked_mul(sden)?.checked_sub(snum.checked_mul(rden)?)?,
+                        sden.checked_mul(rden)?,
+                        false,
+                    )
+                }
+            }
+            (Positive, Negative) => SmallRational::try_new(
+                snum.checked_mul(rden)?.checked_add(rnum.checked_mul(sden)?)?,
+                sden.checked_mul(rden)?,
+                true,
+            ),
+            (Negative, Positive) => SmallRational::try_new(
+                snum.checked_mul(rden)?.checked_add(rnum.checked_mul(sden)?)?,
+                sden.checked_mul(rden)?,
+                false,
+            ),
+            (Negative, Negative) => {
+                if self == rhs {
+                    Some(SmallRational {
+                        numerator: 0,
+                        denominator: 1,
+                        sign: Positive,
+                    })
+                } else if self < rhs {
+                    SmallRational::try_new(
+                        snum.checked_mul(rden)?.checked_sub(rnum.checked_mul(sden)?)?,
+                        sden.checked_mul(rden)?,
+                        false,
+                    )
+                } else {
+                    SmallRational::try_new(
+                        rnum.checked_mul(sden)?.checked_sub(snum.checked_mul(rden)?)?,
+                        sden.checked_mul(rden)?,
+                        true,
+                    )
+                }
+            }
+        }
+    }
+
+    pub(crate) fn checked_mul(&self, rhs: &SmallRational) -> Option<Self> {
+        SmallRational::try_new(
+            (self.numerator as u128).checked_mul(rhs.numerator as u128)?,
+            (self.denominator as u128).checked_mul(rhs.denominator as u128)?,
+            self.sign == rhs.sign,
+        )
+    }
+
+    pub(crate) fn checked_div(&self, rhs: &SmallRational) -> Option<Self> {
+        SmallRational::try_new(
+            (self.numerator as u128).checked_mul(rhs.denominator as u128)?,
+            (self.denominator as u128).checked_mul(rhs.numerator as u128)?,
+            self.sign == rhs.sign,
+        )
     }
 
     pub(crate) fn get_whole_number_part(&self) -> i128 {
@@ -547,8 +645,8 @@ impl ops::Div<SmallRational> for SmallRational {
     }
 }
 
-impl ops::Neg for SmallRational {
-    type Output = Self;
+impl ops::Neg for &SmallRational {
+    type Output = SmallRational;
 
     fn neg(self) -> Self::Output {
         SmallRational {
@@ -562,6 +660,14 @@ impl ops::Neg for SmallRational {
                 }
             },
         }
+    }
+}
+
+impl ops::Neg for SmallRational {
+    type Output = SmallRational;
+
+    fn neg(self) -> Self::Output {
+        -&self
     }
 }
 
@@ -706,11 +812,11 @@ mod tests {
     #[test]
     fn pow() {
         assert_eq!(
-            SmallRational::new(3, 2, false).pow(2).unwrap(),
+            SmallRational::new(3, 2, false).checked_pow(2).unwrap(),
             SmallRational::new(9, 4, true)
         );
         assert_eq!(
-            SmallRational::new(3, 2, false).pow(3).unwrap(),
+            SmallRational::new(3, 2, false).checked_pow(3).unwrap(),
             SmallRational::new(27, 8, false)
         );
     }
