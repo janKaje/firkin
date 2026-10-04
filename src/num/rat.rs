@@ -1,15 +1,43 @@
-use rug::Rational;
 use crate::num::smallrational::SmallRational;
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, Sub, SubAssign};
+use rug::{Integer, Rational};
+use std::{
+    fmt::Display,
+    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
+};
+use regex::regex;
 
 /// Wraps around the logic for both small and large rationals
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub(crate) enum RationalWrapper {
     SmallRat(SmallRational),
     Rat(Rational),
 }
 
-use RationalWrapper::{SmallRat, Rat};
+use RationalWrapper::{Rat, SmallRat};
+
+impl RationalWrapper {
+    fn from_f32(value: f32) -> Option<Self> {
+        Some(RationalWrapper::from(Rational::from_f32(value)?))
+    }
+
+    fn from_f64(value: f64) -> Option<Self> {
+        Some(RationalWrapper::from(Rational::from_f64(value)?))
+    }
+
+    fn from_str_radix(src: &str, radix: i32) -> Option<Self> {
+        match Rational::from_str_radix(src, radix) {
+            Ok(result) => Some(RationalWrapper::from(result)),
+            Err(_) => None,
+        }
+    }
+
+    fn from_small_num_denom<Num, Den>(num: Num, den: Den) -> Self
+    where
+        i64: From<Num> + From<Den>,
+    {
+        SmallRat(SmallRational::from((num, den)))
+    }
+}
 
 macro_rules! arith_binary {
     (
@@ -17,133 +45,148 @@ macro_rules! arith_binary {
         $Imp:ident { $method:ident }
         $ImpAssign:ident { $method_assign:ident }
     ) => {
-
         impl $Imp<RationalWrapper> for RationalWrapper {
             type Output = RationalWrapper;
-            #[inline]
+
             fn $method(mut self, mut rhs: RationalWrapper) -> RationalWrapper {
                 match (self, rhs) {
-                    (SmallRat(i), SmallRat(i2)) => {
-                        match i.$checked_func(i2) {
-                            Some(r) => SmallRat(r),
-                            None => Rat(Integer::from(i).$method(i2)),
-                        }
+                    (SmallRat(r), SmallRat(r2)) => match r.$checked_func(&r2) {
+                        Some(res) => SmallRat(res),
+                        None => Rat(Rational::from(r) + r2),
                     },
-                    (SmallRat(i), Rat(integer)) => {
-                        RationalWrapper::from(i.$method(integer))
-                    },
-                    (Rat(integer), SmallRat(i)) => {
-                        RationalWrapper::from(integer.$method(i))
-                    },
-                    (Rat(integer), Rat(integer2)) => {
-                        RationalWrapper::from(integer.$method(integer2))
-                    },
+                    (SmallRat(r), Rat(rational)) => RationalWrapper::from(r.$method(rational)),
+                    (Rat(rational), SmallRat(r)) => RationalWrapper::from(rational.$method(r)),
+                    (Rat(rational), Rat(rational2)) => {
+                        RationalWrapper::from(rational.$method(rational2))
+                    }
                 }
             }
         }
 
         impl $Imp<&RationalWrapper> for RationalWrapper {
             type Output = RationalWrapper;
-            #[inline]
+
             fn $method(mut self, rhs: &RationalWrapper) -> RationalWrapper {
                 match (self, rhs) {
-                    (SmallRat(i), SmallRat(i2)) => {
-                        match i.$checked_func(*i2) {
-                            Some(r) => SmallRat(r),
-                            None => Rat(Integer::from(i).$method(i2)),
-                        }
+                    (SmallRat(r), SmallRat(r2)) => match r.$checked_func(&r2) {
+                        Some(res) => SmallRat(res),
+                        None => Rat(Rational::from(r) + r2),
                     },
-                    (SmallRat(i), Rat(integer)) => {
-                        RationalWrapper::from(Integer::from(i.$method(integer)))
-                    },
-                    (Rat(integer), SmallRat(i)) => {
-                        RationalWrapper::from(integer.$method(i))
-                    },
-                    (Rat(integer), Rat(integer2)) => {
-                        RationalWrapper::from(integer.$method(integer2))
-                    },
+                    (SmallRat(r), Rat(rational)) => RationalWrapper::from(r.$method(rational)),
+                    (Rat(rational), SmallRat(r)) => RationalWrapper::from(rational.$method(r)),
+                    (Rat(rational), Rat(rational2)) => {
+                        RationalWrapper::from(rational.$method(rational2))
+                    }
                 }
             }
         }
 
         impl $Imp<RationalWrapper> for &RationalWrapper {
             type Output = RationalWrapper;
-            #[inline]
+
             fn $method(self, mut rhs: RationalWrapper) -> RationalWrapper {
                 match (self, rhs) {
-                    (SmallRat(i), SmallRat(i2)) => {
-                        match i.$checked_func(i2) {
-                            Some(r) => SmallRat(r),
-                            None => Rat(Integer::from(*i).$method(i2)),
-                        }
+                    (SmallRat(r), SmallRat(r2)) => match r.$checked_func(&r2) {
+                        Some(res) => SmallRat(res),
+                        None => Rat(Rational::from(r) + r2),
                     },
-                    (SmallRat(i), Rat(integer)) => {
-                        RationalWrapper::from(i.$method(integer))
-                    },
-                    (Rat(integer), SmallRat(i)) => {
-                        RationalWrapper::from(Integer::from(integer.$method(i)))
-                    },
-                    (Rat(integer), Rat(integer2)) => {
-                        RationalWrapper::from(Integer::from(integer.$method(integer2)))
-                    },
+                    (SmallRat(r), Rat(rational)) => RationalWrapper::from(r.$method(&rational)),
+                    (Rat(rational), SmallRat(r)) => RationalWrapper::from(rational.$method(r)),
+                    (Rat(rational), Rat(rational2)) => {
+                        RationalWrapper::from(rational.$method(rational2))
+                    }
                 }
             }
         }
 
         impl $Imp<&RationalWrapper> for &RationalWrapper {
             type Output = RationalWrapper;
-            #[inline]
+
             fn $method(self, rhs: &RationalWrapper) -> RationalWrapper {
                 match (self, rhs) {
-                    (SmallRat(i), SmallRat(i2)) => {
-                        match i.$checked_func(*i2) {
-                            Some(r) => SmallRat(r),
-                            None => Rat(Integer::from(*i).$method(i2)),
-                        }
+                    (SmallRat(r), SmallRat(r2)) => match r.$checked_func(&r2) {
+                        Some(res) => SmallRat(res),
+                        None => Rat(Rational::from(r) + r2),
                     },
-                    (SmallRat(i), Rat(integer)) => {
-                        RationalWrapper::from(Integer::from(integer.$method(i)))
-                    },
-                    (Rat(integer), SmallRat(i)) => {
-                        RationalWrapper::from(Integer::from(integer.$method(i)))
-                    },
-                    (Rat(integer), Rat(integer2)) => {
-                        RationalWrapper::from(Integer::from(integer.$method(integer2)))
-                    },
+                    (SmallRat(r), Rat(rational)) => RationalWrapper::from(r.$method(rational)),
+                    (Rat(rational), SmallRat(r)) => RationalWrapper::from(rational.$method(r)),
+                    (Rat(rational), Rat(rational2)) => {
+                        RationalWrapper::from(Rational::from(rational.$method(rational2)))
+                    }
                 }
             }
-        } 
+        }
 
         impl $ImpAssign<RationalWrapper> for RationalWrapper {
-            #[inline]
             fn $method_assign(&mut self, rhs: RationalWrapper) {
                 self.$method_assign(&rhs);
             }
         }
 
         impl $ImpAssign<&RationalWrapper> for RationalWrapper {
-            #[inline]
             fn $method_assign(&mut self, rhs: &RationalWrapper) {
                 match (&self, rhs) {
-                    (SmallRat(i), SmallRat(i2)) => {
-                        match i.$checked_func(*i2) {
-                            Some(r) => *self = SmallRat(r),
-                            None => *self = Rat(Integer::from(*i).$method(i2)),
-                        }
+                    (SmallRat(r), SmallRat(r2)) => match r.$checked_func(r2) {
+                        Some(res) => *self = SmallRat(res),
+                        None => *self = Rat(Rational::from(r).$method(r2)),
                     },
-                    (SmallRat(i), Rat(integer)) => {
-                        *self = RationalWrapper::from(Integer::from(integer.$method(i)))
-                    },
-                    (Rat(integer), SmallRat(i)) => {
-                        *self = RationalWrapper::from(Integer::from(i.$method(integer)))
-                    },
-                    (Rat(integer), Rat(integer2)) => {
-                        *self = RationalWrapper::from(Integer::from(integer2.$method(integer)))
-                    },
+                    (SmallRat(r), Rat(rational)) => {
+                        *self = RationalWrapper::from(Rational::from(rational.$method(r)))
+                    }
+                    (Rat(rational), SmallRat(r)) => {
+                        *self = RationalWrapper::from(Rational::from(r.$method(rational)))
+                    }
+                    (Rat(rational), Rat(rational2)) => {
+                        *self = RationalWrapper::from(Rational::from(rational2.$method(rational)))
+                    }
                 }
             }
         }
     };
+}
+
+arith_binary! {
+    checked_add;
+    Add { add }
+    AddAssign { add_assign }
+}
+
+arith_binary! {
+    checked_sub;
+    Sub { sub }
+    SubAssign { sub_assign }
+}
+
+arith_binary! {
+    checked_mul;
+    Mul { mul }
+    MulAssign { mul_assign }
+}
+
+arith_binary! {
+    checked_div;
+    Div { div }
+    DivAssign { div_assign }
+}
+
+impl Neg for RationalWrapper {
+    type Output = RationalWrapper;
+
+    fn neg(self) -> Self::Output {
+        match self {
+            SmallRat(small_rational) => SmallRat(-small_rational),
+            Rat(rational) => Rat(-rational),
+        }
+    }
+}
+
+impl Display for RationalWrapper {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SmallRat(small_rational) => small_rational.fmt(f),
+            Rat(rational) => rational.fmt(f),
+        }
+    }
 }
 
 impl From<SmallRational> for RationalWrapper {
@@ -154,12 +197,125 @@ impl From<SmallRational> for RationalWrapper {
 
 impl From<Rational> for RationalWrapper {
     fn from(value: Rational) -> Self {
-        Rat(value)
+        let numer = value.numer().clone().abs();
+        if numer < u64::MAX && value.denom() < &u64::MAX {
+            SmallRat(SmallRational::new(
+                numer.to_u64_wrapping(),
+                value.denom().to_u64_wrapping(),
+                value.is_positive(),
+            ))
+        } else {
+            Rat(value)
+        }
+    }
+}
+
+impl From<i8> for RationalWrapper {
+    fn from(value: i8) -> Self {
+        SmallRat(SmallRational::from(value))
+    }
+}
+
+impl From<i16> for RationalWrapper {
+    fn from(value: i16) -> Self {
+        SmallRat(SmallRational::from(value))
+    }
+}
+
+impl From<i32> for RationalWrapper {
+    fn from(value: i32) -> Self {
+        SmallRat(SmallRational::from(value))
+    }
+}
+
+impl From<i64> for RationalWrapper {
+    fn from(value: i64) -> Self {
+        SmallRat(SmallRational::from(value))
+    }
+}
+
+impl From<i128> for RationalWrapper {
+    fn from(value: i128) -> Self {
+        RationalWrapper::from(Rational::from(value))
     }
 }
 
 impl From<isize> for RationalWrapper {
     fn from(value: isize) -> Self {
-        todo!()
+        SmallRat(SmallRational::from(value))
+    }
+}
+
+impl From<u8> for RationalWrapper {
+    fn from(value: u8) -> Self {
+        SmallRat(SmallRational::from(value))
+    }
+}
+
+impl From<u16> for RationalWrapper {
+    fn from(value: u16) -> Self {
+        SmallRat(SmallRational::from(value))
+    }
+}
+
+impl From<u32> for RationalWrapper {
+    fn from(value: u32) -> Self {
+        SmallRat(SmallRational::from(value))
+    }
+}
+
+impl From<u64> for RationalWrapper {
+    fn from(value: u64) -> Self {
+        SmallRat(SmallRational::from(value))
+    }
+}
+
+impl From<u128> for RationalWrapper {
+    fn from(value: u128) -> Self {
+        RationalWrapper::from(Rational::from(value))
+    }
+}
+
+impl From<usize> for RationalWrapper {
+    fn from(value: usize) -> Self {
+        SmallRat(SmallRational::from(value))
+    }
+}
+
+impl<Num, Den> From<(Num, Den)> for RationalWrapper
+where
+    Integer: From<Num> + From<Den>,
+{
+    fn from(value: (Num, Den)) -> Self {
+        RationalWrapper::from(Rational::from(value))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::num::rat::RationalWrapper;
+
+    #[test]
+    fn froms() {
+        assert_eq!(RationalWrapper::from(-1_i8), RationalWrapper::from(-1_i16));
+        assert_eq!(RationalWrapper::from(3_i32), RationalWrapper::from(3_i64));
+        assert_eq!(
+            RationalWrapper::from(5_isize),
+            RationalWrapper::from(5_i128)
+        );
+        assert_eq!(RationalWrapper::from(15_u8), RationalWrapper::from(15_u16));
+        assert_eq!(RationalWrapper::from(14_u32), RationalWrapper::from(14_u64));
+        assert_eq!(
+            RationalWrapper::from(13_usize),
+            RationalWrapper::from(13_u128)
+        );
+    }
+
+    #[test]
+    fn from_float() {
+        assert_eq!(
+            RationalWrapper::from_f64(3.4),
+            RationalWrapper::from_f32(3.4)
+        );
     }
 }

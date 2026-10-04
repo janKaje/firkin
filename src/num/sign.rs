@@ -4,7 +4,18 @@ pub enum Sign {
     Negative,
 }
 
+use std::fmt::Display;
+
 use Sign::{Negative, Positive};
+
+impl Display for Sign {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if *self == Negative {
+            write!(f, "-")?;
+        }
+        Ok(())
+    }
+}
 
 impl From<Sign> for f64 {
     fn from(value: Sign) -> Self {

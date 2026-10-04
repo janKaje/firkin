@@ -1,9 +1,9 @@
 // big ol number things hahahha
 
-mod sign;
-mod smallrational;
 mod int;
 mod rat;
+mod sign;
+mod smallrational;
 // mod number;
 
 // use number::Number;

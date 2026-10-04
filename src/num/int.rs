@@ -8,17 +8,16 @@ pub(crate) enum IntegerWrapper {
     Int(Integer),
 }
 
-use IntegerWrapper::{SmallInt, Int};
+use IntegerWrapper::{Int, SmallInt};
 
 impl IntegerWrapper {
-    
     pub(crate) fn as_i64(&self) -> i64 {
         match self {
             SmallInt(i) => *i,
             Int(i) => i.to_i64_wrapping(),
         }
     }
-    
+
     pub(crate) fn as_integer(&self) -> Integer {
         match self {
             SmallInt(i) => (*i).into(),
@@ -33,129 +32,108 @@ macro_rules! arith_binary {
         $Imp:ident { $method:ident }
         $ImpAssign:ident { $method_assign:ident }
     ) => {
-
         impl $Imp<IntegerWrapper> for IntegerWrapper {
             type Output = IntegerWrapper;
-            #[inline]
+
             fn $method(mut self, mut rhs: IntegerWrapper) -> IntegerWrapper {
                 match (self, rhs) {
-                    (SmallInt(i), SmallInt(i2)) => {
-                        match i.$checked_func(i2) {
-                            Some(r) => SmallInt(r),
-                            None => Int(Integer::from(i).$method(i2)),
-                        }
+                    (SmallInt(i), SmallInt(i2)) => match i.$checked_func(i2) {
+                        Some(r) => SmallInt(r),
+                        None => Int(Integer::from(i).$method(i2)),
                     },
-                    (SmallInt(i), Int(integer)) => {
-                        IntegerWrapper::from(i.$method(integer))
-                    },
-                    (Int(integer), SmallInt(i)) => {
-                        IntegerWrapper::from(integer.$method(i))
-                    },
+                    (SmallInt(i), Int(integer)) => IntegerWrapper::from(i.$method(integer)),
+                    (Int(integer), SmallInt(i)) => IntegerWrapper::from(integer.$method(i)),
                     (Int(integer), Int(integer2)) => {
                         IntegerWrapper::from(integer.$method(integer2))
-                    },
+                    }
                 }
             }
         }
 
         impl $Imp<&IntegerWrapper> for IntegerWrapper {
             type Output = IntegerWrapper;
-            #[inline]
+
             fn $method(mut self, rhs: &IntegerWrapper) -> IntegerWrapper {
                 match (self, rhs) {
-                    (SmallInt(i), SmallInt(i2)) => {
-                        match i.$checked_func(*i2) {
-                            Some(r) => SmallInt(r),
-                            None => Int(Integer::from(i).$method(i2)),
-                        }
+                    (SmallInt(i), SmallInt(i2)) => match i.$checked_func(*i2) {
+                        Some(r) => SmallInt(r),
+                        None => Int(Integer::from(i).$method(i2)),
                     },
                     (SmallInt(i), Int(integer)) => {
                         IntegerWrapper::from(Integer::from(i.$method(integer)))
-                    },
-                    (Int(integer), SmallInt(i)) => {
-                        IntegerWrapper::from(integer.$method(i))
-                    },
+                    }
+                    (Int(integer), SmallInt(i)) => IntegerWrapper::from(integer.$method(i)),
                     (Int(integer), Int(integer2)) => {
                         IntegerWrapper::from(integer.$method(integer2))
-                    },
+                    }
                 }
             }
         }
 
         impl $Imp<IntegerWrapper> for &IntegerWrapper {
             type Output = IntegerWrapper;
-            #[inline]
+
             fn $method(self, mut rhs: IntegerWrapper) -> IntegerWrapper {
                 match (self, rhs) {
-                    (SmallInt(i), SmallInt(i2)) => {
-                        match i.$checked_func(i2) {
-                            Some(r) => SmallInt(r),
-                            None => Int(Integer::from(*i).$method(i2)),
-                        }
+                    (SmallInt(i), SmallInt(i2)) => match i.$checked_func(i2) {
+                        Some(r) => SmallInt(r),
+                        None => Int(Integer::from(*i).$method(i2)),
                     },
-                    (SmallInt(i), Int(integer)) => {
-                        IntegerWrapper::from(i.$method(integer))
-                    },
+                    (SmallInt(i), Int(integer)) => IntegerWrapper::from(i.$method(integer)),
                     (Int(integer), SmallInt(i)) => {
                         IntegerWrapper::from(Integer::from(integer.$method(i)))
-                    },
+                    }
                     (Int(integer), Int(integer2)) => {
                         IntegerWrapper::from(Integer::from(integer.$method(integer2)))
-                    },
+                    }
                 }
             }
         }
 
         impl $Imp<&IntegerWrapper> for &IntegerWrapper {
             type Output = IntegerWrapper;
-            #[inline]
+
             fn $method(self, rhs: &IntegerWrapper) -> IntegerWrapper {
                 match (self, rhs) {
-                    (SmallInt(i), SmallInt(i2)) => {
-                        match i.$checked_func(*i2) {
-                            Some(r) => SmallInt(r),
-                            None => Int(Integer::from(*i).$method(i2)),
-                        }
+                    (SmallInt(i), SmallInt(i2)) => match i.$checked_func(*i2) {
+                        Some(r) => SmallInt(r),
+                        None => Int(Integer::from(*i).$method(i2)),
                     },
                     (SmallInt(i), Int(integer)) => {
                         IntegerWrapper::from(Integer::from(integer.$method(i)))
-                    },
+                    }
                     (Int(integer), SmallInt(i)) => {
                         IntegerWrapper::from(Integer::from(integer.$method(i)))
-                    },
+                    }
                     (Int(integer), Int(integer2)) => {
                         IntegerWrapper::from(Integer::from(integer.$method(integer2)))
-                    },
+                    }
                 }
             }
-        } 
+        }
 
         impl $ImpAssign<IntegerWrapper> for IntegerWrapper {
-            #[inline]
             fn $method_assign(&mut self, rhs: IntegerWrapper) {
                 self.$method_assign(&rhs);
             }
         }
 
         impl $ImpAssign<&IntegerWrapper> for IntegerWrapper {
-            #[inline]
             fn $method_assign(&mut self, rhs: &IntegerWrapper) {
                 match (&self, rhs) {
-                    (SmallInt(i), SmallInt(i2)) => {
-                        match i.$checked_func(*i2) {
-                            Some(r) => *self = SmallInt(r),
-                            None => *self = Int(Integer::from(*i).$method(i2)),
-                        }
+                    (SmallInt(i), SmallInt(i2)) => match i.$checked_func(*i2) {
+                        Some(r) => *self = SmallInt(r),
+                        None => *self = Int(Integer::from(*i).$method(i2)),
                     },
                     (SmallInt(i), Int(integer)) => {
                         *self = IntegerWrapper::from(Integer::from(integer.$method(i)))
-                    },
+                    }
                     (Int(integer), SmallInt(i)) => {
                         *self = IntegerWrapper::from(Integer::from(i.$method(integer)))
-                    },
+                    }
                     (Int(integer), Int(integer2)) => {
                         *self = IntegerWrapper::from(Integer::from(integer2.$method(integer)))
-                    },
+                    }
                 }
             }
         }
@@ -255,7 +233,47 @@ impl Rem<&IntegerWrapper> for &IntegerWrapper {
             (SmallInt(i), SmallInt(i2)) => IntegerWrapper::from(i.rem(i2)),
             (SmallInt(i), Int(integer)) => IntegerWrapper::from(Integer::from(i.rem(integer))),
             (Int(integer), SmallInt(i)) => IntegerWrapper::from(Integer::from(integer.rem(i))),
-            (Int(integer), Int(integer1)) => IntegerWrapper::from(Integer::from(integer.rem(integer1))),
+            (Int(integer), Int(integer1)) => {
+                IntegerWrapper::from(Integer::from(integer.rem(integer1)))
+            }
+        }
+    }
+}
+
+impl PartialOrd for IntegerWrapper {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        match (self, other) {
+            (SmallInt(i), SmallInt(i2)) => i.partial_cmp(i2),
+            _ => self.as_integer().partial_cmp(&other.as_integer()),
+        }
+    }
+
+    fn lt(&self, other: &Self) -> bool {
+        self.partial_cmp(other)
+            .is_some_and(std::cmp::Ordering::is_lt)
+    }
+
+    fn le(&self, other: &Self) -> bool {
+        self.partial_cmp(other)
+            .is_some_and(std::cmp::Ordering::is_le)
+    }
+
+    fn gt(&self, other: &Self) -> bool {
+        self.partial_cmp(other)
+            .is_some_and(std::cmp::Ordering::is_gt)
+    }
+
+    fn ge(&self, other: &Self) -> bool {
+        self.partial_cmp(other)
+            .is_some_and(std::cmp::Ordering::is_ge)
+    }
+}
+
+impl Ord for IntegerWrapper {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        match (self, other) {
+            (SmallInt(i), SmallInt(i2)) => i.cmp(i2),
+            _ => self.as_integer().cmp(&other.as_integer()),
         }
     }
 }
@@ -363,14 +381,16 @@ mod tests {
     use crate::num::int::IntegerWrapper;
     use rug::Integer;
 
-
     #[test]
     fn wrapper_arith() {
         let small1 = IntegerWrapper::from(2);
-        let big1 = IntegerWrapper::from(Integer::from(i64::MAX)*2);
+        let big1 = IntegerWrapper::from(Integer::from(i64::MAX) * 2);
         assert_eq!(&small1 + &small1, IntegerWrapper::from(4));
         assert_eq!(&big1 - &big1, IntegerWrapper::from(0));
-        assert_eq!(&big1 * &small1, IntegerWrapper::from(36893488147419103228_i128));
+        assert_eq!(
+            &big1 * &small1,
+            IntegerWrapper::from(36893488147419103228_i128)
+        );
         assert_eq!(&small1 / &big1, IntegerWrapper::from(i64::MAX));
         assert_eq!(&big1 % &small1, IntegerWrapper::from(0));
     }

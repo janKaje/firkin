@@ -3,8 +3,10 @@
 use std::{
     cmp::{Ord, Ordering},
     fmt::{Debug, Display},
-    ops,
+    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, Sub, SubAssign},
 };
+
+use rug::{Assign, Rational};
 
 use super::sign::Sign::{self, Negative, Positive};
 
@@ -141,14 +143,16 @@ impl SmallRational {
         let rden = rhs.denominator as u128;
         match (&self.sign, &rhs.sign) {
             (Positive, Positive) => SmallRational::try_new(
-                snum.checked_mul(rden)?.checked_add(rnum.checked_mul(sden)?)?,
+                snum.checked_mul(rden)?
+                    .checked_add(rnum.checked_mul(sden)?)?,
                 sden.checked_mul(rden)?,
                 true,
             ),
             (Positive, Negative) => self.checked_sub(&-rhs),
             (Negative, Positive) => rhs.checked_sub(&-self),
             (Negative, Negative) => SmallRational::try_new(
-                snum.checked_mul(rden)?.checked_add(rnum.checked_mul(sden)?)?,
+                snum.checked_mul(rden)?
+                    .checked_add(rnum.checked_mul(sden)?)?,
                 sden.checked_mul(rden)?,
                 false,
             ),
@@ -170,25 +174,29 @@ impl SmallRational {
                     })
                 } else if self > rhs {
                     SmallRational::try_new(
-                        snum.checked_mul(rden)?.checked_sub(rnum.checked_mul(sden)?)?,
+                        snum.checked_mul(rden)?
+                            .checked_sub(rnum.checked_mul(sden)?)?,
                         sden.checked_mul(rden)?,
                         true,
                     )
                 } else {
                     SmallRational::try_new(
-                        rnum.checked_mul(sden)?.checked_sub(snum.checked_mul(rden)?)?,
+                        rnum.checked_mul(sden)?
+                            .checked_sub(snum.checked_mul(rden)?)?,
                         sden.checked_mul(rden)?,
                         false,
                     )
                 }
             }
             (Positive, Negative) => SmallRational::try_new(
-                snum.checked_mul(rden)?.checked_add(rnum.checked_mul(sden)?)?,
+                snum.checked_mul(rden)?
+                    .checked_add(rnum.checked_mul(sden)?)?,
                 sden.checked_mul(rden)?,
                 true,
             ),
             (Negative, Positive) => SmallRational::try_new(
-                snum.checked_mul(rden)?.checked_add(rnum.checked_mul(sden)?)?,
+                snum.checked_mul(rden)?
+                    .checked_add(rnum.checked_mul(sden)?)?,
                 sden.checked_mul(rden)?,
                 false,
             ),
@@ -201,13 +209,15 @@ impl SmallRational {
                     })
                 } else if self < rhs {
                     SmallRational::try_new(
-                        snum.checked_mul(rden)?.checked_sub(rnum.checked_mul(sden)?)?,
+                        snum.checked_mul(rden)?
+                            .checked_sub(rnum.checked_mul(sden)?)?,
                         sden.checked_mul(rden)?,
                         false,
                     )
                 } else {
                     SmallRational::try_new(
-                        rnum.checked_mul(sden)?.checked_sub(snum.checked_mul(rden)?)?,
+                        rnum.checked_mul(sden)?
+                            .checked_sub(snum.checked_mul(rden)?)?,
                         sden.checked_mul(rden)?,
                         true,
                     )
@@ -281,7 +291,11 @@ impl SmallRational {
     }
 
     pub(crate) fn abs(&self) -> Self {
-        SmallRational { numerator: self.numerator, denominator: self.denominator, sign: Positive }
+        SmallRational {
+            numerator: self.numerator,
+            denominator: self.denominator,
+            sign: Positive,
+        }
     }
 }
 
@@ -415,27 +429,18 @@ impl From<usize> for SmallRational {
     }
 }
 
-impl From<f32> for SmallRational {
-    fn from(value: f32) -> Self {
-        let mut value1 = value.abs();
-        let mut denom = 1_u64;
-        while value1 % 1.0 != 0.0 {
-            value1 *= 2.0;
-            denom *= 2;
-        }
-        SmallRational::new(value1 as u64, denom, value > 0.0)
-    }
-}
-
-impl From<f64> for SmallRational {
-    fn from(value: f64) -> Self {
-        let mut value1 = value.abs();
-        let mut denom = 1_u64;
-        while value1 % 1.0 != 0.0 {
-            value1 *= 2.0;
-            denom *= 2;
-        }
-        SmallRational::new(value1 as u64, denom, value > 0.0)
+impl<Num, Den> From<(Num, Den)> for SmallRational
+where
+    i64: From<Num> + From<Den>,
+{
+    fn from(value: (Num, Den)) -> Self {
+        let num: i64 = value.0.into();
+        let den: i64 = value.1.into();
+        SmallRational::new(
+            num as u64,
+            den as u64,
+            num.is_positive() == den.is_positive(),
+        )
     }
 }
 
@@ -445,9 +450,43 @@ impl From<SmallRational> for f64 {
     }
 }
 
+impl From<&SmallRational> for f64 {
+    fn from(value: &SmallRational) -> Self {
+        f64::from(value.sign) * (value.numerator as f64) / (value.denominator as f64)
+    }
+}
+
 impl From<SmallRational> for f32 {
     fn from(value: SmallRational) -> Self {
         f32::from(value.sign) * (value.numerator as f32) / (value.denominator as f32)
+    }
+}
+
+impl From<&SmallRational> for f32 {
+    fn from(value: &SmallRational) -> Self {
+        f32::from(value.sign) * (value.numerator as f32) / (value.denominator as f32)
+    }
+}
+
+impl From<SmallRational> for Rational {
+    fn from(value: SmallRational) -> Rational {
+        let mut result = Rational::new();
+        result.assign((
+            value.numerator as i128 * i128::from(value.sign),
+            value.denominator,
+        ));
+        result
+    }
+}
+
+impl From<&SmallRational> for Rational {
+    fn from(value: &SmallRational) -> Rational {
+        let mut result = Rational::new();
+        result.assign((
+            value.numerator as i128 * i128::from(value.sign),
+            value.denominator,
+        ));
+        result
     }
 }
 
@@ -539,7 +578,7 @@ impl Ord for SmallRational {
     }
 }
 
-impl ops::Add<SmallRational> for SmallRational {
+impl Add<SmallRational> for SmallRational {
     type Output = Self;
 
     fn add(self, rhs: SmallRational) -> Self::Output {
@@ -560,7 +599,102 @@ impl ops::Add<SmallRational> for SmallRational {
     }
 }
 
-impl ops::Sub<SmallRational> for SmallRational {
+macro_rules! arith_binary_rational {
+    (
+        $Imp:ident { $method:ident }
+        $ImpAssign:ident { $method_assign:ident }
+    ) => {
+        impl $Imp<Rational> for SmallRational {
+            type Output = Rational;
+
+            fn $method(self, rhs: Rational) -> Self::Output {
+                Rational::from(self).$method(rhs)
+            }
+        }
+
+        impl $Imp<&Rational> for SmallRational {
+            type Output = Rational;
+
+            fn $method(self, rhs: &Rational) -> Self::Output {
+                Rational::from(self).$method(rhs)
+            }
+        }
+
+        impl $Imp<&Rational> for &SmallRational {
+            type Output = Rational;
+
+            fn $method(self, rhs: &Rational) -> Self::Output {
+                Rational::from(self).$method(rhs)
+            }
+        }
+
+        impl $Imp<SmallRational> for Rational {
+            type Output = Rational;
+
+            fn $method(self, rhs: SmallRational) -> Self::Output {
+                self.$method(Rational::from(rhs))
+            }
+        }
+
+        impl $Imp<&SmallRational> for Rational {
+            type Output = Rational;
+
+            fn $method(self, rhs: &SmallRational) -> Self::Output {
+                self.$method(Rational::from(rhs))
+            }
+        }
+
+        impl $Imp<SmallRational> for &Rational {
+            type Output = Rational;
+
+            fn $method(self, rhs: SmallRational) -> Self::Output {
+                self.$method(Rational::from(rhs))
+            }
+        }
+
+        impl $Imp<&SmallRational> for &Rational {
+            type Output = Rational;
+
+            fn $method(self, rhs: &SmallRational) -> Self::Output {
+                self.$method(Rational::from(rhs))
+            }
+        }
+
+        impl $ImpAssign<SmallRational> for Rational {
+            fn $method_assign(&mut self, rhs: SmallRational) {
+                self.$method_assign(Rational::from(rhs));
+            }
+        }
+
+        impl $ImpAssign<&SmallRational> for Rational {
+            fn $method_assign(&mut self, rhs: &SmallRational) {
+                self.$method_assign(Rational::from(rhs));
+            }
+        }
+    };
+}
+
+arith_binary_rational! {
+    Add { add }
+    AddAssign { add_assign }
+}
+
+arith_binary_rational! {
+    Sub { sub }
+    SubAssign { sub_assign }
+}
+
+arith_binary_rational! {
+    Mul { mul }
+    MulAssign { mul_assign }
+}
+
+arith_binary_rational! {
+    Div { div }
+    DivAssign { div_assign }
+}
+
+impl Sub<SmallRational> for SmallRational {
     type Output = Self;
 
     fn sub(self, rhs: SmallRational) -> Self::Output {
@@ -621,7 +755,7 @@ impl ops::Sub<SmallRational> for SmallRational {
     }
 }
 
-impl ops::Mul<SmallRational> for SmallRational {
+impl Mul<SmallRational> for SmallRational {
     type Output = Self;
 
     fn mul(self, rhs: SmallRational) -> Self::Output {
@@ -633,7 +767,7 @@ impl ops::Mul<SmallRational> for SmallRational {
     }
 }
 
-impl ops::Div<SmallRational> for SmallRational {
+impl Div<SmallRational> for SmallRational {
     type Output = Self;
 
     fn div(self, rhs: SmallRational) -> Self::Output {
@@ -645,7 +779,7 @@ impl ops::Div<SmallRational> for SmallRational {
     }
 }
 
-impl ops::Neg for &SmallRational {
+impl Neg for &SmallRational {
     type Output = SmallRational;
 
     fn neg(self) -> Self::Output {
@@ -663,7 +797,7 @@ impl ops::Neg for &SmallRational {
     }
 }
 
-impl ops::Neg for SmallRational {
+impl Neg for SmallRational {
     type Output = SmallRational;
 
     fn neg(self) -> Self::Output {
@@ -682,20 +816,11 @@ impl Debug for Sign {
 
 impl Debug for SmallRational {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("SmallRat")
+        f.debug_struct("SmallRational")
             .field("numerator", &self.numerator)
             .field("denominator", &self.denominator)
             .field("sign", &self.sign)
             .finish()
-    }
-}
-
-impl Display for Sign {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if *self == Negative {
-            write!(f, "-")?;
-        }
-        Ok(())
     }
 }
 
@@ -743,18 +868,6 @@ mod tests {
     }
 
     #[test]
-    fn from_float() {
-        let smallrat = SmallRational::new(1, 1, true);
-        assert_eq!(smallrat, 1.0_f32.into());
-        assert_eq!(smallrat, 1.0_f64.into());
-        assert_ne!(smallrat, 2.0_f64.into());
-        let smallrat = SmallRational::new(17, 4, true);
-        assert_eq!(smallrat, 4.25_f64.into());
-        let smallrat = SmallRational::new(17, 4, false);
-        assert_eq!(smallrat, (-4.25_f64).into());
-    }
-
-    #[test]
     fn add() {
         let smallpos = SmallRational::new(17, 5, true);
         let bigpos = SmallRational::new(27, 5, true);
@@ -799,11 +912,6 @@ mod tests {
     }
 
     #[test]
-    fn to_float() {
-        assert_eq!(3.4_f64, f64::from(SmallRational::from(3.4)))
-    }
-
-    #[test]
     fn display() {
         assert_eq!(format!("{}", SmallRational::new(48, 37, false)), "-48/37");
         assert_eq!(format!("{}", SmallRational::new(48, 3, true)), "16");
@@ -826,6 +934,9 @@ mod tests {
         assert_eq!(SmallRational::new(4, 5, true).floor(), 0);
         assert_eq!(SmallRational::new(4, 5, true).ceil(), 1);
         assert_eq!(SmallRational::new(4, 5, false).round(), -1);
-        assert_eq!(SmallRational::new(u64::MAX, 1, true).round(), u64::MAX as i128);
+        assert_eq!(
+            SmallRational::new(u64::MAX, 1, true).round(),
+            u64::MAX as i128
+        );
     }
 }
