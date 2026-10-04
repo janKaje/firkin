@@ -1,10 +1,12 @@
+#![allow(unused)]
+
 use crate::num::smallrational::SmallRational;
-use rug::{Integer, Rational};
+use regex::regex;
+use rug::{Integer, Rational, ops::Pow};
 use std::{
     fmt::Display,
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
 };
-use regex::regex;
 
 /// Wraps around the logic for both small and large rationals
 #[derive(Debug, PartialEq, Eq)]
@@ -37,6 +39,45 @@ impl RationalWrapper {
     {
         SmallRat(SmallRational::from((num, den)))
     }
+
+    fn from_decimal_str(src: &str) -> Option<Self> {
+        let m = regex!(r"\s*([-+]?\d*).?(\d*)[eE]?([-+]?\d*)\s*").captures(src)?;
+
+        // be sure to test this thoroughly
+        let exp: u32;
+        if (&m[3]).len() > 0 {
+            exp = match (&m[3]).parse::<u32>() {
+                Ok(e) => e,
+                Err(_) => return None,
+            };
+        } else {
+            exp = 0
+        }
+
+        let whole: Integer = Integer::parse(&m[1]).unwrap().into();
+
+        let frac: Integer;
+        let frac_denom: Integer;
+        if (&m[2]).len() > 0 {
+            if whole.is_positive() {
+                frac = Integer::parse(&m[2]).unwrap().into();
+            } else {
+                frac = Integer::from(Integer::parse(&m[2]).unwrap()).neg();
+            }
+            frac_denom = Integer::from(10).pow((&m[2]).len() as u32);
+        } else {
+            frac = Integer::from(0);
+            frac_denom = Integer::from(1);
+        }
+
+        let as_rat = Rational::from(dbg!(whole * &frac_denom + frac, frac_denom));
+
+        if exp == 0 {
+            Some(RationalWrapper::from(as_rat))
+        } else {
+            Some(RationalWrapper::from(as_rat * Integer::from(10).pow(exp)))
+        }
+    }
 }
 
 macro_rules! arith_binary {
@@ -48,7 +89,7 @@ macro_rules! arith_binary {
         impl $Imp<RationalWrapper> for RationalWrapper {
             type Output = RationalWrapper;
 
-            fn $method(mut self, mut rhs: RationalWrapper) -> RationalWrapper {
+            fn $method(self, rhs: RationalWrapper) -> RationalWrapper {
                 match (self, rhs) {
                     (SmallRat(r), SmallRat(r2)) => match r.$checked_func(&r2) {
                         Some(res) => SmallRat(res),
@@ -66,7 +107,7 @@ macro_rules! arith_binary {
         impl $Imp<&RationalWrapper> for RationalWrapper {
             type Output = RationalWrapper;
 
-            fn $method(mut self, rhs: &RationalWrapper) -> RationalWrapper {
+            fn $method(self, rhs: &RationalWrapper) -> RationalWrapper {
                 match (self, rhs) {
                     (SmallRat(r), SmallRat(r2)) => match r.$checked_func(&r2) {
                         Some(res) => SmallRat(res),
@@ -84,7 +125,7 @@ macro_rules! arith_binary {
         impl $Imp<RationalWrapper> for &RationalWrapper {
             type Output = RationalWrapper;
 
-            fn $method(self, mut rhs: RationalWrapper) -> RationalWrapper {
+            fn $method(self, rhs: RationalWrapper) -> RationalWrapper {
                 match (self, rhs) {
                     (SmallRat(r), SmallRat(r2)) => match r.$checked_func(&r2) {
                         Some(res) => SmallRat(res),
@@ -314,8 +355,61 @@ mod tests {
     #[test]
     fn from_float() {
         assert_eq!(
-            RationalWrapper::from_f64(3.4),
-            RationalWrapper::from_f32(3.4)
+            RationalWrapper::from_f64(3.125),
+            RationalWrapper::from_f32(3.125)
+        );
+    }
+
+    #[test]
+    fn from_str_num_denom() {
+        assert_ne!(
+            RationalWrapper::from_str_radix("123/4", 10),
+            RationalWrapper::from_str_radix("124/4", 10)
+        );
+        assert_eq!(
+            RationalWrapper::from_str_radix("64/3", 10).unwrap(),
+            RationalWrapper::from(64) / RationalWrapper::from(3)
+        );
+        assert_eq!(
+            RationalWrapper::from_str_radix("-ff/a", 16).unwrap(),
+            RationalWrapper::from_small_num_denom(-255, 10)
+        );
+    }
+
+    #[test]
+    fn from_decimal_str() {
+        assert_eq!(
+            RationalWrapper::from_decimal_str("+12.498e12").unwrap(),
+            RationalWrapper::from_f64(12.498e12).unwrap()
+        );
+        assert_eq!(
+            RationalWrapper::from_decimal_str("-1.12").unwrap(),
+            RationalWrapper::from_small_num_denom(-112, 100)
+        );
+    }
+
+    #[test]
+    fn arith() {
+        let test1 = RationalWrapper::from(-345);
+        let test2 = RationalWrapper::from_f64(51.625).unwrap();
+        let test3 = RationalWrapper::from_decimal_str("513.43").unwrap();
+        let test4 = RationalWrapper::from_str_radix("-5/124", 10).unwrap();
+
+        assert_eq!(
+            &test1 + &test2,
+            RationalWrapper::from_f64(51.625 - 345.0).unwrap()
+        );
+        assert_eq!(
+            &test2 - &test3,
+            RationalWrapper::from_decimal_str("-461.805").unwrap()
+        );
+        assert_eq!(
+            &test3 * &test4,
+            RationalWrapper::from_str_radix("-51343/2480", 10).unwrap()
+        );
+        assert_eq!(
+            &test1 / &test4,
+            RationalWrapper::from_str_radix("42780/5", 10).unwrap()
         );
     }
 }

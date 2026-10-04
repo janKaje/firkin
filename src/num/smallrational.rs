@@ -6,6 +6,7 @@ use std::{
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, Sub, SubAssign},
 };
 
+use gcd::{binary_u64, binary_u128};
 use rug::{Assign, Rational};
 
 use super::sign::Sign::{self, Negative, Positive};
@@ -41,6 +42,13 @@ impl SmallRational {
         if denominator == 0 {
             panic!("denominator cannot be zero");
         }
+        if numerator == 0 {
+            return SmallRational {
+                numerator: 0,
+                denominator: 1,
+                sign: Positive,
+            };
+        }
         let result = SmallRational {
             numerator,
             denominator,
@@ -53,34 +61,28 @@ impl SmallRational {
         if denominator == 0 {
             panic!("denominator cannot be zero");
         }
-        let mut numerator = numerator;
-        let mut denominator = denominator;
-        if numerator % denominator == 0 {
-            numerator /= denominator;
-            denominator = 1;
-        } else if denominator % numerator == 0 {
-            denominator /= numerator;
-            numerator = 0;
-        } else {
-            let min = (numerator.min(denominator) as f64).sqrt().floor() as u128;
-            let mut i = 2_u128;
-            while i <= min {
-                while numerator % i == 0 && denominator % i == 0 {
-                    numerator /= i;
-                    denominator /= i;
-                }
-                i += 1;
-            }
+        if numerator == 0 {
+            return Some(SmallRational {
+                numerator: 0,
+                denominator: 1,
+                sign: Positive,
+            });
         }
+        let gcd = binary_u128(numerator, denominator);
+        let numerator = numerator / gcd;
+        let denominator = denominator / gcd;
 
         if numerator > u64::MAX as u128 || denominator > u64::MAX as u128 {
             None // overflow
         } else {
-            Some(SmallRational {
-                numerator: numerator as u64,
-                denominator: denominator as u64,
-                sign: { if is_positive { Positive } else { Negative } },
-            })
+            Some(
+                SmallRational {
+                    numerator: numerator as u64,
+                    denominator: denominator as u64,
+                    sign: { if is_positive { Positive } else { Negative } },
+                }
+                .reduce(),
+            )
         }
     }
 
@@ -93,25 +95,9 @@ impl SmallRational {
     }
 
     fn reduce_inplace(mut self) -> Self {
-        if self.numerator % self.denominator == 0 {
-            self.numerator /= self.denominator;
-            self.denominator = 1;
-            return self;
-        } else if self.denominator % self.numerator == 0 {
-            self.denominator /= self.numerator;
-            self.numerator = 1;
-            return self;
-        }
-        let min = (self.numerator.min(self.denominator) as f64).sqrt().floor() as u64;
-        let mut i = 2_u64;
-        while i <= min {
-            while self.numerator % i == 0 && self.denominator % i == 0 {
-                self.numerator /= i;
-                self.denominator /= i;
-                dbg!(&i);
-            }
-            i += 1;
-        }
+        let gcd = binary_u64(self.numerator, self.denominator);
+        self.numerator /= gcd;
+        self.denominator /= gcd;
         self
     }
 
@@ -437,8 +423,8 @@ where
         let num: i64 = value.0.into();
         let den: i64 = value.1.into();
         SmallRational::new(
-            num as u64,
-            den as u64,
+            num.unsigned_abs(),
+            den.unsigned_abs(),
             num.is_positive() == den.is_positive(),
         )
     }
@@ -492,8 +478,7 @@ impl From<&SmallRational> for Rational {
 
 impl PartialEq for SmallRational {
     fn eq(&self, other: &Self) -> bool {
-        self.numerator * other.denominator == other.numerator * self.denominator
-            && (self.sign == other.sign || (self.numerator == 0 && other.numerator == 0))
+        self.numerator == other.numerator && other.denominator == self.denominator
     }
 }
 
@@ -574,27 +559,6 @@ impl Ord for SmallRational {
             max
         } else {
             self
-        }
-    }
-}
-
-impl Add<SmallRational> for SmallRational {
-    type Output = Self;
-
-    fn add(self, rhs: SmallRational) -> Self::Output {
-        match (&self.sign, &rhs.sign) {
-            (Positive, Positive) => SmallRational::new(
-                self.numerator * rhs.denominator + rhs.numerator * self.denominator,
-                self.denominator * rhs.denominator,
-                true,
-            ),
-            (Positive, Negative) => self - -rhs,
-            (Negative, Positive) => rhs - -self,
-            (Negative, Negative) => SmallRational::new(
-                self.numerator * rhs.denominator + rhs.numerator * self.denominator,
-                self.denominator * rhs.denominator,
-                false,
-            ),
         }
     }
 }
@@ -694,91 +658,6 @@ arith_binary_rational! {
     DivAssign { div_assign }
 }
 
-impl Sub<SmallRational> for SmallRational {
-    type Output = Self;
-
-    fn sub(self, rhs: SmallRational) -> Self::Output {
-        match (&self.sign, &rhs.sign) {
-            (Positive, Positive) => {
-                if self == rhs {
-                    SmallRational {
-                        numerator: 0,
-                        denominator: 1,
-                        sign: Positive,
-                    }
-                } else if self > rhs {
-                    SmallRational::new(
-                        self.numerator * rhs.denominator - rhs.numerator * self.denominator,
-                        self.denominator * rhs.denominator,
-                        true,
-                    )
-                } else {
-                    SmallRational::new(
-                        rhs.numerator * self.denominator - self.numerator * rhs.denominator,
-                        self.denominator * rhs.denominator,
-                        false,
-                    )
-                }
-            }
-            (Positive, Negative) => SmallRational::new(
-                self.numerator * rhs.denominator + rhs.numerator * self.denominator,
-                self.denominator * rhs.denominator,
-                true,
-            ),
-            (Negative, Positive) => SmallRational::new(
-                self.numerator * rhs.denominator + rhs.numerator * self.denominator,
-                self.denominator * rhs.denominator,
-                false,
-            ),
-            (Negative, Negative) => {
-                if self == rhs {
-                    SmallRational {
-                        numerator: 0,
-                        denominator: 1,
-                        sign: Positive,
-                    }
-                } else if self < rhs {
-                    SmallRational::new(
-                        self.numerator * rhs.denominator - rhs.numerator * self.denominator,
-                        self.denominator * rhs.denominator,
-                        false,
-                    )
-                } else {
-                    SmallRational::new(
-                        rhs.numerator * self.denominator - self.numerator * rhs.denominator,
-                        self.denominator * rhs.denominator,
-                        true,
-                    )
-                }
-            }
-        }
-    }
-}
-
-impl Mul<SmallRational> for SmallRational {
-    type Output = Self;
-
-    fn mul(self, rhs: SmallRational) -> Self::Output {
-        SmallRational::new(
-            self.numerator * rhs.numerator,
-            self.denominator * rhs.denominator,
-            self.sign == rhs.sign,
-        )
-    }
-}
-
-impl Div<SmallRational> for SmallRational {
-    type Output = Self;
-
-    fn div(self, rhs: SmallRational) -> Self::Output {
-        SmallRational::new(
-            self.numerator * rhs.denominator,
-            self.denominator * rhs.numerator,
-            self.sign == rhs.sign,
-        )
-    }
-}
-
 impl Neg for &SmallRational {
     type Output = SmallRational;
 
@@ -873,11 +752,23 @@ mod tests {
         let bigpos = SmallRational::new(27, 5, true);
         let smallneg = SmallRational::new(17, 5, false);
         let bigneg = SmallRational::new(27, 5, false);
-        assert_eq!(smallpos + smallneg, 0.into());
-        assert_eq!(smallpos + bigpos, SmallRational::new(44, 5, true));
-        assert_eq!(smallpos + bigneg, SmallRational::new(10, 5, false));
-        assert_eq!(bigpos + smallneg, SmallRational::new(10, 5, true));
-        assert_eq!(smallneg + bigneg, SmallRational::new(44, 5, false));
+        assert_eq!(smallpos.checked_add(&smallneg).unwrap(), 0.into());
+        assert_eq!(
+            smallpos.checked_add(&bigpos).unwrap(),
+            SmallRational::new(44, 5, true)
+        );
+        assert_eq!(
+            smallpos.checked_add(&bigneg).unwrap(),
+            SmallRational::new(10, 5, false)
+        );
+        assert_eq!(
+            bigpos.checked_add(&smallneg).unwrap(),
+            SmallRational::new(10, 5, true)
+        );
+        assert_eq!(
+            smallneg.checked_add(&bigneg).unwrap(),
+            SmallRational::new(44, 5, false)
+        );
     }
 
     #[test]
@@ -886,29 +777,47 @@ mod tests {
         let bigpos = SmallRational::new(27, 5, true);
         let smallneg = SmallRational::new(17, 5, false);
         let bigneg = SmallRational::new(27, 5, false);
-        assert_eq!(smallpos - smallneg, smallpos + smallpos);
-        assert_eq!(smallpos - bigpos, SmallRational::new(10, 5, false));
-        assert_eq!(smallpos - bigneg, SmallRational::new(44, 5, true));
-        assert_eq!(bigpos - smallneg, SmallRational::new(44, 5, true));
-        assert_eq!(smallneg - bigneg, SmallRational::new(10, 5, true));
+        assert_eq!(
+            smallpos.checked_sub(&smallneg).unwrap(),
+            smallpos.checked_add(&smallpos).unwrap()
+        );
+        assert_eq!(
+            smallpos.checked_sub(&bigpos).unwrap(),
+            SmallRational::new(10, 5, false)
+        );
+        assert_eq!(
+            smallpos.checked_sub(&bigneg).unwrap(),
+            SmallRational::new(44, 5, true)
+        );
+        assert_eq!(
+            bigpos.checked_sub(&smallneg).unwrap(),
+            SmallRational::new(44, 5, true)
+        );
+        assert_eq!(
+            smallneg.checked_sub(&bigneg).unwrap(),
+            SmallRational::new(10, 5, true)
+        );
     }
 
     #[test]
     fn mul() {
         let a = SmallRational::new(25, 4, true);
         let b = SmallRational::new(3, 5, true);
-        assert_eq!(a * b, SmallRational::new(15, 4, true));
+        assert_eq!(a.checked_mul(&b).unwrap(), SmallRational::new(15, 4, true));
         let c = SmallRational::new(1, 2, false);
-        assert_eq!(a * c, SmallRational::new(25, 8, false));
+        assert_eq!(a.checked_mul(&c).unwrap(), SmallRational::new(25, 8, false));
     }
 
     #[test]
     fn div() {
         let a = SmallRational::new(25, 4, true);
         let b = SmallRational::new(3, 5, true);
-        assert_eq!(a / b, SmallRational::new(125, 12, true));
+        assert_eq!(
+            a.checked_div(&b).unwrap(),
+            SmallRational::new(125, 12, true)
+        );
         let c = SmallRational::new(1, 2, false);
-        assert_eq!(a / c, SmallRational::new(25, 2, false));
+        assert_eq!(a.checked_div(&c).unwrap(), SmallRational::new(25, 2, false));
     }
 
     #[test]

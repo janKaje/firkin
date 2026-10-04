@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use rug::Integer;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, Sub, SubAssign};
 
@@ -35,7 +37,7 @@ macro_rules! arith_binary {
         impl $Imp<IntegerWrapper> for IntegerWrapper {
             type Output = IntegerWrapper;
 
-            fn $method(mut self, mut rhs: IntegerWrapper) -> IntegerWrapper {
+            fn $method(self, rhs: IntegerWrapper) -> IntegerWrapper {
                 match (self, rhs) {
                     (SmallInt(i), SmallInt(i2)) => match i.$checked_func(i2) {
                         Some(r) => SmallInt(r),
@@ -53,7 +55,7 @@ macro_rules! arith_binary {
         impl $Imp<&IntegerWrapper> for IntegerWrapper {
             type Output = IntegerWrapper;
 
-            fn $method(mut self, rhs: &IntegerWrapper) -> IntegerWrapper {
+            fn $method(self, rhs: &IntegerWrapper) -> IntegerWrapper {
                 match (self, rhs) {
                     (SmallInt(i), SmallInt(i2)) => match i.$checked_func(*i2) {
                         Some(r) => SmallInt(r),
@@ -73,7 +75,7 @@ macro_rules! arith_binary {
         impl $Imp<IntegerWrapper> for &IntegerWrapper {
             type Output = IntegerWrapper;
 
-            fn $method(self, mut rhs: IntegerWrapper) -> IntegerWrapper {
+            fn $method(self, rhs: IntegerWrapper) -> IntegerWrapper {
                 match (self, rhs) {
                     (SmallInt(i), SmallInt(i2)) => match i.$checked_func(i2) {
                         Some(r) => SmallInt(r),
