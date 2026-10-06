@@ -330,8 +330,16 @@ impl PartialEq for RationalWrapper {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (SmallRat(r), SmallRat(r2)) => r == r2,
-            (SmallRat(r), Rat(rational)) => r.numerator == *rational.numer() && r.denominator == *rational.denom() && r.is_positive() == rational.is_positive(),
-            (Rat(rational), SmallRat(r)) => r.numerator == *rational.numer() && r.denominator == *rational.denom() && r.is_positive() == rational.is_positive(),
+            (SmallRat(r), Rat(rational)) => {
+                r.numerator == *rational.numer()
+                    && r.denominator == *rational.denom()
+                    && r.is_positive() == rational.is_positive()
+            }
+            (Rat(rational), SmallRat(r)) => {
+                r.numerator == *rational.numer()
+                    && r.denominator == *rational.denom()
+                    && r.is_positive() == rational.is_positive()
+            }
             (Rat(rational), Rat(rational2)) => rational == rational2,
         }
     }

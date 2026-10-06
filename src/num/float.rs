@@ -282,9 +282,11 @@ macro_rules! arith_binary {
             }
         }
 
-        impl<Rhs> $ImpAssign<Rhs> for FloatWrapper 
+        impl<Rhs> $ImpAssign<Rhs> for FloatWrapper
         where
-            FloatWrapper: From<Rhs>, Rhs: From<Float> {
+            FloatWrapper: From<Rhs>,
+            Rhs: From<Float>,
+        {
             fn $method_assign(&mut self, rhs: Rhs) {
                 let rhs: FloatWrapper = rhs.into();
                 let new_prec = self.prec().max(rhs.prec());
@@ -297,13 +299,19 @@ macro_rules! arith_binary {
                             *self = SmallFloat(new)
                         }
                     }
-                    (SmallFloat(f), BigFloat(float)) => *self = FloatWrapper::from(Float::with_val(new_prec, f.$method(float)).into()),
-                    (BigFloat(float), SmallFloat(f)) => *self = FloatWrapper::from(float.clone().$method(f).into()),
+                    (SmallFloat(f), BigFloat(float)) => {
+                        *self =
+                            FloatWrapper::from(Float::with_val(new_prec, f.$method(float)).into())
+                    }
+                    (BigFloat(float), SmallFloat(f)) => {
+                        *self = FloatWrapper::from(float.clone().$method(f).into())
+                    }
                     (BigFloat(float), BigFloat(float2)) => {
-                        *self = FloatWrapper::from(Float::with_val(new_prec, float.$method(float2)).into())
+                        *self = FloatWrapper::from(
+                            Float::with_val(new_prec, float.$method(float2)).into(),
+                        )
                     }
                 }
-
             }
         }
     };
