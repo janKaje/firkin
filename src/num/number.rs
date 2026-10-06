@@ -15,7 +15,6 @@ pub(crate) enum NumberWrapper {
 use NumberWrapper::{Float, Int, Rat};
 
 impl NumberWrapper {
-
     pub(crate) fn pow(&self, other: &NumberWrapper) -> NumberWrapper {
         todo!()
     }
