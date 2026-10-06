@@ -1,10 +1,11 @@
 // big ol number things hahahha
 
+mod float;
 mod int;
+mod number;
 mod rat;
 mod sign;
 mod smallrational;
-// mod number;
 
 // use number::Number;
 // use rug::{Integer, Rational, Float};

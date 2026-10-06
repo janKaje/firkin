@@ -1,10 +1,10 @@
 #![allow(unused)]
 
-use rug::Integer;
+use rug::{Float, Integer, az::Cast, float::MiniFloat};
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, Sub, SubAssign};
 
 /// Wraps around the logic for both small and large integers
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum IntegerWrapper {
     SmallInt(i64),
     Int(Integer),
@@ -25,6 +25,32 @@ impl IntegerWrapper {
             SmallInt(i) => (*i).into(),
             Int(i) => i.clone(),
         }
+    }
+
+    pub(crate) fn to_f64(&self) -> f64 {
+        match self {
+            SmallInt(i) => *i as f64,
+            Int(integer) => integer.to_f64(),
+        }
+    }
+
+    pub(crate) fn abs(&self) -> IntegerWrapper {
+        match self {
+            SmallInt(i) => SmallInt(i.abs()),
+            Int(integer) => Int(integer.clone().abs()),
+        }
+    }
+
+    pub(crate) fn floor(&self) -> IntegerWrapper {
+        self.clone()
+    }
+
+    pub(crate) fn ceil(&self) -> IntegerWrapper {
+        self.clone()
+    }
+
+    pub(crate) fn round(&self) -> IntegerWrapper {
+        self.clone()
     }
 }
 
@@ -242,44 +268,6 @@ impl Rem<&IntegerWrapper> for &IntegerWrapper {
     }
 }
 
-impl PartialOrd for IntegerWrapper {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        match (self, other) {
-            (SmallInt(i), SmallInt(i2)) => i.partial_cmp(i2),
-            _ => self.as_integer().partial_cmp(&other.as_integer()),
-        }
-    }
-
-    fn lt(&self, other: &Self) -> bool {
-        self.partial_cmp(other)
-            .is_some_and(std::cmp::Ordering::is_lt)
-    }
-
-    fn le(&self, other: &Self) -> bool {
-        self.partial_cmp(other)
-            .is_some_and(std::cmp::Ordering::is_le)
-    }
-
-    fn gt(&self, other: &Self) -> bool {
-        self.partial_cmp(other)
-            .is_some_and(std::cmp::Ordering::is_gt)
-    }
-
-    fn ge(&self, other: &Self) -> bool {
-        self.partial_cmp(other)
-            .is_some_and(std::cmp::Ordering::is_ge)
-    }
-}
-
-impl Ord for IntegerWrapper {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        match (self, other) {
-            (SmallInt(i), SmallInt(i2)) => i.cmp(i2),
-            _ => self.as_integer().cmp(&other.as_integer()),
-        }
-    }
-}
-
 impl From<i128> for IntegerWrapper {
     fn from(value: i128) -> Self {
         if value > i64::MAX as i128 || value < i64::MIN as i128 {
@@ -375,6 +363,30 @@ impl From<u16> for IntegerWrapper {
 impl From<u32> for IntegerWrapper {
     fn from(value: u32) -> Self {
         SmallInt(value as i64)
+    }
+}
+
+impl From<f64> for IntegerWrapper {
+    fn from(value: f64) -> Self {
+        if value.is_infinite() {
+            todo!()
+        } else if value.abs() < i64::MAX as f64 {
+            SmallInt(value as i64)
+        } else {
+            Int(Integer::from_f64(value).expect("unreachable"))
+        }
+    }
+}
+
+impl From<Float> for IntegerWrapper {
+    fn from(value: Float) -> Self {
+        if value.is_infinite() {
+            todo!()
+        } else if value <= i64::MAX && value >= i64::MIN {
+            SmallInt(value.cast())
+        } else {
+            Int(value.cast())
+        }
     }
 }
 

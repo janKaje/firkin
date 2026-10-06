@@ -14,9 +14,9 @@ use super::sign::Sign::{self, Negative, Positive};
 /// Small rational number, to be used in unit powers and Number enum
 #[derive(Clone, Copy)]
 pub(crate) struct SmallRational {
-    numerator: u64,
-    denominator: u64,
-    sign: Sign,
+    pub numerator: u64,
+    pub denominator: u64,
+    pub sign: Sign,
 }
 
 impl SmallRational {
@@ -122,7 +122,11 @@ impl SmallRational {
         }
     }
 
-    pub(crate) fn checked_add(&self, rhs: &SmallRational) -> Option<Self> {
+    pub(crate) fn checked_add<RhsAdd>(&self, rhs: RhsAdd) -> Option<Self>
+    where
+        SmallRational: From<RhsAdd>,
+    {
+        let rhs: SmallRational = rhs.into();
         let snum = self.numerator as u128;
         let sden = self.denominator as u128;
         let rnum = rhs.numerator as u128;
@@ -134,8 +138,54 @@ impl SmallRational {
                 sden.checked_mul(rden)?,
                 true,
             ),
-            (Positive, Negative) => self.checked_sub(&-rhs),
-            (Negative, Positive) => rhs.checked_sub(&-self),
+            (Positive, Negative) => {
+                let rhsabs = rhs.abs();
+                if self == &rhsabs {
+                    Some(SmallRational {
+                        numerator: 0,
+                        denominator: 1,
+                        sign: Positive,
+                    })
+                } else if self > &rhsabs {
+                    SmallRational::try_new(
+                        snum.checked_mul(rden)?
+                            .checked_sub(rnum.checked_mul(sden)?)?,
+                        sden.checked_mul(rden)?,
+                        true,
+                    )
+                } else {
+                    SmallRational::try_new(
+                        rnum.checked_mul(sden)?
+                            .checked_sub(snum.checked_mul(rden)?)?,
+                        sden.checked_mul(rden)?,
+                        false,
+                    )
+                }
+            }
+            (Negative, Positive) => {
+                let selfabs = self.abs();
+                if selfabs == rhs {
+                    Some(SmallRational {
+                        numerator: 0,
+                        denominator: 1,
+                        sign: Positive,
+                    })
+                } else if selfabs > rhs {
+                    SmallRational::try_new(
+                        rnum.checked_mul(sden)?
+                            .checked_sub(snum.checked_mul(rden)?)?,
+                        sden.checked_mul(rden)?,
+                        false,
+                    )
+                } else {
+                    SmallRational::try_new(
+                        snum.checked_mul(rden)?
+                            .checked_sub(rnum.checked_mul(sden)?)?,
+                        sden.checked_mul(rden)?,
+                        true,
+                    )
+                }
+            }
             (Negative, Negative) => SmallRational::try_new(
                 snum.checked_mul(rden)?
                     .checked_add(rnum.checked_mul(sden)?)?,
@@ -145,20 +195,24 @@ impl SmallRational {
         }
     }
 
-    pub(crate) fn checked_sub(&self, rhs: &SmallRational) -> Option<Self> {
+    pub(crate) fn checked_sub<RhsSub>(&self, rhs: RhsSub) -> Option<Self>
+    where
+        SmallRational: From<RhsSub>,
+    {
+        let rhs: SmallRational = rhs.into();
         let snum = self.numerator as u128;
         let sden = self.denominator as u128;
         let rnum = rhs.numerator as u128;
         let rden = rhs.denominator as u128;
         match (&self.sign, &rhs.sign) {
             (Positive, Positive) => {
-                if self == rhs {
+                if self == &rhs {
                     Some(SmallRational {
                         numerator: 0,
                         denominator: 1,
                         sign: Positive,
                     })
-                } else if self > rhs {
+                } else if self > &rhs {
                     SmallRational::try_new(
                         snum.checked_mul(rden)?
                             .checked_sub(rnum.checked_mul(sden)?)?,
@@ -187,13 +241,13 @@ impl SmallRational {
                 false,
             ),
             (Negative, Negative) => {
-                if self == rhs {
+                if self == &rhs {
                     Some(SmallRational {
                         numerator: 0,
                         denominator: 1,
                         sign: Positive,
                     })
-                } else if self < rhs {
+                } else if self < &rhs {
                     SmallRational::try_new(
                         snum.checked_mul(rden)?
                             .checked_sub(rnum.checked_mul(sden)?)?,
@@ -212,7 +266,11 @@ impl SmallRational {
         }
     }
 
-    pub(crate) fn checked_mul(&self, rhs: &SmallRational) -> Option<Self> {
+    pub(crate) fn checked_mul<RhsMul>(&self, rhs: RhsMul) -> Option<Self>
+    where
+        SmallRational: From<RhsMul>,
+    {
+        let rhs: SmallRational = rhs.into();
         SmallRational::try_new(
             (self.numerator as u128).checked_mul(rhs.numerator as u128)?,
             (self.denominator as u128).checked_mul(rhs.denominator as u128)?,
@@ -220,7 +278,11 @@ impl SmallRational {
         )
     }
 
-    pub(crate) fn checked_div(&self, rhs: &SmallRational) -> Option<Self> {
+    pub(crate) fn checked_div<RhsDiv>(&self, rhs: RhsDiv) -> Option<Self>
+    where
+        SmallRational: From<RhsDiv>,
+    {
+        let rhs: SmallRational = rhs.into();
         SmallRational::try_new(
             (self.numerator as u128).checked_mul(rhs.denominator as u128)?,
             (self.denominator as u128).checked_mul(rhs.numerator as u128)?,
@@ -473,6 +535,12 @@ impl From<&SmallRational> for Rational {
             value.denominator,
         ));
         result
+    }
+}
+
+impl From<&SmallRational> for SmallRational {
+    fn from(value: &SmallRational) -> Self {
+        *value
     }
 }
 
@@ -757,6 +825,8 @@ mod tests {
             smallpos.checked_add(&bigpos).unwrap(),
             SmallRational::new(44, 5, true)
         );
+        dbg!(smallpos);
+        dbg!(bigneg);
         assert_eq!(
             smallpos.checked_add(&bigneg).unwrap(),
             SmallRational::new(10, 5, false)
