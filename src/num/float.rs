@@ -1,6 +1,6 @@
 #![allow(unused)]
 
-use crate::num::{int::IntegerWrapper, rat::RationalWrapper, smallrational::SmallRational};
+use crate::num::{int::IntegerWrapper, rat::RationalWrapper, smallrational::SmallRational, traits::PythonMathFunctions};
 use rug::{Float, Integer, Rational};
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, Sub, SubAssign};
 

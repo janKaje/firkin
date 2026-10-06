@@ -6,6 +6,7 @@ mod number;
 mod rat;
 mod sign;
 mod smallrational;
+mod traits;
 
 // use number::Number;
 // use rug::{Integer, Rational, Float};

@@ -6,101 +6,46 @@ use crate::num::{float::FloatWrapper, int::IntegerWrapper, rat::RationalWrapper}
 
 /// Single number, whether it's integer, rational, or irrational
 #[derive(Clone)]
-pub(crate) enum Number {
+pub(crate) enum NumberWrapper {
     Int(IntegerWrapper),
     Rat(RationalWrapper),
     Float(FloatWrapper),
 }
 
-use Number::{Float, Int, Rat};
+use NumberWrapper::{Float, Int, Rat};
 
-impl Number {
-    pub(crate) fn add(&self, other: &Number) -> Number {
-        match (self, other) {
-            (Int(i), Int(i2)) => Int(i + i2),
-            (Int(i), Rat(r)) => Rat(i + r),
-            (Int(i), Float(f)) => Float(i + f),
-            (Rat(r), Int(i)) => Rat(r + i),
-            (Rat(r), Rat(r2)) => Rat(r + r2),
-            (Rat(r), Float(f)) => Float(r + f),
-            (Float(f), Int(i)) => Float(f + i),
-            (Float(f), Rat(r)) => Float(f + r),
-            (Float(f), Float(f2)) => Float(f + f2),
-        }
-    }
+impl NumberWrapper {
 
-    pub(crate) fn sub(&self, other: &Number) -> Number {
-        match (self, other) {
-            (Int(i), Int(i2)) => Int(i - i2),
-            (Int(i), Rat(r)) => Rat(i - r),
-            (Int(i), Float(f)) => Float(i - f),
-            (Rat(r), Int(i)) => Rat(r - i),
-            (Rat(r), Rat(r2)) => Rat(r - r2),
-            (Rat(r), Float(f)) => Float(r - f),
-            (Float(f), Int(i)) => Float(f - i),
-            (Float(f), Rat(r)) => Float(f - r),
-            (Float(f), Float(f2)) => Float(f - f2),
-        }
-    }
-
-    pub(crate) fn mul(&self, other: &Number) -> Number {
-        match (self, other) {
-            (Int(i), Int(i2)) => Int(i * i2),
-            (Int(i), Rat(r)) => Rat(i * r),
-            (Int(i), Float(f)) => Float(i * f),
-            (Rat(r), Int(i)) => Rat(r * i),
-            (Rat(r), Rat(r2)) => Rat(r * r2),
-            (Rat(r), Float(f)) => Float(r * f),
-            (Float(f), Int(i)) => Float(f * i),
-            (Float(f), Rat(r)) => Float(f * r),
-            (Float(f), Float(f2)) => Float(f * f2),
-        }
-    }
-
-    pub(crate) fn div(&self, other: &Number) -> Number {
-        match (self, other) {
-            (Int(i), Int(i2)) => Int(i / i2),
-            (Int(i), Rat(r)) => Rat(i / r),
-            (Int(i), Float(f)) => Float(i / f),
-            (Rat(r), Int(i)) => Rat(r / i),
-            (Rat(r), Rat(r2)) => Rat(r / r2),
-            (Rat(r), Float(f)) => Float(r / f),
-            (Float(f), Int(i)) => Float(f / i),
-            (Float(f), Rat(r)) => Float(f / r),
-            (Float(f), Float(f2)) => Float(f / f2),
-        }
-    }
-
-    pub(crate) fn pow(&self, other: &Number) -> Number {
+    pub(crate) fn pow(&self, other: &NumberWrapper) -> NumberWrapper {
         todo!()
     }
 
-    pub(crate) fn log(&self, base: &Number) -> Number {
+    pub(crate) fn log(&self, base: &NumberWrapper) -> NumberWrapper {
         todo!()
     }
 
-    pub(crate) fn abs(&self) -> Number {
+    pub(crate) fn abs(&self) -> NumberWrapper {
         match self {
             Int(i) => Int(i.abs()),
             Rat(r) => Rat(r.abs()),
             Float(f) => Float(f.abs()),
         }
     }
-    pub(crate) fn floor(&self) -> Number {
+    pub(crate) fn floor(&self) -> NumberWrapper {
         match self {
             Int(i) => Int(i.floor()),
             Rat(r) => Int(r.floor()),
             Float(f) => Int(f.floor()),
         }
     }
-    pub(crate) fn ceil(&self) -> Number {
+    pub(crate) fn ceil(&self) -> NumberWrapper {
         match self {
             Int(i) => Int(i.ceil()),
             Rat(r) => Int(r.ceil()),
             Float(f) => Int(f.ceil()),
         }
     }
-    pub(crate) fn round(&self) -> Number {
+    pub(crate) fn round(&self) -> NumberWrapper {
         match self {
             Int(i) => Int(i.round()),
             Rat(r) => Int(r.round()),
@@ -122,10 +67,10 @@ macro_rules! arith_binary {
         $Imp:ident { $method:ident }
         $ImpAssign:ident { $method_assign:ident }
     ) => {
-        impl $Imp<Number> for Number {
-            type Output = Number;
+        impl $Imp<NumberWrapper> for NumberWrapper {
+            type Output = NumberWrapper;
 
-            fn $method(self, rhs: Number) -> Self::Output {
+            fn $method(self, rhs: NumberWrapper) -> Self::Output {
                 match (self, rhs) {
                     (Int(i), Int(i2)) => Int(i.$method(i2)),
                     (Int(i), Rat(r)) => Rat(i.$method(r)),
@@ -140,10 +85,10 @@ macro_rules! arith_binary {
             }
         }
 
-        impl $Imp<&Number> for &Number {
-            type Output = Number;
+        impl $Imp<&NumberWrapper> for &NumberWrapper {
+            type Output = NumberWrapper;
 
-            fn $method(self, rhs: &Number) -> Self::Output {
+            fn $method(self, rhs: &NumberWrapper) -> Self::Output {
                 match (self, rhs) {
                     (Int(i), Int(i2)) => Int(i.$method(i2)),
                     (Int(i), Rat(r)) => Rat(i.$method(r)),
@@ -158,10 +103,10 @@ macro_rules! arith_binary {
             }
         }
 
-        impl $Imp<&Number> for Number {
-            type Output = Number;
+        impl $Imp<&NumberWrapper> for NumberWrapper {
+            type Output = NumberWrapper;
 
-            fn $method(self, rhs: &Number) -> Self::Output {
+            fn $method(self, rhs: &NumberWrapper) -> Self::Output {
                 match (self, rhs) {
                     (Int(i), Int(i2)) => Int(i.$method(i2)),
                     (Int(i), Rat(r)) => Rat(i.$method(r)),
@@ -176,10 +121,10 @@ macro_rules! arith_binary {
             }
         }
 
-        impl $Imp<Number> for &Number {
-            type Output = Number;
+        impl $Imp<NumberWrapper> for &NumberWrapper {
+            type Output = NumberWrapper;
 
-            fn $method(self, rhs: Number) -> Self::Output {
+            fn $method(self, rhs: NumberWrapper) -> Self::Output {
                 match (self, rhs) {
                     (Int(i), Int(i2)) => Int(i.$method(i2)),
                     (Int(i), Rat(r)) => Rat(i.$method(r)),
@@ -216,8 +161,8 @@ arith_binary! {
     DivAssign { div_assign }
 }
 
-impl Neg for Number {
-    type Output = Number;
+impl Neg for NumberWrapper {
+    type Output = NumberWrapper;
 
     fn neg(self) -> Self::Output {
         match self {
@@ -228,19 +173,19 @@ impl Neg for Number {
     }
 }
 
-impl From<IntegerWrapper> for Number {
+impl From<IntegerWrapper> for NumberWrapper {
     fn from(value: IntegerWrapper) -> Self {
         Int(value)
     }
 }
 
-impl From<RationalWrapper> for Number {
+impl From<RationalWrapper> for NumberWrapper {
     fn from(value: RationalWrapper) -> Self {
         Rat(value)
     }
 }
 
-impl From<FloatWrapper> for Number {
+impl From<FloatWrapper> for NumberWrapper {
     fn from(value: FloatWrapper) -> Self {
         Float(value)
     }
