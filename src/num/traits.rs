@@ -12,8 +12,9 @@ use std::{
 
 use rug::{Float, Integer};
 
-use crate::num::{
-    float::FloatWrapper, int::IntegerWrapper, number::NumberWrapper, rat::RationalWrapper,
+use crate::{
+    error::FirkinError,
+    num::{float::FloatWrapper, int::IntegerWrapper, number::NumberWrapper, rat::RationalWrapper},
 };
 
 pub(crate) trait PythonMathFunctions:
@@ -44,18 +45,18 @@ pub(crate) trait PythonMathFunctions:
     + ShrAssign
     + Hash
 {
-    fn pow(
+    fn py_pow(
         &self,
         other: &NumberWrapper,
-        modulus: &NumberWrapper,
-    ) -> Result<NumberWrapper, &'static str>;
-    fn abs(&self) -> Result<NumberWrapper, &'static str>;
-    fn int(&self) -> Result<IntegerWrapper, &'static str>;
-    fn to_f64(&self) -> Result<f64, &'static str>;
-    fn round(&self, ndigits: &IntegerWrapper) -> Result<IntegerWrapper, &'static str>;
-    fn floor(&self) -> Result<IntegerWrapper, &'static str>;
-    fn ceil(&self) -> Result<IntegerWrapper, &'static str>;
-    fn trunc(&self) -> Result<IntegerWrapper, &'static str>;
+        modulus: Option<&NumberWrapper>,
+    ) -> Result<NumberWrapper, FirkinError>;
+    fn py_abs(&self) -> Result<NumberWrapper, FirkinError>;
+    fn py_int(&self) -> Result<IntegerWrapper, FirkinError>;
+    fn py_float(&self) -> Result<f64, FirkinError>;
+    fn py_round(&self, ndigits: i32) -> Result<NumberWrapper, FirkinError>;
+    fn py_floor(&self) -> Result<IntegerWrapper, FirkinError>;
+    fn py_ceil(&self) -> Result<IntegerWrapper, FirkinError>;
+    fn py_trunc(&self) -> Result<IntegerWrapper, FirkinError>;
 }
 
 pub(crate) trait NumpyUFuncs: PythonMathFunctions {}

@@ -10,6 +10,7 @@ pub(crate) enum FirkinError {
     IncompatibleUnits { first: String, second: String },
     CannotConvertToFirkin(String),
     CannotConvertToNumber(String),
+    PowModDoesNotExist(String, String, String),
 }
 
 impl std::error::Error for FirkinError {}
@@ -29,6 +30,9 @@ impl fmt::Display for FirkinError {
             Self::CannotConvertToNumber(other) => {
                 write!(f, "{other} cannot be coerced into a number")
             }
+            Self::PowModDoesNotExist(base, exp, modulo) => {
+                write!(f, "{base}^{exp}%{modulo} does not exist")
+            }
         }
     }
 }
@@ -45,6 +49,7 @@ impl std::convert::From<FirkinError> for PyErr {
             } => PyTypeError::new_err(err.to_string()),
             FirkinError::CannotConvertToFirkin(_other) => PyTypeError::new_err(err.to_string()),
             FirkinError::CannotConvertToNumber(_other) => PyTypeError::new_err(err.to_string()),
+            FirkinError::PowModDoesNotExist(_, _, _) => PyTypeError::new_err(err.to_string()),
         }
     }
 }
