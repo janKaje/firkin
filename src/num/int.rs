@@ -1,5 +1,6 @@
 #![allow(unused)]
 
+use crate::num::traits::{FromInts, PythonMathFunctions, TryFromFloats};
 use rug::{Float, Integer, az::Cast, float::MiniFloat};
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, Sub, SubAssign};
 
@@ -366,29 +367,51 @@ impl From<u32> for IntegerWrapper {
     }
 }
 
-impl From<f64> for IntegerWrapper {
-    fn from(value: f64) -> Self {
+impl TryFrom<f32> for IntegerWrapper {
+    type Error = &'static str;
+
+    fn try_from(value: f32) -> Result<IntegerWrapper, &'static str> {
         if value.is_infinite() {
-            todo!()
-        } else if value.abs() < i64::MAX as f64 {
-            SmallInt(value as i64)
+            Err("Value is infinite.")
+        } else if value.abs() < i64::MAX as f32 {
+            Ok(SmallInt(value as i64))
         } else {
-            Int(Integer::from_f64(value).expect("unreachable"))
+            Ok(Int(Integer::from_f32(value).expect("unreachable")))
         }
     }
 }
 
-impl From<Float> for IntegerWrapper {
-    fn from(value: Float) -> Self {
+impl TryFrom<f64> for IntegerWrapper {
+    type Error = &'static str;
+
+    fn try_from(value: f64) -> Result<IntegerWrapper, &'static str> {
         if value.is_infinite() {
-            todo!()
-        } else if value <= i64::MAX && value >= i64::MIN {
-            SmallInt(value.cast())
+            Err("Value is infinite.")
+        } else if value.abs() < i64::MAX as f64 {
+            Ok(SmallInt(value as i64))
         } else {
-            Int(value.cast())
+            Ok(Int(Integer::from_f64(value).expect("unreachable")))
         }
     }
 }
+
+impl TryFrom<Float> for IntegerWrapper {
+    type Error = &'static str;
+
+    fn try_from(value: Float) -> Result<IntegerWrapper, &'static str> {
+        if value.is_infinite() {
+            Err("Value is infinite.")
+        } else if value <= i64::MAX && value >= i64::MIN {
+            Ok(SmallInt(value.cast()))
+        } else {
+            Ok(Int(value.cast()))
+        }
+    }
+}
+
+impl FromInts for IntegerWrapper {}
+
+impl TryFromFloats for IntegerWrapper {}
 
 #[cfg(test)]
 mod tests {

@@ -2,7 +2,9 @@
 
 use crate::num::int::IntegerWrapper::{self, Int, SmallInt};
 use crate::num::smallrational::SmallRational;
+use crate::num::traits::{FromFloats, FromInts, TryFromFloats};
 use regex::regex;
+use rug::Float;
 use rug::{Integer, Rational, ops::Pow};
 use std::{
     fmt::Display,
@@ -438,6 +440,12 @@ impl From<usize> for RationalWrapper {
     }
 }
 
+impl From<Integer> for RationalWrapper {
+    fn from(value: Integer) -> Self {
+        RationalWrapper::from(Rational::from(value))
+    }
+}
+
 impl<Num, Den> From<(Num, Den)> for RationalWrapper
 where
     Integer: From<Num> + From<Den>,
@@ -446,6 +454,52 @@ where
         RationalWrapper::from(Rational::from(value))
     }
 }
+
+impl TryFrom<f32> for RationalWrapper {
+    type Error = &'static str;
+
+    fn try_from(value: f32) -> Result<RationalWrapper, &'static str> {
+        if value.is_infinite() {
+            Err("Value is infinite.")
+        } else {
+            Ok(RationalWrapper::from(
+                Rational::from_f32(value).expect("unreachable"),
+            ))
+        }
+    }
+}
+
+impl TryFrom<f64> for RationalWrapper {
+    type Error = &'static str;
+
+    fn try_from(value: f64) -> Result<RationalWrapper, &'static str> {
+        if value.is_infinite() {
+            Err("Value is infinite.")
+        } else {
+            Ok(RationalWrapper::from(
+                Rational::from_f64(value).expect("unreachable"),
+            ))
+        }
+    }
+}
+
+impl TryFrom<Float> for RationalWrapper {
+    type Error = &'static str;
+
+    fn try_from(value: Float) -> Result<RationalWrapper, &'static str> {
+        if value.is_infinite() {
+            Err("Value is infinite.")
+        } else {
+            Ok(RationalWrapper::from(
+                Rational::try_from(value).expect("unreachable"),
+            ))
+        }
+    }
+}
+
+impl FromInts for RationalWrapper {}
+
+impl TryFromFloats for RationalWrapper {}
 
 #[cfg(test)]
 mod tests {

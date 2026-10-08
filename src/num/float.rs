@@ -1,8 +1,10 @@
 #![allow(unused)]
 
 use crate::num::{
-    int::IntegerWrapper, rat::RationalWrapper, smallrational::SmallRational,
-    traits::PythonMathFunctions,
+    int::IntegerWrapper,
+    rat::RationalWrapper,
+    smallrational::SmallRational,
+    traits::{FromFloats, FromInts, PythonMathFunctions},
 };
 use rug::{Float, Integer, Rational};
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, Sub, SubAssign};
@@ -45,24 +47,24 @@ impl FloatWrapper {
         }
     }
 
-    pub(crate) fn floor(&self) -> IntegerWrapper {
+    pub(crate) fn floor(&self) -> Result<IntegerWrapper, &'static str> {
         match self {
-            SmallFloat(f) => f.floor().into(),
-            BigFloat(float) => float.clone().floor().into(),
+            SmallFloat(f) => f.floor().try_into(),
+            BigFloat(float) => float.clone().floor().try_into(),
         }
     }
 
-    pub(crate) fn ceil(&self) -> IntegerWrapper {
+    pub(crate) fn ceil(&self) -> Result<IntegerWrapper, &'static str> {
         match self {
-            SmallFloat(f) => f.ceil().into(),
-            BigFloat(float) => float.clone().ceil().into(),
+            SmallFloat(f) => f.ceil().try_into(),
+            BigFloat(float) => float.clone().ceil().try_into(),
         }
     }
 
-    pub(crate) fn round(&self) -> IntegerWrapper {
+    pub(crate) fn round(&self) -> Result<IntegerWrapper, &'static str> {
         match self {
-            SmallFloat(f) => f.round().into(),
-            BigFloat(float) => float.clone().round().into(),
+            SmallFloat(f) => f.round().try_into(),
+            BigFloat(float) => float.clone().round().try_into(),
         }
     }
 }
@@ -384,15 +386,34 @@ impl From<Float> for FloatWrapper {
     }
 }
 
-impl From<i64> for FloatWrapper {
-    fn from(value: i64) -> Self {
-        if DEFAULT_PREC <= 53 {
-            SmallFloat(value as f64)
-        } else {
-            BigFloat(Float::with_val(DEFAULT_PREC, value))
+macro_rules! from_primitive {
+    (
+        $Prim:ty
+    ) => {
+        impl From<$Prim> for FloatWrapper {
+            fn from(value: $Prim) -> Self {
+                if DEFAULT_PREC <= 53 {
+                    SmallFloat(value as f64)
+                } else {
+                    BigFloat(Float::with_val(DEFAULT_PREC, value))
+                }
+            }
         }
-    }
+    };
 }
+
+from_primitive! {i8}
+from_primitive! {i16}
+from_primitive! {i32}
+from_primitive! {i64}
+from_primitive! {i128}
+from_primitive! {isize}
+from_primitive! {u8}
+from_primitive! {u16}
+from_primitive! {u32}
+from_primitive! {u64}
+from_primitive! {u128}
+from_primitive! {usize}
 
 impl From<Integer> for FloatWrapper {
     fn from(value: Integer) -> Self {
@@ -430,6 +451,10 @@ impl From<RationalWrapper> for FloatWrapper {
     }
 }
 
+impl FromFloats for FloatWrapper {}
+
+impl FromInts for FloatWrapper {}
+
 #[cfg(test)]
 mod tests {
     use rug::Float;
@@ -452,15 +477,15 @@ mod tests {
             FloatWrapper::from(125.64)
         );
         assert_eq!(
-            FloatWrapper::from(-125.64).floor(),
+            FloatWrapper::from(-125.64).floor().unwrap(),
             IntegerWrapper::from(-126)
         );
         assert_eq!(
-            FloatWrapper::from(-125.64).ceil(),
+            FloatWrapper::from(-125.64).ceil().unwrap(),
             IntegerWrapper::from(-125)
         );
         assert_eq!(
-            FloatWrapper::from(-125.64).round(),
+            FloatWrapper::from(-125.64).round().unwrap(),
             IntegerWrapper::from(-126)
         );
     }
