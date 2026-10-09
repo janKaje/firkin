@@ -6,7 +6,7 @@ use crate::num::{
     float::FloatWrapper,
     int::IntegerWrapper,
     rat::RationalWrapper,
-    traits::{FromFloats, FromInts},
+    traits::{FromFloats, FromInts, PythonMathFunctions},
 };
 
 /// Single number, whether it's integer, rational, or irrational
@@ -238,6 +238,94 @@ from_float! {f32}
 from_float! {f64}
 from_float! {RugFloat}
 
+impl PartialEq for NumberWrapper {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Int(i), Int(i2)) => i.eq(i2),
+            (Int(i), Rat(r)) => i.eq(r),
+            (Int(i), Float(f)) => i.eq(f),
+            (Rat(r), Int(i)) => r.eq(i),
+            (Rat(r), Rat(r2)) => r.eq(r2),
+            (Rat(r), Float(f)) => r.eq(f),
+            (Float(f), Int(i)) => f.eq(i),
+            (Float(f), Rat(r)) => f.eq(r),
+            (Float(f), Float(f2)) => f.eq(f),
+        }
+    }
+}
+
+impl PartialOrd for NumberWrapper {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        match (self, other) {
+            (Int(i), Int(i2)) => i.partial_cmp(i2),
+            (Int(i), Rat(r)) => i.partial_cmp(r),
+            (Int(i), Float(f)) => i.partial_cmp(f),
+            (Rat(r), Int(i)) => r.partial_cmp(i),
+            (Rat(r), Rat(r2)) => r.partial_cmp(r2),
+            (Rat(r), Float(f)) => r.partial_cmp(f),
+            (Float(f), Int(i)) => f.partial_cmp(i),
+            (Float(f), Rat(r)) => f.partial_cmp(r),
+            (Float(f), Float(f2)) => f.partial_cmp(f),
+        }
+    }
+}
+
 impl FromInts for NumberWrapper {}
 
 impl FromFloats for NumberWrapper {}
+
+impl PythonMathFunctions for NumberWrapper {
+    fn py_pow(
+        &self,
+        other: &NumberWrapper,
+        modulus: Option<&NumberWrapper>,
+    ) -> Result<NumberWrapper, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_truediv(
+        &self,
+        other: &NumberWrapper,
+    ) -> Result<NumberWrapper, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_floordiv(
+        &self,
+        other: &NumberWrapper,
+    ) -> Result<NumberWrapper, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_divmod(&self, other: &NumberWrapper) -> Result<NumberWrapper, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_abs(&self) -> Result<NumberWrapper, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_int(&self) -> Result<IntegerWrapper, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_float(&self) -> Result<f64, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_round(&self, ndigits: i32) -> Result<NumberWrapper, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_floor(&self) -> Result<IntegerWrapper, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_ceil(&self) -> Result<IntegerWrapper, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_trunc(&self) -> Result<IntegerWrapper, crate::error::FirkinError> {
+        todo!()
+    }
+}

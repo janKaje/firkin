@@ -12,7 +12,7 @@ use std::ops::{
 };
 
 /// Wraps around the logic for both small and large integers
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, Hash)]
 pub(crate) enum IntegerWrapper {
     SmallInt(i64),
     Int(Integer),
@@ -641,6 +641,52 @@ impl TryFrom<Float> for IntegerWrapper {
         } else {
             Ok(Int(value.cast()))
         }
+    }
+}
+
+impl PartialEq for IntegerWrapper {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (SmallInt(i), SmallInt(i2)) => i.eq(i2),
+            (SmallInt(i), Int(integer)) => i.eq(integer),
+            (Int(integer), SmallInt(i)) => integer.eq(i),
+            (Int(integer), Int(integer2)) => integer.eq(integer2),
+        }
+    }
+}
+
+impl PartialOrd for IntegerWrapper {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        match (self, other) {
+            (SmallInt(i), SmallInt(i2)) => i.partial_cmp(i2),
+            (SmallInt(i), Int(integer)) => i.partial_cmp(integer),
+            (Int(integer), SmallInt(i)) => integer.partial_cmp(i),
+            (Int(integer), Int(integer2)) => integer.partial_cmp(integer2),
+        }
+    }
+}
+
+impl PartialEq<&IntegerWrapper> for IntegerWrapper {
+    fn eq(&self, other: &&IntegerWrapper) -> bool {
+        (&self).eq(other)
+    }
+}
+
+impl PartialOrd<&IntegerWrapper> for IntegerWrapper {
+    fn partial_cmp(&self, other: &&IntegerWrapper) -> Option<std::cmp::Ordering> {
+        (&self).partial_cmp(other)
+    }
+}
+
+impl PartialEq<IntegerWrapper> for &IntegerWrapper {
+    fn eq(&self, other: &IntegerWrapper) -> bool {
+        self.eq(&other)
+    }
+}
+
+impl PartialOrd<IntegerWrapper> for &IntegerWrapper {
+    fn partial_cmp(&self, other: &IntegerWrapper) -> Option<std::cmp::Ordering> {
+        self.partial_cmp(&other)
     }
 }
 

@@ -118,6 +118,20 @@ impl RationalWrapper {
             Rat(rational) => IntegerWrapper::from(rational.clone().round().into_numer_denom().0),
         }
     }
+
+    pub(crate) fn is_integer(&self) -> bool {
+        match self {
+            SmallRat(r) => r.is_integer(),
+            Rat(rational) => rational.is_integer(),
+        }
+    }
+
+    pub(crate) fn to_integer(&self) -> IntegerWrapper {
+        match self {
+            SmallRat(r) => IntegerWrapper::from(r.get_whole_number_part()),
+            Rat(rational) => IntegerWrapper::from(rational.clone().fract_trunc(Integer::new()).1),
+        }
+    }
 }
 
 macro_rules! arith_binary {
@@ -346,6 +360,44 @@ impl PartialEq for RationalWrapper {
             }
             (Rat(rational), Rat(rational2)) => rational == rational2,
         }
+    }
+}
+
+impl PartialEq<IntegerWrapper> for RationalWrapper {
+    fn eq(&self, other: &IntegerWrapper) -> bool {
+        if !self.is_integer() {
+            return false;
+        }
+        self.to_integer().eq(other)
+    }
+}
+
+impl PartialEq<RationalWrapper> for IntegerWrapper {
+    fn eq(&self, other: &RationalWrapper) -> bool {
+        if !other.is_integer() {
+            return false;
+        }
+        other.to_integer().eq(self)
+    }
+}
+
+impl PartialOrd<IntegerWrapper> for RationalWrapper {
+    fn partial_cmp(&self, other: &IntegerWrapper) -> Option<std::cmp::Ordering> {
+        if self.is_integer() {
+            self.to_integer().partial_cmp(other)
+        } else {
+            if self.floor() >= other {
+                Some(std::cmp::Ordering::Greater)
+            } else {
+                Some(std::cmp::Ordering::Less)
+            }
+        }
+    }
+}
+
+impl PartialOrd<RationalWrapper> for IntegerWrapper {
+    fn partial_cmp(&self, other: &RationalWrapper) -> Option<std::cmp::Ordering> {
+        todo!()
     }
 }
 

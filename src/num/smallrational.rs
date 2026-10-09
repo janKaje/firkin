@@ -102,6 +102,10 @@ impl SmallRational {
         return self.sign == Negative;
     }
 
+    pub(crate) const fn is_integer(&self) -> bool {
+        return self.denominator == 1;
+    }
+
     fn reduce_inplace(mut self) -> Self {
         let gcd = binary_u64(self.numerator, self.denominator);
         self.numerator /= gcd;

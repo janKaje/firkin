@@ -22,6 +22,8 @@ pub(crate) trait PythonNum:
 {
 }
 
+pub(crate) trait PythonRat: Sized + Hash + PythonNum {}
+
 pub(crate) trait PythonInt:
     Sized
     + Rem
@@ -38,7 +40,7 @@ pub(crate) trait PythonInt:
     fn py_index(&self) -> Result<IntegerWrapper, FirkinError>;
 }
 
-pub(crate) trait PythonMathFunctions: Sized + Neg + PartialOrd + PartialEq + Hash {
+pub(crate) trait PythonMathFunctions: Sized + Neg + PartialOrd + PartialEq {
     fn py_pow(
         &self,
         other: &NumberWrapper,

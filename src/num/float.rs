@@ -1,10 +1,14 @@
 #![allow(unused)]
 
-use crate::num::{
-    int::IntegerWrapper,
-    rat::RationalWrapper,
-    smallrational::SmallRational,
-    traits::{FromFloats, FromInts, PythonMathFunctions},
+use crate::{
+    error::FirkinError,
+    num::{
+        int::IntegerWrapper,
+        number::NumberWrapper,
+        rat::RationalWrapper,
+        smallrational::SmallRational,
+        traits::{FromFloats, FromInts, PythonMathFunctions},
+    },
 };
 use rug::{Float, Integer, Rational};
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, Sub, SubAssign};
@@ -12,7 +16,7 @@ use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, Sub, Su
 const DEFAULT_PREC: u32 = 53;
 
 /// Wraps around the logic for both small and large precision floats
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
+#[derive(Clone, Debug)]
 pub(crate) enum FloatWrapper {
     SmallFloat(f64),
     BigFloat(Float),
@@ -65,6 +69,62 @@ impl FloatWrapper {
         match self {
             SmallFloat(f) => f.round().try_into(),
             BigFloat(float) => float.clone().round().try_into(),
+        }
+    }
+
+    pub(crate) fn is_integer(&self) -> bool {
+        match self {
+            SmallFloat(f) => &f.trunc() == f,
+            BigFloat(float) => float.is_integer(),
+        }
+    }
+
+    pub(crate) fn trunc(&self) -> Result<IntegerWrapper, &'static str> {
+        match self {
+            SmallFloat(f) => f.trunc().try_into(),
+            BigFloat(float) => float.clone().trunc().try_into(),
+        }
+    }
+
+    pub(crate) fn is_infinite(&self) -> bool {
+        match self {
+            SmallFloat(f) => f.is_infinite(),
+            BigFloat(float) => float.is_infinite(),
+        }
+    }
+
+    pub(crate) fn is_finite(&self) -> bool {
+        match self {
+            SmallFloat(f) => f.is_finite(),
+            BigFloat(float) => float.is_finite(),
+        }
+    }
+
+    pub(crate) fn is_sign_positive(&self) -> bool {
+        match self {
+            SmallFloat(f) => f.is_sign_positive(),
+            BigFloat(float) => float.is_sign_positive(),
+        }
+    }
+
+    pub(crate) fn is_sign_negative(&self) -> bool {
+        match self {
+            SmallFloat(f) => f.is_sign_negative(),
+            BigFloat(float) => float.is_sign_negative(),
+        }
+    }
+
+    pub(crate) fn is_normal(&self) -> bool {
+        match self {
+            SmallFloat(f) => f.is_normal(),
+            BigFloat(float) => float.is_normal(),
+        }
+    }
+
+    pub(crate) fn is_nan(&self) -> bool {
+        match self {
+            SmallFloat(f) => f.is_nan(),
+            BigFloat(float) => float.is_nan(),
         }
     }
 }
@@ -421,10 +481,25 @@ impl From<Integer> for FloatWrapper {
     }
 }
 
+impl From<&Integer> for FloatWrapper {
+    fn from(value: &Integer) -> Self {
+        FloatWrapper::from(Float::with_val(DEFAULT_PREC, value))
+    }
+}
+
 impl From<IntegerWrapper> for FloatWrapper {
     fn from(value: IntegerWrapper) -> Self {
         match value {
             IntegerWrapper::SmallInt(i) => FloatWrapper::from(i),
+            IntegerWrapper::Int(integer) => FloatWrapper::from(integer),
+        }
+    }
+}
+
+impl From<&IntegerWrapper> for FloatWrapper {
+    fn from(value: &IntegerWrapper) -> Self {
+        match value {
+            IntegerWrapper::SmallInt(i) => FloatWrapper::from(*i),
             IntegerWrapper::Int(integer) => FloatWrapper::from(integer),
         }
     }
@@ -442,6 +517,12 @@ impl From<Rational> for FloatWrapper {
     }
 }
 
+impl From<&Rational> for FloatWrapper {
+    fn from(value: &Rational) -> Self {
+        FloatWrapper::from(Float::with_val(DEFAULT_PREC, value))
+    }
+}
+
 impl From<RationalWrapper> for FloatWrapper {
     fn from(value: RationalWrapper) -> Self {
         match value {
@@ -451,9 +532,174 @@ impl From<RationalWrapper> for FloatWrapper {
     }
 }
 
+impl From<&RationalWrapper> for FloatWrapper {
+    fn from(value: &RationalWrapper) -> Self {
+        match value {
+            RationalWrapper::SmallRat(r) => FloatWrapper::from(*r),
+            RationalWrapper::Rat(rational) => FloatWrapper::from(rational),
+        }
+    }
+}
+
+impl PartialEq for FloatWrapper {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (SmallFloat(f), SmallFloat(f2)) => f.eq(f2),
+            (SmallFloat(f), BigFloat(float)) => f.eq(float),
+            (BigFloat(float), SmallFloat(f)) => float.eq(f),
+            (BigFloat(float), BigFloat(float2)) => float.eq(float2),
+        }
+    }
+}
+
+impl PartialOrd for FloatWrapper {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        match (self, other) {
+            (SmallFloat(f), SmallFloat(f2)) => f.partial_cmp(f2),
+            (SmallFloat(f), BigFloat(float)) => f.partial_cmp(float),
+            (BigFloat(float), SmallFloat(f)) => float.partial_cmp(f),
+            (BigFloat(float), BigFloat(float2)) => float.partial_cmp(float2),
+        }
+    }
+}
+
+impl PartialEq<IntegerWrapper> for FloatWrapper {
+    fn eq(&self, other: &IntegerWrapper) -> bool {
+        if !self.is_integer() {
+            return false;
+        }
+        match self.trunc() {
+            Ok(r) => r.eq(other),
+            Err(_) => false,
+        }
+    }
+}
+
+impl PartialOrd<IntegerWrapper> for FloatWrapper {
+    fn partial_cmp(&self, other: &IntegerWrapper) -> Option<std::cmp::Ordering> {
+        if self.eq(other) {
+            Some(std::cmp::Ordering::Equal)
+        } else if self.is_infinite() {
+            if self.is_sign_positive() {
+                Some(std::cmp::Ordering::Greater)
+            } else {
+                Some(std::cmp::Ordering::Less)
+            }
+        } else if self.is_nan() {
+            None
+        } else {
+            self.partial_cmp(&FloatWrapper::from(other))
+        }
+    }
+}
+
+impl PartialEq<FloatWrapper> for IntegerWrapper {
+    fn eq(&self, other: &FloatWrapper) -> bool {
+        if !other.is_integer() {
+            return false;
+        }
+        match other.trunc() {
+            Ok(r) => self.eq(&r),
+            Err(_) => false,
+        }
+    }
+}
+
+impl PartialOrd<FloatWrapper> for IntegerWrapper {
+    fn partial_cmp(&self, other: &FloatWrapper) -> Option<std::cmp::Ordering> {
+        if other.eq(self) {
+            Some(std::cmp::Ordering::Equal)
+        } else if other.is_infinite() {
+            if other.is_sign_positive() {
+                Some(std::cmp::Ordering::Greater)
+            } else {
+                Some(std::cmp::Ordering::Less)
+            }
+        } else if other.is_nan() {
+            None
+        } else {
+            FloatWrapper::from(self).partial_cmp(other)
+        }
+    }
+}
+
+impl PartialEq<RationalWrapper> for FloatWrapper {
+    fn eq(&self, other: &RationalWrapper) -> bool {
+        self.eq(&FloatWrapper::from(other))
+    }
+}
+
+impl PartialOrd<RationalWrapper> for FloatWrapper {
+    fn partial_cmp(&self, other: &RationalWrapper) -> Option<std::cmp::Ordering> {
+        self.partial_cmp(&FloatWrapper::from(other))
+    }
+}
+
+impl PartialEq<FloatWrapper> for RationalWrapper {
+    fn eq(&self, other: &FloatWrapper) -> bool {
+        FloatWrapper::from(self).eq(other)
+    }
+}
+
+impl PartialOrd<FloatWrapper> for RationalWrapper {
+    fn partial_cmp(&self, other: &FloatWrapper) -> Option<std::cmp::Ordering> {
+        FloatWrapper::from(self).partial_cmp(other)
+    }
+}
+
 impl FromFloats for FloatWrapper {}
 
 impl FromInts for FloatWrapper {}
+
+impl PythonMathFunctions for FloatWrapper {
+    fn py_pow(
+        &self,
+        other: &NumberWrapper,
+        modulus: Option<&NumberWrapper>,
+    ) -> Result<NumberWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_truediv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_floordiv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_divmod(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_abs(&self) -> Result<NumberWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_int(&self) -> Result<IntegerWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_float(&self) -> Result<f64, FirkinError> {
+        todo!()
+    }
+
+    fn py_round(&self, ndigits: i32) -> Result<NumberWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_floor(&self) -> Result<IntegerWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_ceil(&self) -> Result<IntegerWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_trunc(&self) -> Result<IntegerWrapper, FirkinError> {
+        todo!()
+    }
+}
 
 #[cfg(test)]
 mod tests {
