@@ -11,7 +11,8 @@ use crate::{
         float::FloatWrapper,
         int::IntegerWrapper,
         rat::RationalWrapper,
-        traits::{FromFloats, FromInts, PythonMathFunctions},
+        smallrational::SmallRational,
+        traits::{FromFloats, FromInts, PythonMathFunctions, PythonNum},
     },
 };
 
@@ -24,9 +25,11 @@ pub(crate) enum NumberWrapper {
 }
 
 use NumberWrapper::{Float, Int, Rat};
-use rug::{Float as RugFloat, Integer};
+use rug::{Float as RugFloat, Integer, Rational};
 
 impl NumberWrapper {
+    pub(crate) const ZERO: Self = NumberWrapper::Int(IntegerWrapper::ZERO);
+
     pub(crate) fn pow(&self, other: &NumberWrapper) -> NumberWrapper {
         todo!()
     }
@@ -106,6 +109,22 @@ macro_rules! arith_binary {
             }
         }
 
+        impl $ImpAssign<NumberWrapper> for NumberWrapper {
+            fn $method_assign(&mut self, rhs: NumberWrapper) {
+                match (&self, rhs) {
+                    (Int(i), Int(i2)) => *self = Int(i.$method(i2)),
+                    (Int(i), Rat(r)) => *self = Rat(i.$method(r)),
+                    (Int(i), Float(f)) => *self = Float(i.$method(f)),
+                    (Rat(r), Int(i)) => *self = Rat(r.$method(i)),
+                    (Rat(r), Rat(r2)) => *self = Rat(r.$method(r2)),
+                    (Rat(r), Float(f)) => *self = Float(r.$method(f)),
+                    (Float(f), Int(i)) => *self = Float(f.$method(i)),
+                    (Float(f), Rat(r)) => *self = Float(f.$method(r)),
+                    (Float(f), Float(f2)) => *self = Float(f.$method(f2)),
+                }
+            }
+        }
+
         impl $Imp<&NumberWrapper> for &NumberWrapper {
             type Output = NumberWrapper;
 
@@ -138,6 +157,22 @@ macro_rules! arith_binary {
                     (Float(f), Int(i)) => Float(f.$method(i)),
                     (Float(f), Rat(r)) => Float(f.$method(r)),
                     (Float(f), Float(f2)) => Float(f.$method(f2)),
+                }
+            }
+        }
+
+        impl $ImpAssign<&NumberWrapper> for NumberWrapper {
+            fn $method_assign(&mut self, rhs: &NumberWrapper) {
+                match (&self, rhs) {
+                    (Int(i), Int(i2)) => *self = Int(i.$method(i2)),
+                    (Int(i), Rat(r)) => *self = Rat(i.$method(r)),
+                    (Int(i), Float(f)) => *self = Float(i.$method(f)),
+                    (Rat(r), Int(i)) => *self = Rat(r.$method(i)),
+                    (Rat(r), Rat(r2)) => *self = Rat(r.$method(r2)),
+                    (Rat(r), Float(f)) => *self = Float(r.$method(f)),
+                    (Float(f), Int(i)) => *self = Float(f.$method(i)),
+                    (Float(f), Rat(r)) => *self = Float(f.$method(r)),
+                    (Float(f), Float(f2)) => *self = Float(f.$method(f2)),
                 }
             }
         }
@@ -254,6 +289,18 @@ from_float! {f32}
 from_float! {f64}
 from_float! {RugFloat}
 
+impl From<SmallRational> for NumberWrapper {
+    fn from(value: SmallRational) -> Self {
+        Rat(RationalWrapper::SmallRat(value))
+    }
+}
+
+impl From<Rational> for NumberWrapper {
+    fn from(value: Rational) -> Self {
+        Rat(RationalWrapper::Rat(value))
+    }
+}
+
 impl PartialEq for NumberWrapper {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
@@ -303,14 +350,14 @@ impl PythonMathFunctions for NumberWrapper {
         todo!()
     }
 
-    fn py_floordiv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+    fn py_floordiv(&self, other: &NumberWrapper) -> Result<IntegerWrapper, FirkinError> {
         todo!()
     }
 
     fn py_divmod(
         &self,
         other: &NumberWrapper,
-    ) -> Result<(NumberWrapper, NumberWrapper), FirkinError> {
+    ) -> Result<(IntegerWrapper, NumberWrapper), FirkinError> {
         todo!()
     }
 
@@ -341,4 +388,10 @@ impl PythonMathFunctions for NumberWrapper {
     fn py_trunc(&self) -> Result<IntegerWrapper, FirkinError> {
         todo!()
     }
+
+    fn py_mod(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+        todo!()
+    }
 }
+
+impl PythonNum for NumberWrapper {}

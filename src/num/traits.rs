@@ -41,17 +41,20 @@ pub(crate) trait PythonInt:
 }
 
 pub(crate) trait PythonMathFunctions: Sized + Neg + PartialOrd + PartialEq {
+    fn py_mod(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError>;
     fn py_pow(
         &self,
         other: &NumberWrapper,
         modulus: Option<&NumberWrapper>,
     ) -> Result<NumberWrapper, FirkinError>;
     fn py_truediv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError>;
-    fn py_floordiv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError>;
+    fn py_floordiv(&self, other: &NumberWrapper) -> Result<IntegerWrapper, FirkinError>;
     fn py_divmod(
         &self,
         other: &NumberWrapper,
-    ) -> Result<(NumberWrapper, NumberWrapper), FirkinError>;
+    ) -> Result<(IntegerWrapper, NumberWrapper), FirkinError> {
+        Ok((self.py_floordiv(other)?, self.py_mod(other)?))
+    }
     fn py_abs(&self) -> Result<NumberWrapper, FirkinError>;
     fn py_int(&self) -> Result<IntegerWrapper, FirkinError>;
     fn py_float(&self) -> Result<f64, FirkinError>;

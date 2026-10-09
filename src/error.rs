@@ -11,6 +11,7 @@ pub(crate) enum FirkinError {
     CannotConvertToFirkin(String),
     CannotConvertToNumber(String),
     PowModDoesNotExist(String, String, String),
+    DivideByZero(String, String),
 }
 
 impl std::error::Error for FirkinError {}
@@ -33,6 +34,9 @@ impl fmt::Display for FirkinError {
             Self::PowModDoesNotExist(base, exp, modulo) => {
                 write!(f, "{base}^{exp}%{modulo} does not exist")
             }
+            Self::DivideByZero(numer, denom) => {
+                write!(f, "{numer}/{denom} does not exist - divide by zero error")
+            }
         }
     }
 }
@@ -50,6 +54,7 @@ impl std::convert::From<FirkinError> for PyErr {
             FirkinError::CannotConvertToFirkin(_other) => PyTypeError::new_err(err.to_string()),
             FirkinError::CannotConvertToNumber(_other) => PyTypeError::new_err(err.to_string()),
             FirkinError::PowModDoesNotExist(_, _, _) => PyTypeError::new_err(err.to_string()),
+            FirkinError::DivideByZero(_, _) => PyZeroDivisionError::new_err(err.to_string()),
         }
     }
 }

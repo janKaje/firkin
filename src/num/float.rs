@@ -680,14 +680,121 @@ impl PythonMathFunctions for FloatWrapper {
         todo!()
     }
 
-    fn py_floordiv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+    fn py_floordiv(&self, other: &NumberWrapper) -> Result<IntegerWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_abs(&self) -> Result<NumberWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_int(&self) -> Result<IntegerWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_float(&self) -> Result<f64, FirkinError> {
+        todo!()
+    }
+
+    fn py_round(&self, ndigits: i32) -> Result<NumberWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_floor(&self) -> Result<IntegerWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_ceil(&self) -> Result<IntegerWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_trunc(&self) -> Result<IntegerWrapper, FirkinError> {
         todo!()
     }
 
     fn py_divmod(
         &self,
         other: &NumberWrapper,
-    ) -> Result<(NumberWrapper, NumberWrapper), FirkinError> {
+    ) -> Result<(IntegerWrapper, NumberWrapper), FirkinError> {
+        match self {
+            SmallFloat(f) => f.py_divmod(other),
+            BigFloat(float) => float.py_divmod(other),
+        }
+    }
+
+    fn py_mod(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+        todo!()
+    }
+}
+
+impl PythonMathFunctions for f64 {
+    fn py_mod(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_pow(
+        &self,
+        other: &NumberWrapper,
+        modulus: Option<&NumberWrapper>,
+    ) -> Result<NumberWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_truediv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_floordiv(&self, other: &NumberWrapper) -> Result<IntegerWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_abs(&self) -> Result<NumberWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_int(&self) -> Result<IntegerWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_float(&self) -> Result<f64, FirkinError> {
+        todo!()
+    }
+
+    fn py_round(&self, ndigits: i32) -> Result<NumberWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_floor(&self) -> Result<IntegerWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_ceil(&self) -> Result<IntegerWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_trunc(&self) -> Result<IntegerWrapper, FirkinError> {
+        todo!()
+    }
+}
+
+impl PythonMathFunctions for Float {
+    fn py_mod(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_pow(
+        &self,
+        other: &NumberWrapper,
+        modulus: Option<&NumberWrapper>,
+    ) -> Result<NumberWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_truediv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_floordiv(&self, other: &NumberWrapper) -> Result<IntegerWrapper, FirkinError> {
         todo!()
     }
 

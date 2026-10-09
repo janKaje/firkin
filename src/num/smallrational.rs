@@ -102,8 +102,16 @@ impl SmallRational {
         return self.sign == Negative;
     }
 
+    pub(crate) const fn is_zero(&self) -> bool {
+        return self.numerator == 0;
+    }
+
     pub(crate) const fn is_integer(&self) -> bool {
         return self.denominator == 1;
+    }
+
+    pub(crate) fn to_integer(&self) -> IntegerWrapper {
+        return IntegerWrapper::from(self.get_whole_number_part());
     }
 
     fn reduce_inplace(mut self) -> Self {
@@ -556,6 +564,17 @@ impl From<&SmallRational> for SmallRational {
     }
 }
 
+impl TryFrom<i128> for SmallRational {
+    type Error = &'static str;
+
+    fn try_from(value: i128) -> Result<Self, Self::Error> {
+        match SmallRational::try_new(value.unsigned_abs(), 1, value.is_positive()) {
+            Some(res) => Ok(res),
+            None => Err("Overflow"),
+        }
+    }
+}
+
 impl PartialEq for SmallRational {
     fn eq(&self, other: &Self) -> bool {
         self.numerator == other.numerator
@@ -926,15 +945,55 @@ impl Display for SmallRational {
 }
 
 impl PythonMathFunctions for SmallRational {
-    fn py_floordiv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
-        todo!()
-    }
-
-    fn py_divmod(
-        &self,
-        other: &NumberWrapper,
-    ) -> Result<(NumberWrapper, NumberWrapper), FirkinError> {
-        todo!()
+    fn py_floordiv(&self, other: &NumberWrapper) -> Result<IntegerWrapper, FirkinError> {
+        if self.is_zero() {
+            return Ok(IntegerWrapper::ZERO);
+        } else if self.is_integer() {
+            return self.to_integer().py_floordiv(other);
+        }
+        match other {
+            NumberWrapper::Int(int) => {
+                if int.is_zero() {
+                    Err(FirkinError::DivideByZero(self.to_string(), int.to_string()))
+                } else if int.is_positive() {
+                    match int {
+                        IntegerWrapper::SmallInt(i) => match self.checked_div(i.unsigned_abs()) {
+                            Some(res) => {
+                                let mut result: i128 = (res.numerator / res.denominator) as i128;
+                                if self.is_negative() {
+                                    result = -(result as i128) - 1;
+                                }
+                                Ok(IntegerWrapper::from(result))
+                            }
+                            None => Rational::from(self).py_floordiv(other),
+                        },
+                        IntegerWrapper::Int(integer) => Rational::from(self).py_floordiv(other),
+                    }
+                } else {
+                    match int {
+                        IntegerWrapper::SmallInt(i) => match self.checked_div(i.unsigned_abs()) {
+                            Some(res) => {
+                                let mut result: i128 = (res.numerator / res.denominator) as i128;
+                                if self.is_positive() {
+                                    result = -(result as i128) - 1;
+                                }
+                                Ok(IntegerWrapper::from(result))
+                            }
+                            None => Rational::from(self).py_floordiv(other),
+                        },
+                        IntegerWrapper::Int(integer) => Rational::from(self).py_floordiv(other),
+                    }
+                }
+            }
+            NumberWrapper::Rat(rat) => match rat {
+                RationalWrapper::SmallRat(r) => match self.checked_div(r) {
+                    Some(res) => Ok(IntegerWrapper::from(res.floor())),
+                    None => Rational::from(self).py_floordiv(other),
+                },
+                RationalWrapper::Rat(rational) => Rational::from(self).py_floordiv(other),
+            },
+            NumberWrapper::Float(float) => FloatWrapper::from(*self).py_floordiv(other),
+        }
     }
 
     fn py_pow(
@@ -942,39 +1001,124 @@ impl PythonMathFunctions for SmallRational {
         other: &NumberWrapper,
         modulus: Option<&NumberWrapper>,
     ) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        if self.is_zero() {
+            return Ok(NumberWrapper::ZERO);
+        } else if self.is_integer() {
+            return self.to_integer().py_pow(other, modulus);
+        }
+        match other {
+            NumberWrapper::Int(integer_wrapper) => match integer_wrapper {
+                IntegerWrapper::SmallInt(i) => {
+                    if i.unsigned_abs() > i32::MAX as u64 {
+                        Rational::from(self).py_pow(other, modulus)
+                    } else {
+                        match self.checked_pow(*i as i32) {
+                            Some(res) => Ok(NumberWrapper::from(res)),
+                            None => Rational::from(self).py_pow(other, modulus),
+                        }
+                    }
+                }
+                IntegerWrapper::Int(integer) => FloatWrapper::from(*self).py_pow(other, modulus),
+            },
+            _ => FloatWrapper::from(*self).py_pow(other, modulus),
+        }
     }
 
     fn py_truediv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        if self.is_zero() {
+            return Ok(NumberWrapper::ZERO);
+        }
+        match other {
+            NumberWrapper::Int(integer_wrapper) => match integer_wrapper {
+                IntegerWrapper::SmallInt(i) => match self.checked_div(*i) {
+                    Some(res) => Ok(NumberWrapper::from(res)),
+                    None => Rational::from(self).py_truediv(other),
+                },
+                IntegerWrapper::Int(integer) => Rational::from(self).py_truediv(other),
+            },
+            NumberWrapper::Rat(rational_wrapper) => match rational_wrapper {
+                RationalWrapper::SmallRat(r) => match self.checked_div(r) {
+                    Some(res) => Ok(NumberWrapper::from(res)),
+                    None => Rational::from(self).py_truediv(other),
+                },
+                RationalWrapper::Rat(rational) => Ok(NumberWrapper::from(self / rational)),
+            },
+            NumberWrapper::Float(float_wrapper) => FloatWrapper::from(*self).py_truediv(other),
+        }
     }
 
     fn py_abs(&self) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        Ok(self.abs().into())
     }
 
     fn py_int(&self) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        Ok(self.to_integer())
     }
 
     fn py_float(&self) -> Result<f64, FirkinError> {
-        todo!()
+        Ok(self.into())
     }
 
     fn py_round(&self, ndigits: i32) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        Ok(self.round().into())
     }
 
     fn py_floor(&self) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        Ok(self.floor().into())
     }
 
     fn py_ceil(&self) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        Ok(self.ceil().into())
     }
 
     fn py_trunc(&self) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        Ok(self.get_whole_number_part().into())
+    }
+
+    fn py_mod(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+        if self.is_zero() {
+            return Ok(NumberWrapper::ZERO);
+        }
+        match other {
+            NumberWrapper::Int(integer_wrapper) => {
+                let (frac, trunc) = (self.get_remainder(), self.get_whole_number_part());
+                let rem_trunc = match integer_wrapper {
+                    IntegerWrapper::SmallInt(i) => trunc % *i as i128,
+                    IntegerWrapper::Int(integer) => {
+                        Integer::from(trunc % integer).to_i128_wrapping()
+                    }
+                };
+                match SmallRational::try_new(rem_trunc.unsigned_abs(), 1, rem_trunc.is_positive()) {
+                    Some(rem_trunc) => match frac.checked_add(rem_trunc) {
+                        Some(res) => Ok(NumberWrapper::from(res)),
+                        None => unreachable!(),
+                    },
+                    None => unreachable!(),
+                }
+            }
+            NumberWrapper::Rat(rational_wrapper) => match rational_wrapper {
+                RationalWrapper::SmallRat(r) => {
+                    let adivb = match self.checked_div(r) {
+                        Some(adivb) => adivb,
+                        None => return Rational::from(self).py_mod(other),
+                    };
+                    let adivb_floor = match SmallRational::try_from(adivb.floor()) {
+                        Ok(adivb_floor) => adivb_floor,
+                        Err(_) => return Rational::from(self).py_mod(other),
+                    };
+                    let bfloor = match r.checked_mul(adivb_floor) {
+                        Some(bfloor) => bfloor,
+                        None => return Rational::from(self).py_mod(other),
+                    };
+                    match self.checked_sub(bfloor) {
+                        Some(res) => Ok(NumberWrapper::from(res)),
+                        None => Rational::from(self).py_mod(other),
+                    }
+                },
+                RationalWrapper::Rat(rational) => Rational::from(self).py_mod(other),
+            },
+            NumberWrapper::Float(float_wrapper) => FloatWrapper::from(*self).py_mod(other),
+        }
     }
 }
 
