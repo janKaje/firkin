@@ -931,6 +931,12 @@ impl PythonMathFunctions for i64 {
     }
 
     fn py_truediv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+        if other.is_zero() {
+            return Err(FirkinError::DivideByZero(
+                self.to_string(),
+                other.to_string(),
+            ));
+        }
         match other {
             NumberWrapper::Int(i) => Ok(NumberWrapper::Rat(RationalWrapper::from((*self, i)))),
             NumberWrapper::Rat(r) => Ok(NumberWrapper::Rat(RationalWrapper::from(*self) / r)),
@@ -939,6 +945,12 @@ impl PythonMathFunctions for i64 {
     }
 
     fn py_floordiv(&self, other: &NumberWrapper) -> Result<IntegerWrapper, FirkinError> {
+        if other.is_zero() {
+            return Err(FirkinError::DivideByZero(
+                self.to_string(),
+                other.to_string(),
+            ));
+        }
         match other {
             NumberWrapper::Int(i) => Ok({
                 match i {
@@ -1061,6 +1073,12 @@ impl PythonMathFunctions for Integer {
     }
 
     fn py_truediv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+        if other.is_zero() {
+            return Err(FirkinError::DivideByZero(
+                self.to_string(),
+                other.to_string(),
+            ));
+        }
         match other {
             NumberWrapper::Int(i) => Ok(NumberWrapper::Rat(RationalWrapper::from((self, i)))),
             NumberWrapper::Rat(r) => Ok(NumberWrapper::Rat(RationalWrapper::from(self) / r)),
@@ -1069,6 +1087,12 @@ impl PythonMathFunctions for Integer {
     }
 
     fn py_floordiv(&self, other: &NumberWrapper) -> Result<IntegerWrapper, FirkinError> {
+        if other.is_zero() {
+            return Err(FirkinError::DivideByZero(
+                self.to_string(),
+                other.to_string(),
+            ));
+        }
         match other {
             NumberWrapper::Int(i) => Ok({
                 match i {

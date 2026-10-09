@@ -134,6 +134,13 @@ impl FloatWrapper {
             BigFloat(float) => float.is_nan(),
         }
     }
+
+    pub(crate) fn is_zero(&self) -> bool {
+        match self {
+            SmallFloat(f) => f.abs() == 0.0,
+            BigFloat(float) => float.is_zero(),
+        }
+    }
 }
 
 use FloatWrapper::{BigFloat, SmallFloat};
@@ -741,10 +748,22 @@ impl PythonMathFunctions for f64 {
     }
 
     fn py_truediv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+        if other.is_zero() {
+            return Err(FirkinError::DivideByZero(
+                self.to_string(),
+                other.to_string(),
+            ));
+        }
         todo!()
     }
 
     fn py_floordiv(&self, other: &NumberWrapper) -> Result<IntegerWrapper, FirkinError> {
+        if other.is_zero() {
+            return Err(FirkinError::DivideByZero(
+                self.to_string(),
+                other.to_string(),
+            ));
+        }
         todo!()
     }
 
@@ -791,10 +810,22 @@ impl PythonMathFunctions for Float {
     }
 
     fn py_truediv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+        if other.is_zero() {
+            return Err(FirkinError::DivideByZero(
+                self.to_string(),
+                other.to_string(),
+            ));
+        }
         todo!()
     }
 
     fn py_floordiv(&self, other: &NumberWrapper) -> Result<IntegerWrapper, FirkinError> {
+        if other.is_zero() {
+            return Err(FirkinError::DivideByZero(
+                self.to_string(),
+                other.to_string(),
+            ));
+        }
         todo!()
     }
 

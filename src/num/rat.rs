@@ -8,6 +8,7 @@ use crate::num::{float::FloatWrapper, number::NumberWrapper};
 
 use regex::regex;
 use rug::Float;
+use rug::ops::PowAssign;
 use rug::{Integer, Rational, ops::Pow};
 use std::{
     fmt::Display,
@@ -124,6 +125,13 @@ impl RationalWrapper {
         match self {
             SmallRat(r) => r.is_integer(),
             Rat(rational) => rational.is_integer(),
+        }
+    }
+
+    pub(crate) fn is_zero(&self) -> bool {
+        match self {
+            SmallRat(r) => r.is_zero(),
+            Rat(rational) => rational.is_zero(),
         }
     }
 
@@ -507,6 +515,12 @@ impl From<&Integer> for RationalWrapper {
     }
 }
 
+impl From<&Rational> for RationalWrapper {
+    fn from(value: &Rational) -> Self {
+        RationalWrapper::from(Rational::from(value))
+    }
+}
+
 impl<Num, Den> From<(Num, Den)> for RationalWrapper
 where
     Integer: From<Num> + From<Den>,
@@ -672,47 +686,159 @@ impl PythonMathFunctions for Rational {
         other: &NumberWrapper,
         modulus: Option<&NumberWrapper>,
     ) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        if self.is_zero() {
+            return Ok(NumberWrapper::ZERO);
+        } else if self.is_integer() {
+            return self
+                .clone()
+                .fract_trunc(Integer::new())
+                .1
+                .py_pow(other, modulus);
+        }
+        match other {
+            NumberWrapper::Int(integer_wrapper) => match modulus {
+                Some(m) => self.py_pow(other, None)?.py_mod(m),
+                None => match integer_wrapper {
+                    SmallInt(i) => {
+                        if i.unsigned_abs() > u32::MAX as u64 {
+                            FloatWrapper::from(self).py_pow(other, modulus)
+                        } else if i.is_positive() {
+                            let mut clone = self.clone();
+                            clone.mutate_numer_denom(|num, den| {
+                                num.pow_assign(i.unsigned_abs() as u32);
+                                den.pow_assign(i.unsigned_abs() as u32);
+                            });
+                            Ok(NumberWrapper::from(clone))
+                        } else {
+                            let mut clone = self.clone();
+                            clone.mutate_numer_denom(|num, den| {
+                                num.pow_assign(i.unsigned_abs() as u32);
+                                den.pow_assign(i.unsigned_abs() as u32);
+                            });
+                            Ok(NumberWrapper::from(1 / clone))
+                        }
+                    }
+                    Int(integer) => FloatWrapper::from(self).py_pow(other, modulus),
+                },
+            },
+            _ => FloatWrapper::from(self).py_pow(other, modulus),
+        }
     }
 
     fn py_truediv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        if other.is_zero() {
+            return Err(FirkinError::DivideByZero(
+                self.to_string(),
+                other.to_string(),
+            ));
+        } else if self.is_zero() {
+            return Ok(NumberWrapper::ZERO);
+        }
+        match other {
+            NumberWrapper::Int(integer_wrapper) => match integer_wrapper {
+                SmallInt(i) => Ok(NumberWrapper::from(Rational::from(self.div(i)))),
+                Int(integer) => Ok(NumberWrapper::from(Rational::from(self.div(integer)))),
+            },
+            NumberWrapper::Rat(rational_wrapper) => match rational_wrapper {
+                RationalWrapper::SmallRat(r) => {
+                    Ok(NumberWrapper::from(Rational::from(self.div(r))))
+                }
+                RationalWrapper::Rat(rational) => {
+                    Ok(NumberWrapper::from(Rational::from(self.div(rational))))
+                }
+            },
+            NumberWrapper::Float(float_wrapper) => FloatWrapper::from(self).py_truediv(other),
+        }
     }
 
     fn py_floordiv(&self, other: &NumberWrapper) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        if other.is_zero() {
+            return Err(FirkinError::DivideByZero(
+                self.to_string(),
+                other.to_string(),
+            ));
+        } else if self.is_zero() {
+            return Ok(IntegerWrapper::ZERO);
+        } else if self.is_integer() {
+            return self
+                .clone()
+                .fract_trunc(Integer::new())
+                .1
+                .py_floordiv(other);
+        }
+        match other {
+            NumberWrapper::Int(int) => match int {
+                IntegerWrapper::SmallInt(i) => {
+                    Ok(RationalWrapper::from(Rational::from(self.div(i)).floor()).to_integer())
+                }
+                IntegerWrapper::Int(integer) => Ok(RationalWrapper::from(
+                    Rational::from(self.div(integer)).floor(),
+                )
+                .to_integer()),
+            },
+            NumberWrapper::Rat(rat) => match rat {
+                RationalWrapper::SmallRat(r) => Ok(RationalWrapper::from(Rational::from(self.div(r)).floor()).to_integer()),
+                RationalWrapper::Rat(rational) => Ok(RationalWrapper::from(Rational::from(self.div(rational)).floor()).to_integer()),
+            },
+            NumberWrapper::Float(float) => FloatWrapper::from(self).py_floordiv(other),
+        }
     }
 
     fn py_abs(&self) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        Ok(self.clone().abs().into())
     }
 
     fn py_int(&self) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        Ok(RationalWrapper::from(self).to_integer())
     }
 
     fn py_float(&self) -> Result<f64, FirkinError> {
-        todo!()
+        Ok(self.clone().to_f64())
     }
 
     fn py_round(&self, ndigits: i32) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        if ndigits < 0 {
+            let div = Integer::from(10).pow(ndigits.unsigned_abs());
+            Ok(NumberWrapper::from(RationalWrapper::from(Rational::from(self / &div).round() * div).to_integer()))
+        } else if ndigits == 0 {
+            Ok(NumberWrapper::from(RationalWrapper::from(self.clone().round()).to_integer()))
+        } else {
+            let mul = Integer::from(10).pow(ndigits.unsigned_abs());
+            Ok(NumberWrapper::from(Rational::from(self * &mul).round() / mul))
+        }
     }
 
     fn py_floor(&self) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        Ok(RationalWrapper::from(self).floor())
     }
 
     fn py_ceil(&self) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        Ok(RationalWrapper::from(self).ceil())
     }
 
     fn py_trunc(&self) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        Ok(RationalWrapper::from(self).to_integer())
     }
 
     fn py_mod(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        if self.is_zero() {
+            return Ok(NumberWrapper::ZERO);
+        }
+        match other {
+            NumberWrapper::Int(integer_wrapper) => {
+                let (frac, trunc) = self.clone().fract_trunc(Integer::new());
+                let rem_trunc = match integer_wrapper {
+                    IntegerWrapper::SmallInt(i) => trunc % i,
+                    IntegerWrapper::Int(integer) => trunc % integer
+                };
+                Ok(NumberWrapper::from(frac + rem_trunc))
+            }
+            NumberWrapper::Rat(rational_wrapper) => match rational_wrapper {
+                RationalWrapper::SmallRat(r) => Ok(NumberWrapper::from(self - r * &(self / r).floor())),
+                RationalWrapper::Rat(rational) => Ok(NumberWrapper::from(self - rational * Rational::from(self / rational).floor())),
+            },
+            NumberWrapper::Float(float_wrapper) => FloatWrapper::from(self).py_mod(other),
+        }
     }
 }
 

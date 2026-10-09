@@ -946,16 +946,19 @@ impl Display for SmallRational {
 
 impl PythonMathFunctions for SmallRational {
     fn py_floordiv(&self, other: &NumberWrapper) -> Result<IntegerWrapper, FirkinError> {
-        if self.is_zero() {
+        if other.is_zero() {
+            return Err(FirkinError::DivideByZero(
+                self.to_string(),
+                other.to_string(),
+            ));
+        } else if self.is_zero() {
             return Ok(IntegerWrapper::ZERO);
         } else if self.is_integer() {
             return self.to_integer().py_floordiv(other);
         }
         match other {
             NumberWrapper::Int(int) => {
-                if int.is_zero() {
-                    Err(FirkinError::DivideByZero(self.to_string(), int.to_string()))
-                } else if int.is_positive() {
+                if int.is_positive() {
                     match int {
                         IntegerWrapper::SmallInt(i) => match self.checked_div(i.unsigned_abs()) {
                             Some(res) => {
@@ -1025,7 +1028,12 @@ impl PythonMathFunctions for SmallRational {
     }
 
     fn py_truediv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
-        if self.is_zero() {
+        if other.is_zero() {
+            return Err(FirkinError::DivideByZero(
+                self.to_string(),
+                other.to_string(),
+            ));
+        } else if self.is_zero() {
             return Ok(NumberWrapper::ZERO);
         }
         match other {
@@ -1043,6 +1051,7 @@ impl PythonMathFunctions for SmallRational {
                 },
                 RationalWrapper::Rat(rational) => Ok(NumberWrapper::from(self / rational)),
             },
+
             NumberWrapper::Float(float_wrapper) => FloatWrapper::from(*self).py_truediv(other),
         }
     }
@@ -1114,7 +1123,7 @@ impl PythonMathFunctions for SmallRational {
                         Some(res) => Ok(NumberWrapper::from(res)),
                         None => Rational::from(self).py_mod(other),
                     }
-                },
+                }
                 RationalWrapper::Rat(rational) => Rational::from(self).py_mod(other),
             },
             NumberWrapper::Float(float_wrapper) => FloatWrapper::from(*self).py_mod(other),

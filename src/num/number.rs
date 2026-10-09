@@ -74,6 +74,14 @@ impl NumberWrapper {
             Float(f) => f.to_f64(),
         }
     }
+
+    pub(crate) fn is_zero(&self) -> bool {
+        match self {
+            Int(integer_wrapper) => integer_wrapper.is_zero(),
+            Rat(rational_wrapper) => rational_wrapper.is_zero(),
+            Float(float_wrapper) => float_wrapper.is_zero(),
+        }
+    }
 }
 
 impl Display for NumberWrapper {
