@@ -21,6 +21,8 @@ pub(crate) enum IntegerWrapper {
 use IntegerWrapper::{Int, SmallInt};
 
 impl IntegerWrapper {
+    const ZERO: Self = IntegerWrapper::SmallInt(0);
+
     pub(crate) const fn is_positive(&self) -> bool {
         match self {
             SmallInt(i) => i.is_positive(),
@@ -80,6 +82,15 @@ impl IntegerWrapper {
 
     pub(crate) fn round(&self) -> IntegerWrapper {
         self.clone()
+    }
+}
+
+impl std::fmt::Display for IntegerWrapper {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SmallInt(i) => i.fmt(f),
+            Int(integer) => integer.fmt(f),
+        }
     }
 }
 
@@ -554,6 +565,16 @@ impl From<Integer> for IntegerWrapper {
     }
 }
 
+impl From<&Integer> for IntegerWrapper {
+    fn from(value: &Integer) -> Self {
+        if value > &Integer::from(i64::MAX) || value < &Integer::from(i64::MIN) {
+            Int(value.into())
+        } else {
+            SmallInt(value.to_i64_wrapping())
+        }
+    }
+}
+
 impl From<i8> for IntegerWrapper {
     fn from(value: i8) -> Self {
         SmallInt(value as i64)
@@ -599,6 +620,18 @@ impl From<u16> for IntegerWrapper {
 impl From<u32> for IntegerWrapper {
     fn from(value: u32) -> Self {
         SmallInt(value as i64)
+    }
+}
+
+impl From<IntegerWrapper> for Integer {
+    fn from(value: IntegerWrapper) -> Self {
+        value.as_integer()
+    }
+}
+
+impl From<&IntegerWrapper> for Integer {
+    fn from(value: &IntegerWrapper) -> Self {
+        value.as_integer()
     }
 }
 
@@ -769,7 +802,10 @@ impl PythonMathFunctions for IntegerWrapper {
         }
     }
 
-    fn py_divmod(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+    fn py_divmod(
+        &self,
+        other: &NumberWrapper,
+    ) -> Result<(NumberWrapper, NumberWrapper), FirkinError> {
         match self {
             SmallInt(i) => i.py_divmod(other),
             Int(integer) => integer.py_divmod(other),
@@ -783,35 +819,45 @@ impl PythonMathFunctions for i64 {
         other: &NumberWrapper,
         modulus: Option<&NumberWrapper>,
     ) -> Result<NumberWrapper, FirkinError> {
-        todo!()
-        // match other {
-        //     NumberWrapper::Int(integer_wrapper) => match integer_wrapper {
-        //         SmallInt(i_exp) => match modulus {
-        //             Some(m) => match m {
-        //                 NumberWrapper::Int(integer_mod) => {
-        //                     match Integer::from(*self).pow_mod(&Integer::from(*i_exp), &integer_mod.as_integer()) {
-        //                         Ok(result) => Ok(NumberWrapper::from(result)),
-        //                         Err(_) => Err(FirkinError::PowModDoesNotExist(self.to_string(), other.to_string(), modulus.to_string())),
-        //                     }
-        //                 },
-        //                 _ => FloatWrapper::from(*self).py_pow(other, modulus),
-        //             },
-        //             None => if i_exp.is_positive() {
-        //                 Ok(NumberWrapper::from(Integer::from(Integer::i64_pow_u64(
-        //                     *self,
-        //                     i_exp.unsigned_abs(),
-        //                 ))))
-        //             } else {
-        //                 Ok(NumberWrapper::Rat(RationalWrapper::from((
-        //                     Integer::ONE,
-        //                     Integer::i64_pow_u64(*self, i_exp.unsigned_abs()),
-        //                 ))))
-        //             },
-        //         }
-        //         Int(integer_exp) => FloatWrapper::from(*self).py_pow(other, modulus),
-        //     },
-        //     _ => FloatWrapper::from(*self).py_pow(other, modulus),
-        // }
+        match other {
+            NumberWrapper::Int(integer_wrapper) => match integer_wrapper {
+                SmallInt(i_exp) => match modulus {
+                    Some(m) => match m {
+                        NumberWrapper::Int(integer_mod) => {
+                            match Integer::from(*self)
+                                .pow_mod(&Integer::from(*i_exp), &integer_mod.as_integer())
+                            {
+                                Ok(result) => Ok(NumberWrapper::from(result)),
+                                Err(_) => Err(FirkinError::PowModDoesNotExist(
+                                    self.to_string(),
+                                    other.to_string(),
+                                    match modulus {
+                                        Some(m) => m.to_string(),
+                                        None => String::from("no modulus"),
+                                    },
+                                )),
+                            }
+                        }
+                        _ => FloatWrapper::from(*self).py_pow(other, modulus),
+                    },
+                    None => {
+                        if i_exp.is_positive() {
+                            Ok(NumberWrapper::from(Integer::from(Integer::i64_pow_u64(
+                                *self,
+                                i_exp.unsigned_abs(),
+                            ))))
+                        } else {
+                            Ok(NumberWrapper::Rat(RationalWrapper::from((
+                                Integer::ONE,
+                                Integer::i64_pow_u64(*self, i_exp.unsigned_abs()),
+                            ))))
+                        }
+                    }
+                },
+                Int(integer_exp) => FloatWrapper::from(*self).py_pow(other, modulus),
+            },
+            _ => FloatWrapper::from(*self).py_pow(other, modulus),
+        }
     }
 
     fn py_abs(&self) -> Result<NumberWrapper, FirkinError> {
@@ -868,14 +914,37 @@ impl PythonMathFunctions for i64 {
     }
 
     fn py_truediv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        match other {
+            NumberWrapper::Int(i) => Ok(NumberWrapper::Rat(RationalWrapper::from((*self, i)))),
+            NumberWrapper::Rat(r) => Ok(NumberWrapper::Rat(RationalWrapper::from(*self) / r)),
+            NumberWrapper::Float(f) => Ok(NumberWrapper::Float(FloatWrapper::from(*self) / f)),
+        }
     }
 
     fn py_floordiv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        match other {
+            NumberWrapper::Int(i) => Ok(NumberWrapper::Int({
+                match i {
+                    SmallInt(int) => IntegerWrapper::from(self / int),
+                    Int(integer) => IntegerWrapper::from(Integer::from(self / integer)),
+                }
+            })),
+            NumberWrapper::Rat(r) => Ok(NumberWrapper::Int({
+                (IntegerWrapper::from(*self) / r).to_integer()
+            })),
+            NumberWrapper::Float(f) => Ok(NumberWrapper::Int({
+                match (IntegerWrapper::from(*self) / f).to_integer() {
+                    Ok(r) => r,
+                    Err(e) => IntegerWrapper::ZERO,
+                }
+            })),
+        }
     }
 
-    fn py_divmod(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+    fn py_divmod(
+        &self,
+        other: &NumberWrapper,
+    ) -> Result<(NumberWrapper, NumberWrapper), FirkinError> {
         todo!()
     }
 }
@@ -886,7 +955,47 @@ impl PythonMathFunctions for Integer {
         other: &NumberWrapper,
         modulus: Option<&NumberWrapper>,
     ) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        match other {
+            NumberWrapper::Int(integer_wrapper) => match integer_wrapper {
+                SmallInt(i_exp) => match modulus {
+                    Some(m) => match m {
+                        NumberWrapper::Int(integer_mod) => {
+                            match self
+                                .clone()
+                                .pow_mod(&Integer::from(*i_exp), &integer_mod.as_integer())
+                            {
+                                Ok(result) => Ok(NumberWrapper::from(result)),
+                                Err(_) => Err(FirkinError::PowModDoesNotExist(
+                                    self.to_string(),
+                                    other.to_string(),
+                                    match modulus {
+                                        Some(m) => m.to_string(),
+                                        None => String::from("no modulus"),
+                                    },
+                                )),
+                            }
+                        }
+                        _ => FloatWrapper::from(self).py_pow(other, modulus),
+                    },
+                    None => {
+                        if i_exp.unsigned_abs() > u32::MAX as u64 {
+                            FloatWrapper::from(self).py_pow(other, modulus)
+                        } else if i_exp.is_positive() {
+                            Ok(NumberWrapper::from(Integer::from(
+                                self.pow(i_exp.unsigned_abs() as u32),
+                            )))
+                        } else {
+                            Ok(NumberWrapper::Rat(RationalWrapper::from((
+                                Integer::ONE,
+                                self.pow(i_exp.unsigned_abs() as u32),
+                            ))))
+                        }
+                    }
+                },
+                Int(integer_exp) => FloatWrapper::from(self).py_pow(other, modulus),
+            },
+            _ => FloatWrapper::from(self).py_pow(other, modulus),
+        }
     }
 
     fn py_abs(&self) -> Result<NumberWrapper, FirkinError> {
@@ -930,14 +1039,37 @@ impl PythonMathFunctions for Integer {
     }
 
     fn py_truediv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        match other {
+            NumberWrapper::Int(i) => Ok(NumberWrapper::Rat(RationalWrapper::from((self, i)))),
+            NumberWrapper::Rat(r) => Ok(NumberWrapper::Rat(RationalWrapper::from(self) / r)),
+            NumberWrapper::Float(f) => Ok(NumberWrapper::Float(FloatWrapper::from(self) / f)),
+        }
     }
 
     fn py_floordiv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        match other {
+            NumberWrapper::Int(i) => Ok(NumberWrapper::Int({
+                match i {
+                    SmallInt(int) => IntegerWrapper::from(Integer::from(self / int)),
+                    Int(integer) => IntegerWrapper::from(Integer::from(self / integer)),
+                }
+            })),
+            NumberWrapper::Rat(r) => Ok(NumberWrapper::Int({
+                (IntegerWrapper::from(self) / r).to_integer()
+            })),
+            NumberWrapper::Float(f) => Ok(NumberWrapper::Int({
+                match (IntegerWrapper::from(self) / f).to_integer() {
+                    Ok(r) => r,
+                    Err(e) => IntegerWrapper::ZERO,
+                }
+            })),
+        }
     }
 
-    fn py_divmod(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+    fn py_divmod(
+        &self,
+        other: &NumberWrapper,
+    ) -> Result<(NumberWrapper, NumberWrapper), FirkinError> {
         todo!()
     }
 }

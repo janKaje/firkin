@@ -1,12 +1,18 @@
 #![allow(unused)]
 
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
+use std::{
+    fmt::Display,
+    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
+};
 
-use crate::num::{
-    float::FloatWrapper,
-    int::IntegerWrapper,
-    rat::RationalWrapper,
-    traits::{FromFloats, FromInts, PythonMathFunctions},
+use crate::{
+    error::FirkinError,
+    num::{
+        float::FloatWrapper,
+        int::IntegerWrapper,
+        rat::RationalWrapper,
+        traits::{FromFloats, FromInts, PythonMathFunctions},
+    },
 };
 
 /// Single number, whether it's integer, rational, or irrational
@@ -63,6 +69,16 @@ impl NumberWrapper {
             Int(i) => i.to_f64(),
             Rat(r) => r.to_f64(),
             Float(f) => f.to_f64(),
+        }
+    }
+}
+
+impl Display for NumberWrapper {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Int(integer_wrapper) => integer_wrapper.fmt(f),
+            Rat(rational_wrapper) => rational_wrapper.fmt(f),
+            Float(float_wrapper) => float_wrapper.fmt(f),
         }
     }
 }
@@ -279,53 +295,50 @@ impl PythonMathFunctions for NumberWrapper {
         &self,
         other: &NumberWrapper,
         modulus: Option<&NumberWrapper>,
-    ) -> Result<NumberWrapper, crate::error::FirkinError> {
+    ) -> Result<NumberWrapper, FirkinError> {
         todo!()
     }
 
-    fn py_truediv(
+    fn py_truediv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_floordiv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_divmod(
         &self,
         other: &NumberWrapper,
-    ) -> Result<NumberWrapper, crate::error::FirkinError> {
+    ) -> Result<(NumberWrapper, NumberWrapper), FirkinError> {
         todo!()
     }
 
-    fn py_floordiv(
-        &self,
-        other: &NumberWrapper,
-    ) -> Result<NumberWrapper, crate::error::FirkinError> {
+    fn py_abs(&self) -> Result<NumberWrapper, FirkinError> {
         todo!()
     }
 
-    fn py_divmod(&self, other: &NumberWrapper) -> Result<NumberWrapper, crate::error::FirkinError> {
+    fn py_int(&self) -> Result<IntegerWrapper, FirkinError> {
         todo!()
     }
 
-    fn py_abs(&self) -> Result<NumberWrapper, crate::error::FirkinError> {
+    fn py_float(&self) -> Result<f64, FirkinError> {
         todo!()
     }
 
-    fn py_int(&self) -> Result<IntegerWrapper, crate::error::FirkinError> {
+    fn py_round(&self, ndigits: i32) -> Result<NumberWrapper, FirkinError> {
         todo!()
     }
 
-    fn py_float(&self) -> Result<f64, crate::error::FirkinError> {
+    fn py_floor(&self) -> Result<IntegerWrapper, FirkinError> {
         todo!()
     }
 
-    fn py_round(&self, ndigits: i32) -> Result<NumberWrapper, crate::error::FirkinError> {
+    fn py_ceil(&self) -> Result<IntegerWrapper, FirkinError> {
         todo!()
     }
 
-    fn py_floor(&self) -> Result<IntegerWrapper, crate::error::FirkinError> {
-        todo!()
-    }
-
-    fn py_ceil(&self) -> Result<IntegerWrapper, crate::error::FirkinError> {
-        todo!()
-    }
-
-    fn py_trunc(&self) -> Result<IntegerWrapper, crate::error::FirkinError> {
+    fn py_trunc(&self) -> Result<IntegerWrapper, FirkinError> {
         todo!()
     }
 }

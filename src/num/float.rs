@@ -11,7 +11,10 @@ use crate::{
     },
 };
 use rug::{Float, Integer, Rational};
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, Sub, SubAssign};
+use std::{
+    fmt::Display,
+    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, Sub, SubAssign},
+};
 
 const DEFAULT_PREC: u32 = 53;
 
@@ -79,6 +82,10 @@ impl FloatWrapper {
         }
     }
 
+    pub(crate) fn to_integer(&self) -> Result<IntegerWrapper, &'static str> {
+        self.trunc()
+    }
+
     pub(crate) fn trunc(&self) -> Result<IntegerWrapper, &'static str> {
         match self {
             SmallFloat(f) => f.trunc().try_into(),
@@ -130,6 +137,15 @@ impl FloatWrapper {
 }
 
 use FloatWrapper::{BigFloat, SmallFloat};
+
+impl Display for FloatWrapper {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SmallFloat(flt) => flt.fmt(f),
+            BigFloat(float) => float.fmt(f),
+        }
+    }
+}
 
 macro_rules! arith_binary {
     (
@@ -668,7 +684,10 @@ impl PythonMathFunctions for FloatWrapper {
         todo!()
     }
 
-    fn py_divmod(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+    fn py_divmod(
+        &self,
+        other: &NumberWrapper,
+    ) -> Result<(NumberWrapper, NumberWrapper), FirkinError> {
         todo!()
     }
 
