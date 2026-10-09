@@ -39,10 +39,10 @@ pub(crate) trait PythonMathFunctions:
     + BitXor
     + BitXorAssign
     + Not
-    + Shl
-    + ShlAssign
-    + Shr
-    + ShrAssign
+    + Shl<u32>
+    + ShlAssign<u32>
+    + Shr<u32>
+    + ShrAssign<u32>
     + Hash
 {
     fn py_pow(

@@ -221,187 +221,71 @@ arith_binary! {
     DivAssign { div_assign }
 }
 
-impl Shl<IntegerWrapper> for IntegerWrapper {
+impl Shl<u32> for IntegerWrapper {
     type Output = IntegerWrapper;
 
-    fn shl(self, rhs: IntegerWrapper) -> Self::Output {
-        if rhs.is_positive() {
-            let rhs = rhs.abs().as_u32();
-            match self {
-                SmallInt(i) => SmallInt(i.shl(rhs)),
-                Int(integer) => IntegerWrapper::from(integer.shl(rhs)),
-            }
-        } else {
-            self.shr(rhs.abs())
+    fn shl(self, rhs: u32) -> Self::Output {
+        match self {
+            SmallInt(i) => SmallInt(i.shl(rhs)),
+            Int(integer) => IntegerWrapper::from(integer.shl(rhs)),
         }
     }
 }
 
-impl Shr<IntegerWrapper> for IntegerWrapper {
+impl Shr<u32> for IntegerWrapper {
     type Output = IntegerWrapper;
 
-    fn shr(self, rhs: IntegerWrapper) -> Self::Output {
-        if rhs.is_positive() {
-            let rhs = rhs.abs().as_u32();
+    fn shr(self, rhs: u32) -> Self::Output {
+        
             match self {
                 SmallInt(i) => SmallInt(i.shr(rhs)),
                 Int(integer) => IntegerWrapper::from(integer.shr(rhs)),
             }
-        } else {
-            self.shl(rhs.abs())
-        }
+        
     }
 }
 
-impl ShlAssign<IntegerWrapper> for IntegerWrapper {
-    fn shl_assign(&mut self, rhs: IntegerWrapper) {
-        if rhs.is_positive() {
-            let rhs = rhs.abs().as_u32();
+impl ShlAssign<u32> for IntegerWrapper {
+    fn shl_assign(&mut self, rhs: u32) {
+        
             match self {
                 SmallInt(i) => *self = SmallInt(i.shl(rhs)),
                 Int(integer) => integer.shl_assign(rhs),
             }
-        } else {
-            self.shr_assign(rhs.abs())
-        }
+        
     }
 }
 
-impl ShrAssign<IntegerWrapper> for IntegerWrapper {
-    fn shr_assign(&mut self, rhs: IntegerWrapper) {
-        if rhs.is_positive() {
-            let rhs = rhs.abs().as_u32();
+impl ShrAssign<u32> for IntegerWrapper {
+    fn shr_assign(&mut self, rhs: u32
+    ) {
             match self {
                 SmallInt(i) => *self = SmallInt(i.shr(rhs)),
                 Int(integer) => integer.shr_assign(rhs),
             }
-        } else {
-            self.shl_assign(rhs.abs())
-        }
     }
 }
 
-impl Shl<&IntegerWrapper> for IntegerWrapper {
+impl Shl<u32> for &IntegerWrapper {
     type Output = IntegerWrapper;
 
-    fn shl(self, rhs: &IntegerWrapper) -> Self::Output {
-        if rhs.is_positive() {
-            let rhs = rhs.abs().as_u32();
-            match self {
-                SmallInt(i) => SmallInt(i.shl(rhs)),
-                Int(integer) => IntegerWrapper::from(integer.shl(rhs)),
-            }
-        } else {
-            self.shr(rhs.abs())
-        }
-    }
-}
-
-impl Shr<&IntegerWrapper> for IntegerWrapper {
-    type Output = IntegerWrapper;
-
-    fn shr(self, rhs: &IntegerWrapper) -> Self::Output {
-        if rhs.is_positive() {
-            let rhs = rhs.abs().as_u32();
-            match self {
-                SmallInt(i) => SmallInt(i.shr(rhs)),
-                Int(integer) => IntegerWrapper::from(integer.shr(rhs)),
-            }
-        } else {
-            self.shl(rhs.abs())
-        }
-    }
-}
-
-impl ShlAssign<&IntegerWrapper> for IntegerWrapper {
-    fn shl_assign(&mut self, rhs: &IntegerWrapper) {
-        if rhs.is_positive() {
-            let rhs = rhs.abs().as_u32();
-            match self {
-                SmallInt(i) => *self = SmallInt(i.shl(rhs)),
-                Int(integer) => integer.shl_assign(rhs),
-            }
-        } else {
-            self.shr_assign(rhs.abs())
-        }
-    }
-}
-
-impl ShrAssign<&IntegerWrapper> for IntegerWrapper {
-    fn shr_assign(&mut self, rhs: &IntegerWrapper) {
-        if rhs.is_positive() {
-            let rhs = rhs.abs().as_u32();
-            match self {
-                SmallInt(i) => *self = SmallInt(i.shr(rhs)),
-                Int(integer) => integer.shr_assign(rhs),
-            }
-        } else {
-            self.shl_assign(rhs.abs())
-        }
-    }
-}
-
-impl Shl<IntegerWrapper> for &IntegerWrapper {
-    type Output = IntegerWrapper;
-
-    fn shl(self, rhs: IntegerWrapper) -> Self::Output {
-        if rhs.is_positive() {
-            let rhs = rhs.abs().as_u32();
+    fn shl(self, rhs: u32) -> Self::Output {
             match self {
                 SmallInt(i) => SmallInt(i.shl(rhs)),
                 Int(integer) => IntegerWrapper::from(Integer::from(integer.shl(rhs))),
             }
-        } else {
-            self.shr(rhs.abs())
-        }
+        
     }
 }
 
-impl Shr<IntegerWrapper> for &IntegerWrapper {
+impl Shr<u32> for &IntegerWrapper {
     type Output = IntegerWrapper;
 
-    fn shr(self, rhs: IntegerWrapper) -> Self::Output {
-        if rhs.is_positive() {
-            let rhs = rhs.abs().as_u32();
+    fn shr(self, rhs: u32) -> Self::Output {
             match self {
                 SmallInt(i) => SmallInt(i.shr(rhs)),
                 Int(integer) => IntegerWrapper::from(Integer::from(integer.shr(rhs))),
             }
-        } else {
-            self.shl(rhs.abs())
-        }
-    }
-}
-
-impl Shl<&IntegerWrapper> for &IntegerWrapper {
-    type Output = IntegerWrapper;
-
-    fn shl(self, rhs: &IntegerWrapper) -> Self::Output {
-        if rhs.is_positive() {
-            let rhs = rhs.abs().as_u32();
-            match self {
-                SmallInt(i) => SmallInt(i.shl(rhs)),
-                Int(integer) => IntegerWrapper::from(Integer::from(integer.shl(rhs))),
-            }
-        } else {
-            self.shr(rhs.abs())
-        }
-    }
-}
-
-impl Shr<&IntegerWrapper> for &IntegerWrapper {
-    type Output = IntegerWrapper;
-
-    fn shr(self, rhs: &IntegerWrapper) -> Self::Output {
-        if rhs.is_positive() {
-            let rhs = rhs.abs().as_u32();
-            match self {
-                SmallInt(i) => SmallInt(i.shr(rhs)),
-                Int(integer) => IntegerWrapper::from(Integer::from(integer.shr(rhs))),
-            }
-        } else {
-            self.shl(rhs.abs())
-        }
     }
 }
 
@@ -776,35 +660,59 @@ impl PythonMathFunctions for IntegerWrapper {
         other: &NumberWrapper,
         modulus: Option<&NumberWrapper>,
     ) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        match self {
+            SmallInt(i) => i.py_pow(other, modulus),
+            Int(integer) => integer.py_pow(other, modulus),
+        }
     }
 
     fn py_abs(&self) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        match self {
+            SmallInt(i) => i.py_abs(),
+            Int(integer) => integer.py_abs(),
+        }
     }
 
     fn py_int(&self) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        match self {
+            SmallInt(i) => i.py_int(),
+            Int(integer) => integer.py_int(),
+        }
     }
 
     fn py_float(&self) -> Result<f64, FirkinError> {
-        todo!()
+        match self {
+            SmallInt(i) => i.py_float(),
+            Int(integer) => integer.py_float(),
+        }
     }
 
     fn py_round(&self, ndigits: i32) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        match self {
+            SmallInt(i) => i.py_round(ndigits),
+            Int(integer) => integer.py_round(ndigits),
+        }
     }
 
     fn py_floor(&self) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        match self {
+            SmallInt(i) => i.py_floor(),
+            Int(integer) => integer.py_floor(),
+        }
     }
 
     fn py_ceil(&self) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        match self {
+            SmallInt(i) => i.py_ceil(),
+            Int(integer) => integer.py_ceil(),
+        }
     }
 
     fn py_trunc(&self) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        match self {
+            SmallInt(i) => i.py_trunc(),
+            Int(integer) => integer.py_trunc(),
+        }
     }
 }
 
@@ -896,6 +804,56 @@ impl PythonMathFunctions for i64 {
 
     fn py_trunc(&self) -> Result<IntegerWrapper, FirkinError> {
         Ok(IntegerWrapper::from(*self))
+    }
+}
+
+impl PythonMathFunctions for Integer {
+    fn py_pow(
+        &self,
+        other: &NumberWrapper,
+        modulus: Option<&NumberWrapper>,
+    ) -> Result<NumberWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_abs(&self) -> Result<NumberWrapper, FirkinError> {
+        Ok(NumberWrapper::from(self.clone().abs()))
+    }
+
+    fn py_int(&self) -> Result<IntegerWrapper, FirkinError> {
+        Ok(IntegerWrapper::from(self.clone()))
+    }
+
+    fn py_float(&self) -> Result<f64, FirkinError> {
+        Ok(self.to_f64())
+    }
+
+    fn py_round(&self, ndigits: i32) -> Result<NumberWrapper, FirkinError> {
+        if ndigits < 0 {
+            let pow = Integer::from(10).pow(ndigits.unsigned_abs());
+            let rem = Integer::from(self % &pow);
+            let result;
+            if rem >= Integer::from(&rem / 2) {
+                result = self - rem + pow;
+            } else {
+                result = self - rem;
+            }
+            Ok(NumberWrapper::from(result))
+        } else {
+            Ok(NumberWrapper::from(self.clone()))
+        }
+    }
+
+    fn py_floor(&self) -> Result<IntegerWrapper, FirkinError> {
+        Ok(IntegerWrapper::from(self.clone()))
+    }
+
+    fn py_ceil(&self) -> Result<IntegerWrapper, FirkinError> {
+        Ok(IntegerWrapper::from(self.clone()))
+    }
+
+    fn py_trunc(&self) -> Result<IntegerWrapper, FirkinError> {
+        Ok(IntegerWrapper::from(self.clone()))
     }
 }
 
