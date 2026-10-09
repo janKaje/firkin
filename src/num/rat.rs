@@ -14,7 +14,7 @@ use std::{
 };
 
 /// Wraps around the logic for both small and large rationals
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash)]
 pub(crate) enum RationalWrapper {
     SmallRat(SmallRational),
     Rat(Rational),
@@ -502,6 +502,73 @@ impl TryFrom<Float> for RationalWrapper {
 impl FromInts for RationalWrapper {}
 
 impl TryFromFloats for RationalWrapper {}
+
+impl PartialOrd for RationalWrapper {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        match (self, other) {
+            (SmallRat(r), SmallRat(r2)) => r.partial_cmp(r2),
+            (SmallRat(r), Rat(rational)) => r.partial_cmp(rational),
+            (Rat(rational), SmallRat(r)) => rational.partial_cmp(r),
+            (Rat(rational), Rat(rational2)) => rational.partial_cmp(rational2),
+        }
+    }
+}
+
+impl PythonMathFunctions for RationalWrapper {
+    fn py_pow(
+        &self,
+        other: &NumberWrapper,
+        modulus: Option<&NumberWrapper>,
+    ) -> Result<NumberWrapper, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_truediv(
+        &self,
+        other: &NumberWrapper,
+    ) -> Result<NumberWrapper, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_floordiv(
+        &self,
+        other: &NumberWrapper,
+    ) -> Result<NumberWrapper, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_divmod(&self, other: &NumberWrapper) -> Result<NumberWrapper, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_abs(&self) -> Result<NumberWrapper, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_int(&self) -> Result<IntegerWrapper, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_float(&self) -> Result<f64, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_round(&self, ndigits: i32) -> Result<NumberWrapper, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_floor(&self) -> Result<IntegerWrapper, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_ceil(&self) -> Result<IntegerWrapper, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_trunc(&self) -> Result<IntegerWrapper, crate::error::FirkinError> {
+        todo!()
+    }
+}
 
 impl PythonMathFunctions for Rational {
     fn py_pow(

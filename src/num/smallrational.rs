@@ -10,7 +10,7 @@ use std::{
 };
 
 use gcd::{binary_u64, binary_u128};
-use rug::{Assign, Rational};
+use rug::{Assign, Integer, Rational};
 
 use crate::num::traits::PythonMathFunctions;
 use crate::num::{
@@ -314,7 +314,7 @@ impl SmallRational {
     pub(crate) fn floor(&self) -> i128 {
         if self.numerator % self.denominator == 0 {
             self.get_whole_number_part()
-        } else if *self >= 0.into() {
+        } else if *self >= SmallRational::ZERO {
             self.get_whole_number_part()
         } else {
             self.get_whole_number_part() - 1
@@ -324,7 +324,7 @@ impl SmallRational {
     pub(crate) fn ceil(&self) -> i128 {
         if self.numerator % self.denominator == 0 {
             self.get_whole_number_part()
-        } else if *self >= 0.into() {
+        } else if *self >= SmallRational::ZERO {
             self.get_whole_number_part() + 1
         } else {
             self.get_whole_number_part()
@@ -336,8 +336,8 @@ impl SmallRational {
             self.get_whole_number_part()
         } else {
             let rem = self.get_remainder();
-            if (rem > 0.into() && rem < SmallRational::new(1, 2, true)
-                || rem < 0.into() && rem > SmallRational::new(1, 2, false))
+            if (rem > SmallRational::ZERO && rem < SmallRational::new(1, 2, true)
+                || rem < SmallRational::ZERO && rem > SmallRational::new(1, 2, false))
             {
                 self.get_whole_number_part()
             } else {
@@ -554,7 +554,31 @@ impl From<&SmallRational> for SmallRational {
 
 impl PartialEq for SmallRational {
     fn eq(&self, other: &Self) -> bool {
-        self.numerator == other.numerator && other.denominator == self.denominator
+        self.numerator == other.numerator
+            && other.denominator == self.denominator
+            && self.sign == other.sign
+    }
+}
+
+impl PartialEq<Rational> for SmallRational {
+    fn eq(&self, other: &Rational) -> bool {
+        if self.numerator == 0 && other.is_zero() {
+            return true;
+        }
+        self.numerator == *other.numer()
+            && self.denominator == *other.denom()
+            && self.is_positive() == other.is_positive()
+    }
+}
+
+impl PartialEq<SmallRational> for Rational {
+    fn eq(&self, other: &SmallRational) -> bool {
+        if self.is_zero() && other.numerator == 0 {
+            return true;
+        }
+        *self.numer() == other.numerator
+            && *self.denom() == other.denominator
+            && self.is_positive() == other.is_positive()
     }
 }
 
@@ -581,6 +605,66 @@ impl PartialOrd for SmallRational {
                 if self.numerator * other.denominator == other.numerator * self.denominator {
                     Some(Ordering::Equal)
                 } else if self.numerator * other.denominator > other.numerator * self.denominator {
+                    Some(Ordering::Less)
+                } else {
+                    Some(Ordering::Greater)
+                }
+            }
+        }
+    }
+}
+
+impl PartialOrd<Rational> for SmallRational {
+    fn partial_cmp(&self, other: &Rational) -> Option<Ordering> {
+        if self == other {
+            return Some(Ordering::Equal);
+        }
+        match (self.sign, other.is_positive()) {
+            (Positive, true) => {
+                if Integer::from(self.numerator * other.denom())
+                    > Integer::from(other.numer() * self.denominator)
+                {
+                    Some(Ordering::Greater)
+                } else {
+                    Some(Ordering::Less)
+                }
+            }
+            (Positive, false) => Some(Ordering::Greater),
+            (Negative, true) => Some(Ordering::Less),
+            (Negative, false) => {
+                if Integer::from(self.numerator * other.denom())
+                    > Integer::from(other.numer() * self.denominator)
+                {
+                    Some(Ordering::Less)
+                } else {
+                    Some(Ordering::Greater)
+                }
+            }
+        }
+    }
+}
+
+impl PartialOrd<SmallRational> for Rational {
+    fn partial_cmp(&self, other: &SmallRational) -> Option<Ordering> {
+        if self == other {
+            return Some(Ordering::Equal);
+        }
+        match (self.is_positive(), other.sign) {
+            (true, Positive) => {
+                if Integer::from(self.numer() * other.denominator)
+                    > Integer::from(other.numerator * self.denom())
+                {
+                    Some(Ordering::Greater)
+                } else {
+                    Some(Ordering::Less)
+                }
+            }
+            (true, Negative) => Some(Ordering::Greater),
+            (false, Positive) => Some(Ordering::Less),
+            (false, Negative) => {
+                if Integer::from(self.numer() * other.denominator)
+                    > Integer::from(other.numerator * self.denom())
+                {
                     Some(Ordering::Less)
                 } else {
                     Some(Ordering::Greater)
@@ -909,19 +993,19 @@ mod tests {
     #[test]
     fn from_int() {
         let smallrat = SmallRational::new(1, 1, true);
-        assert_eq!(smallrat, 1_u8.into());
-        assert_eq!(smallrat, 1_u16.into());
-        assert_eq!(smallrat, 1_u32.into());
-        assert_eq!(smallrat, 1_u64.into());
-        assert_eq!(smallrat, 1_usize.into());
-        assert_eq!(smallrat, 1_i8.into());
-        assert_eq!(smallrat, 1_i16.into());
-        assert_eq!(smallrat, 1_i32.into());
-        assert_eq!(smallrat, 1_i64.into());
-        assert_eq!(smallrat, 1_isize.into());
-        assert_ne!(smallrat, (-5_i32).into());
+        assert_eq!(smallrat, SmallRational::from(1_u8));
+        assert_eq!(smallrat, SmallRational::from(1_u16));
+        assert_eq!(smallrat, SmallRational::from(1_u32));
+        assert_eq!(smallrat, SmallRational::from(1_u64));
+        assert_eq!(smallrat, SmallRational::from(1_usize));
+        assert_eq!(smallrat, SmallRational::from(1_i8));
+        assert_eq!(smallrat, SmallRational::from(1_i16));
+        assert_eq!(smallrat, SmallRational::from(1_i32));
+        assert_eq!(smallrat, SmallRational::from(1_i64));
+        assert_eq!(smallrat, SmallRational::from(1_isize));
+        assert_ne!(smallrat, SmallRational::from(-5_i32));
         let smallrat = SmallRational::new(5, 1, false);
-        assert_eq!(smallrat, (-5_i32).into());
+        assert_eq!(smallrat, SmallRational::from(-5_i32));
     }
 
     #[test]
@@ -930,7 +1014,10 @@ mod tests {
         let bigpos = SmallRational::new(27, 5, true);
         let smallneg = SmallRational::new(17, 5, false);
         let bigneg = SmallRational::new(27, 5, false);
-        assert_eq!(smallpos.checked_add(&smallneg).unwrap(), 0.into());
+        assert_eq!(
+            smallpos.checked_add(&smallneg).unwrap(),
+            SmallRational::ZERO
+        );
         assert_eq!(
             smallpos.checked_add(&bigpos).unwrap(),
             SmallRational::new(44, 5, true)

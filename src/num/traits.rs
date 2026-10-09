@@ -19,7 +19,8 @@ use crate::{
 
 pub(crate) trait PythonNum:
     Sized + Sub + SubAssign + Add + AddAssign + Div + DivAssign + Mul + MulAssign + PythonMathFunctions
-{}
+{
+}
 
 pub(crate) trait PythonInt:
     Sized
