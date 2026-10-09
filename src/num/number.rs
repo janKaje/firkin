@@ -359,54 +359,102 @@ impl PythonMathFunctions for NumberWrapper {
         other: &NumberWrapper,
         modulus: Option<&NumberWrapper>,
     ) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        match self {
+            Int(integer_wrapper) => integer_wrapper.py_pow(other, modulus),
+            Rat(rational_wrapper) => rational_wrapper.py_pow(other, modulus),
+            Float(float_wrapper) => float_wrapper.py_pow(other, modulus),
+        }
     }
 
     fn py_truediv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        match self {
+            Int(integer_wrapper) => integer_wrapper.py_truediv(other),
+            Rat(rational_wrapper) => rational_wrapper.py_truediv(other),
+            Float(float_wrapper) => float_wrapper.py_truediv(other),
+        }
     }
 
     fn py_floordiv(&self, other: &NumberWrapper) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        match self {
+            Int(integer_wrapper) => integer_wrapper.py_floordiv(other),
+            Rat(rational_wrapper) => rational_wrapper.py_floordiv(other),
+            Float(float_wrapper) => float_wrapper.py_floordiv(other),
+        }
     }
 
     fn py_divmod(
         &self,
         other: &NumberWrapper,
     ) -> Result<(IntegerWrapper, NumberWrapper), FirkinError> {
-        todo!()
+        match self {
+            Int(integer_wrapper) => integer_wrapper.py_divmod(other),
+            Rat(rational_wrapper) => rational_wrapper.py_divmod(other),
+            Float(float_wrapper) => float_wrapper.py_divmod(other),
+        }
     }
 
     fn py_abs(&self) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        match self {
+            Int(integer_wrapper) => integer_wrapper.py_abs(),
+            Rat(rational_wrapper) => rational_wrapper.py_abs(),
+            Float(float_wrapper) => float_wrapper.py_abs(),
+        }
     }
 
     fn py_int(&self) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        match self {
+            Int(integer_wrapper) => integer_wrapper.py_int(),
+            Rat(rational_wrapper) => rational_wrapper.py_int(),
+            Float(float_wrapper) => float_wrapper.py_int(),
+        }
     }
 
     fn py_float(&self) -> Result<f64, FirkinError> {
-        todo!()
+        match self {
+            Int(integer_wrapper) => integer_wrapper.py_float(),
+            Rat(rational_wrapper) => rational_wrapper.py_float(),
+            Float(float_wrapper) => float_wrapper.py_float(),
+        }
     }
 
     fn py_round(&self, ndigits: i32) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        match self {
+            Int(integer_wrapper) => integer_wrapper.py_round(ndigits),
+            Rat(rational_wrapper) => rational_wrapper.py_round(ndigits),
+            Float(float_wrapper) => float_wrapper.py_round(ndigits),
+        }
     }
 
     fn py_floor(&self) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        match self {
+            Int(integer_wrapper) => integer_wrapper.py_floor(),
+            Rat(rational_wrapper) => rational_wrapper.py_floor(),
+            Float(float_wrapper) => float_wrapper.py_floor(),
+        }
     }
 
     fn py_ceil(&self) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        match self {
+            Int(integer_wrapper) => integer_wrapper.py_ceil(),
+            Rat(rational_wrapper) => rational_wrapper.py_ceil(),
+            Float(float_wrapper) => float_wrapper.py_ceil(),
+        }
     }
 
     fn py_trunc(&self) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        match self {
+            Int(integer_wrapper) => integer_wrapper.py_trunc(),
+            Rat(rational_wrapper) => rational_wrapper.py_trunc(),
+            Float(float_wrapper) => float_wrapper.py_trunc(),
+        }
     }
 
     fn py_mod(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        match self {
+            Int(integer_wrapper) => integer_wrapper.py_mod(other),
+            Rat(rational_wrapper) => rational_wrapper.py_mod(other),
+            Float(float_wrapper) => float_wrapper.py_mod(other),
+        }
     }
 }
 
