@@ -12,6 +12,7 @@ pub(crate) enum FirkinError {
     CannotConvertToNumber(String),
     PowModDoesNotExist(String, String, String),
     DivideByZero(String, String),
+    CannotConvertInfinity(String),
 }
 
 impl std::error::Error for FirkinError {}
@@ -37,6 +38,7 @@ impl fmt::Display for FirkinError {
             Self::DivideByZero(numer, denom) => {
                 write!(f, "{numer}/{denom} does not exist - divide by zero error")
             }
+            Self::CannotConvertInfinity(msg) => write!(f, "{}", msg),
         }
     }
 }
@@ -55,6 +57,7 @@ impl std::convert::From<FirkinError> for PyErr {
             FirkinError::CannotConvertToNumber(_other) => PyTypeError::new_err(err.to_string()),
             FirkinError::PowModDoesNotExist(_, _, _) => PyTypeError::new_err(err.to_string()),
             FirkinError::DivideByZero(_, _) => PyZeroDivisionError::new_err(err.to_string()),
+            FirkinError::CannotConvertInfinity(_) => PyOverflowError::new_err(err.to_string()),
         }
     }
 }

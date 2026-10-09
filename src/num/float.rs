@@ -10,7 +10,11 @@ use crate::{
         traits::{FromFloats, FromInts, PythonMathFunctions},
     },
 };
-use rug::{Float, Integer, Rational};
+use rug::{
+    Assign, Float, Integer, Rational,
+    float::Round,
+    ops::{AssignRound, Pow},
+};
 use std::{
     fmt::Display,
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, Sub, SubAssign},
@@ -140,6 +144,15 @@ impl FloatWrapper {
             SmallFloat(f) => f.abs() == 0.0,
             BigFloat(float) => float.is_zero(),
         }
+    }
+
+    pub(crate) fn from_incomplete_float<T>(input: T) -> FloatWrapper
+    where
+        Float: Assign<T>,
+    {
+        let mut new = Float::new(DEFAULT_PREC);
+        new.assign(input);
+        FloatWrapper::from(new)
     }
 }
 
@@ -680,43 +693,73 @@ impl PythonMathFunctions for FloatWrapper {
         other: &NumberWrapper,
         modulus: Option<&NumberWrapper>,
     ) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        match self {
+            SmallFloat(f) => f.py_pow(other, modulus),
+            BigFloat(float) => float.py_pow(other, modulus),
+        }
     }
 
     fn py_truediv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        match self {
+            SmallFloat(f) => f.py_truediv(other),
+            BigFloat(float) => float.py_truediv(other),
+        }
     }
 
     fn py_floordiv(&self, other: &NumberWrapper) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        match self {
+            SmallFloat(f) => f.py_floordiv(other),
+            BigFloat(float) => float.py_floordiv(other),
+        }
     }
 
     fn py_abs(&self) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        match self {
+            SmallFloat(f) => f.py_abs(),
+            BigFloat(float) => float.py_abs(),
+        }
     }
 
     fn py_int(&self) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        match self {
+            SmallFloat(f) => f.py_int(),
+            BigFloat(float) => float.py_int(),
+        }
     }
 
     fn py_float(&self) -> Result<f64, FirkinError> {
-        todo!()
+        match self {
+            SmallFloat(f) => f.py_float(),
+            BigFloat(float) => float.py_float(),
+        }
     }
 
     fn py_round(&self, ndigits: i32) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        match self {
+            SmallFloat(f) => f.py_round(ndigits),
+            BigFloat(float) => float.py_round(ndigits),
+        }
     }
 
     fn py_floor(&self) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        match self {
+            SmallFloat(f) => f.py_floor(),
+            BigFloat(float) => float.py_floor(),
+        }
     }
 
     fn py_ceil(&self) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        match self {
+            SmallFloat(f) => f.py_ceil(),
+            BigFloat(float) => float.py_ceil(),
+        }
     }
 
     fn py_trunc(&self) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        match self {
+            SmallFloat(f) => f.py_trunc(),
+            BigFloat(float) => float.py_trunc(),
+        }
     }
 
     fn py_divmod(
@@ -730,13 +773,28 @@ impl PythonMathFunctions for FloatWrapper {
     }
 
     fn py_mod(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        match self {
+            SmallFloat(f) => f.py_mod(other),
+            BigFloat(float) => float.py_mod(other),
+        }
     }
 }
 
 impl PythonMathFunctions for f64 {
     fn py_mod(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        match other {
+            NumberWrapper::Int(integer_wrapper) => match integer_wrapper {
+                IntegerWrapper::SmallInt(i) => Ok(NumberWrapper::from(
+                    FloatWrapper::from_incomplete_float(self.rem(*i as f64)),
+                )),
+                IntegerWrapper::Int(integer) => Ok(NumberWrapper::from(self.rem(integer.to_f64()))),
+            },
+            NumberWrapper::Rat(_) => Ok(self.rem(other.to_f64()).into()),
+            NumberWrapper::Float(float_wrapper) => match float_wrapper {
+                SmallFloat(f) => Ok(NumberWrapper::from(self.rem(f))),
+                BigFloat(float) => Ok(FloatWrapper::from_incomplete_float(self.rem(float)).into()),
+            },
+        }
     }
 
     fn py_pow(
@@ -744,7 +802,22 @@ impl PythonMathFunctions for f64 {
         other: &NumberWrapper,
         modulus: Option<&NumberWrapper>,
     ) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        match modulus {
+            Some(m) => self.py_pow(other, None)?.py_mod(m),
+            None => match other {
+                NumberWrapper::Int(integer_wrapper) => match integer_wrapper {
+                    IntegerWrapper::SmallInt(i) => Ok(self.powf(*i as f64).into()),
+                    IntegerWrapper::Int(integer) => Ok(self.powf(integer.to_f64()).into()),
+                },
+                NumberWrapper::Rat(_) => Ok(self.pow(other.to_f64()).into()),
+                NumberWrapper::Float(float_wrapper) => match float_wrapper {
+                    SmallFloat(f) => Ok(self.powf(*f).into()),
+                    BigFloat(float) => {
+                        Ok(FloatWrapper::from_incomplete_float(self.pow(float)).into())
+                    }
+                },
+            },
+        }
     }
 
     fn py_truediv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
@@ -753,8 +826,20 @@ impl PythonMathFunctions for f64 {
                 self.to_string(),
                 other.to_string(),
             ));
+        } else if self.abs() == 0.0 {
+            return Ok(NumberWrapper::ZERO);
         }
-        todo!()
+        match other {
+            NumberWrapper::Int(integer_wrapper) => match integer_wrapper {
+                IntegerWrapper::SmallInt(i) => Ok((self / *i as f64).into()),
+                IntegerWrapper::Int(integer) => Ok((self / integer.to_f64()).into()),
+            },
+            NumberWrapper::Rat(rational_wrapper) => Ok(self.div(other.to_f64()).into()),
+            NumberWrapper::Float(float_wrapper) => match float_wrapper {
+                SmallFloat(f) => Ok((self / *f).into()),
+                BigFloat(float) => Ok(FloatWrapper::from_incomplete_float(self / float).into()),
+            },
+        }
     }
 
     fn py_floordiv(&self, other: &NumberWrapper) -> Result<IntegerWrapper, FirkinError> {
@@ -763,42 +848,93 @@ impl PythonMathFunctions for f64 {
                 self.to_string(),
                 other.to_string(),
             ));
+        } else if self.abs() == 0.0 {
+            return Ok(IntegerWrapper::ZERO);
         }
-        todo!()
+        self.py_truediv(other)?.py_floor()
     }
 
     fn py_abs(&self) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        Ok(self.abs().into())
     }
 
     fn py_int(&self) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        match IntegerWrapper::try_from(self.trunc()) {
+            Ok(res) => Ok(res),
+            Err(_) => Err(FirkinError::CannotConvertInfinity(
+                "Cannot convert infinity to integer".into(),
+            )),
+        }
     }
 
     fn py_float(&self) -> Result<f64, FirkinError> {
-        todo!()
+        Ok(*self)
     }
 
     fn py_round(&self, ndigits: i32) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        if self.is_infinite() {
+            return Err(FirkinError::CannotConvertInfinity(
+                "Cannot round infinity".into(),
+            ));
+        }
+        if ndigits == 0 {
+            Ok(self.round().into())
+        } else if ndigits < 0 {
+            let mul = 10.0_f64.powi(ndigits);
+            Ok(IntegerWrapper::try_from(self.mul(mul).round().div(mul))
+                .unwrap()
+                .into())
+        } else {
+            let mul = 10.0_f64.powi(ndigits);
+            Ok(self.mul(mul).round().div(mul).into())
+        }
     }
 
     fn py_floor(&self) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        match IntegerWrapper::try_from(self.floor()) {
+            Ok(res) => Ok(res),
+            Err(_) => Err(FirkinError::CannotConvertInfinity(
+                "Cannot floor infinity".into(),
+            )),
+        }
     }
 
     fn py_ceil(&self) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        match IntegerWrapper::try_from(self.ceil()) {
+            Ok(res) => Ok(res),
+            Err(_) => Err(FirkinError::CannotConvertInfinity(
+                "Cannot ceil infinity".into(),
+            )),
+        }
     }
 
     fn py_trunc(&self) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        match IntegerWrapper::try_from(self.trunc()) {
+            Ok(res) => Ok(res),
+            Err(_) => Err(FirkinError::CannotConvertInfinity(
+                "Cannot trunc infinity".into(),
+            )),
+        }
     }
 }
 
 impl PythonMathFunctions for Float {
     fn py_mod(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        match other {
+            NumberWrapper::Int(integer_wrapper) => match integer_wrapper {
+                IntegerWrapper::SmallInt(i) => Ok(NumberWrapper::from(
+                    FloatWrapper::from_incomplete_float(self.rem(i)),
+                )),
+                IntegerWrapper::Int(integer) => Ok(NumberWrapper::from(
+                    self.rem(FloatWrapper::from(integer).to_float()),
+                )),
+            },
+            NumberWrapper::Rat(_) => Ok(self.rem(other.to_float()).into()),
+            NumberWrapper::Float(float_wrapper) => match float_wrapper {
+                SmallFloat(f) => Ok(FloatWrapper::from_incomplete_float(self.rem(f)).into()),
+                BigFloat(float) => Ok(FloatWrapper::from_incomplete_float(self.rem(float)).into()),
+            },
+        }
     }
 
     fn py_pow(
@@ -806,7 +942,26 @@ impl PythonMathFunctions for Float {
         other: &NumberWrapper,
         modulus: Option<&NumberWrapper>,
     ) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        match modulus {
+            Some(m) => self.py_pow(other, None)?.py_mod(m),
+            None => match other {
+                NumberWrapper::Int(integer_wrapper) => match integer_wrapper {
+                    IntegerWrapper::SmallInt(i) => {
+                        Ok(FloatWrapper::from_incomplete_float(self.pow(i)).into())
+                    }
+                    IntegerWrapper::Int(integer) => {
+                        Ok(FloatWrapper::from_incomplete_float(self.pow(integer)).into())
+                    }
+                },
+                NumberWrapper::Rat(_) => Ok(self.pow(other.to_float()).into()),
+                NumberWrapper::Float(float_wrapper) => match float_wrapper {
+                    SmallFloat(f) => Ok(FloatWrapper::from_incomplete_float(self.pow(f)).into()),
+                    BigFloat(float) => {
+                        Ok(FloatWrapper::from_incomplete_float(self.pow(float)).into())
+                    }
+                },
+            },
+        }
     }
 
     fn py_truediv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
@@ -815,8 +970,24 @@ impl PythonMathFunctions for Float {
                 self.to_string(),
                 other.to_string(),
             ));
+        } else if self.is_zero() {
+            return Ok(NumberWrapper::ZERO);
         }
-        todo!()
+        match other {
+            NumberWrapper::Int(integer_wrapper) => match integer_wrapper {
+                IntegerWrapper::SmallInt(i) => {
+                    Ok(FloatWrapper::from_incomplete_float(self / i).into())
+                }
+                IntegerWrapper::Int(integer) => {
+                    Ok(FloatWrapper::from_incomplete_float(self / integer).into())
+                }
+            },
+            NumberWrapper::Rat(rational_wrapper) => Ok(self.div(other.to_float()).into()),
+            NumberWrapper::Float(float_wrapper) => match float_wrapper {
+                SmallFloat(f) => Ok(FloatWrapper::from_incomplete_float(self / f).into()),
+                BigFloat(float) => Ok(FloatWrapper::from_incomplete_float(self / float).into()),
+            },
+        }
     }
 
     fn py_floordiv(&self, other: &NumberWrapper) -> Result<IntegerWrapper, FirkinError> {
@@ -825,36 +996,72 @@ impl PythonMathFunctions for Float {
                 self.to_string(),
                 other.to_string(),
             ));
+        } else if self.is_zero() {
+            return Ok(IntegerWrapper::ZERO);
         }
-        todo!()
+        self.py_truediv(other)?.py_floor()
     }
 
     fn py_abs(&self) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        Ok(NumberWrapper::from(self.clone().abs()))
     }
 
     fn py_int(&self) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        Ok(IntegerWrapper::from(
+            match self.clone().trunc().to_integer() {
+                Some(res) => res,
+                None => {
+                    return Err(FirkinError::CannotConvertInfinity(String::from(
+                        "Cannot convert infinity to integer",
+                    )));
+                }
+            },
+        ))
     }
 
     fn py_float(&self) -> Result<f64, FirkinError> {
-        todo!()
+        Ok(self.to_f64())
     }
 
     fn py_round(&self, ndigits: i32) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        let mul = FloatWrapper::from(10).to_float().pow(ndigits);
+        Ok(NumberWrapper::from(
+            match FloatWrapper::from_incomplete_float(self * &mul).round() {
+                Ok(res) => FloatWrapper::from(res).to_float() / mul,
+                Err(e) => {
+                    return Err(FirkinError::CannotConvertInfinity(
+                        "Cannot round infinity".into(),
+                    ));
+                }
+            },
+        ))
     }
 
     fn py_floor(&self) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        match self.clone().floor().try_into() {
+            Ok(res) => Ok(res),
+            Err(e) => Err(FirkinError::CannotConvertInfinity(
+                "Cannot floor infinity".into(),
+            )),
+        }
     }
 
     fn py_ceil(&self) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        match self.clone().ceil().try_into() {
+            Ok(res) => Ok(res),
+            Err(e) => Err(FirkinError::CannotConvertInfinity(
+                "Cannot ceil infinity".into(),
+            )),
+        }
     }
 
     fn py_trunc(&self) -> Result<IntegerWrapper, FirkinError> {
-        todo!()
+        match self.clone().trunc().try_into() {
+            Ok(res) => Ok(res),
+            Err(e) => Err(FirkinError::CannotConvertInfinity(
+                "Cannot trunc infinity".into(),
+            )),
+        }
     }
 }
 

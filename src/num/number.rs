@@ -75,6 +75,14 @@ impl NumberWrapper {
         }
     }
 
+    pub(crate) fn to_float(&self) -> RugFloat {
+        match self {
+            Int(integer_wrapper) => FloatWrapper::from(integer_wrapper).to_float(),
+            Rat(rational_wrapper) => FloatWrapper::from(rational_wrapper).to_float(),
+            Float(float_wrapper) => float_wrapper.to_float(),
+        }
+    }
+
     pub(crate) fn is_zero(&self) -> bool {
         match self {
             Int(integer_wrapper) => integer_wrapper.is_zero(),

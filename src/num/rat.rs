@@ -777,8 +777,13 @@ impl PythonMathFunctions for Rational {
                 .to_integer()),
             },
             NumberWrapper::Rat(rat) => match rat {
-                RationalWrapper::SmallRat(r) => Ok(RationalWrapper::from(Rational::from(self.div(r)).floor()).to_integer()),
-                RationalWrapper::Rat(rational) => Ok(RationalWrapper::from(Rational::from(self.div(rational)).floor()).to_integer()),
+                RationalWrapper::SmallRat(r) => {
+                    Ok(RationalWrapper::from(Rational::from(self.div(r)).floor()).to_integer())
+                }
+                RationalWrapper::Rat(rational) => Ok(RationalWrapper::from(
+                    Rational::from(self.div(rational)).floor(),
+                )
+                .to_integer()),
             },
             NumberWrapper::Float(float) => FloatWrapper::from(self).py_floordiv(other),
         }
@@ -799,12 +804,18 @@ impl PythonMathFunctions for Rational {
     fn py_round(&self, ndigits: i32) -> Result<NumberWrapper, FirkinError> {
         if ndigits < 0 {
             let div = Integer::from(10).pow(ndigits.unsigned_abs());
-            Ok(NumberWrapper::from(RationalWrapper::from(Rational::from(self / &div).round() * div).to_integer()))
+            Ok(NumberWrapper::from(
+                RationalWrapper::from(Rational::from(self / &div).round() * div).to_integer(),
+            ))
         } else if ndigits == 0 {
-            Ok(NumberWrapper::from(RationalWrapper::from(self.clone().round()).to_integer()))
+            Ok(NumberWrapper::from(
+                RationalWrapper::from(self.clone().round()).to_integer(),
+            ))
         } else {
             let mul = Integer::from(10).pow(ndigits.unsigned_abs());
-            Ok(NumberWrapper::from(Rational::from(self * &mul).round() / mul))
+            Ok(NumberWrapper::from(
+                Rational::from(self * &mul).round() / mul,
+            ))
         }
     }
 
@@ -829,13 +840,17 @@ impl PythonMathFunctions for Rational {
                 let (frac, trunc) = self.clone().fract_trunc(Integer::new());
                 let rem_trunc = match integer_wrapper {
                     IntegerWrapper::SmallInt(i) => trunc % i,
-                    IntegerWrapper::Int(integer) => trunc % integer
+                    IntegerWrapper::Int(integer) => trunc % integer,
                 };
                 Ok(NumberWrapper::from(frac + rem_trunc))
             }
             NumberWrapper::Rat(rational_wrapper) => match rational_wrapper {
-                RationalWrapper::SmallRat(r) => Ok(NumberWrapper::from(self - r * &(self / r).floor())),
-                RationalWrapper::Rat(rational) => Ok(NumberWrapper::from(self - rational * Rational::from(self / rational).floor())),
+                RationalWrapper::SmallRat(r) => {
+                    Ok(NumberWrapper::from(self - r * &(self / r).floor()))
+                }
+                RationalWrapper::Rat(rational) => Ok(NumberWrapper::from(
+                    self - rational * Rational::from(self / rational).floor(),
+                )),
             },
             NumberWrapper::Float(float_wrapper) => FloatWrapper::from(self).py_mod(other),
         }
