@@ -3,16 +3,24 @@
 use std::{
     cmp::{Ord, Ordering},
     fmt::{Debug, Display},
-    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, Sub, SubAssign},
+    ops::{
+        Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div,
+        DivAssign, Mul, MulAssign, Neg, Not, Rem, Sub, SubAssign,
+    },
 };
 
 use gcd::{binary_u64, binary_u128};
 use rug::{Assign, Rational};
 
+use crate::num::traits::PythonMathFunctions;
+use crate::num::{
+    float::FloatWrapper, int::IntegerWrapper, number::NumberWrapper, rat::RationalWrapper,
+};
+
 use super::sign::Sign::{self, Negative, Positive};
 
 /// Small rational number, to be used in unit powers and Number enum
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Hash)]
 pub(crate) struct SmallRational {
     pub numerator: u64,
     pub denominator: u64,
@@ -733,13 +741,7 @@ impl Neg for &SmallRational {
         SmallRational {
             numerator: self.numerator,
             denominator: self.denominator,
-            sign: {
-                if self.sign == Positive {
-                    Negative
-                } else {
-                    Positive
-                }
-            },
+            sign: !self.sign,
         }
     }
 }
@@ -749,6 +751,58 @@ impl Neg for SmallRational {
 
     fn neg(self) -> Self::Output {
         -&self
+    }
+}
+
+impl Not for &SmallRational {
+    type Output = SmallRational;
+
+    fn not(self) -> Self::Output {
+        SmallRational {
+            numerator: !self.numerator,
+            denominator: !self.denominator,
+            sign: !self.sign,
+        }
+    }
+}
+
+impl Not for SmallRational {
+    type Output = SmallRational;
+
+    fn not(self) -> Self::Output {
+        -&self
+    }
+}
+
+impl Rem<SmallRational> for SmallRational {
+    type Output = SmallRational;
+
+    fn rem(self, rhs: SmallRational) -> Self::Output {
+        (&self).rem(&rhs)
+    }
+}
+
+impl Rem<&SmallRational> for SmallRational {
+    type Output = SmallRational;
+
+    fn rem(self, rhs: &SmallRational) -> Self::Output {
+        (&self).rem(rhs)
+    }
+}
+
+impl Rem<SmallRational> for &SmallRational {
+    type Output = SmallRational;
+
+    fn rem(self, rhs: SmallRational) -> Self::Output {
+        self.rem(&rhs)
+    }
+}
+
+impl Rem<&SmallRational> for &SmallRational {
+    type Output = SmallRational;
+
+    fn rem(self, rhs: &SmallRational) -> Self::Output {
+        todo!()
     }
 }
 
@@ -780,6 +834,62 @@ impl Display for SmallRational {
             write!(f, "{}", self.numerator)?;
         }
         Ok(())
+    }
+}
+
+impl PythonMathFunctions for SmallRational {
+    fn py_pow(
+        &self,
+        other: &NumberWrapper,
+        modulus: Option<&NumberWrapper>,
+    ) -> Result<NumberWrapper, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_abs(&self) -> Result<NumberWrapper, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_int(&self) -> Result<IntegerWrapper, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_float(&self) -> Result<f64, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_round(&self, ndigits: i32) -> Result<NumberWrapper, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_floor(&self) -> Result<IntegerWrapper, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_ceil(&self) -> Result<IntegerWrapper, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_trunc(&self) -> Result<IntegerWrapper, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_truediv(
+        &self,
+        other: &NumberWrapper,
+    ) -> Result<NumberWrapper, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_floordiv(
+        &self,
+        other: &NumberWrapper,
+    ) -> Result<NumberWrapper, crate::error::FirkinError> {
+        todo!()
+    }
+
+    fn py_divmod(&self, other: &NumberWrapper) -> Result<NumberWrapper, crate::error::FirkinError> {
+        todo!()
     }
 }
 

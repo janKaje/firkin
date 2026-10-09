@@ -17,21 +17,14 @@ use crate::{
     num::{float::FloatWrapper, int::IntegerWrapper, number::NumberWrapper, rat::RationalWrapper},
 };
 
-pub(crate) trait PythonMathFunctions:
+pub(crate) trait PythonNum:
+    Sized + Sub + SubAssign + Add + AddAssign + Div + DivAssign + Mul + MulAssign + PythonMathFunctions
+{}
+
+pub(crate) trait PythonInt:
     Sized
-    + Add
-    + AddAssign
-    + Div
-    + DivAssign
-    + Mul
-    + MulAssign
-    + Neg
     + Rem
     + RemAssign
-    + Sub
-    + SubAssign
-    + PartialOrd
-    + PartialEq
     + BitAnd
     + BitAndAssign
     + BitOr
@@ -39,17 +32,20 @@ pub(crate) trait PythonMathFunctions:
     + BitXor
     + BitXorAssign
     + Not
-    + Shl<u32>
-    + ShlAssign<u32>
-    + Shr<u32>
-    + ShrAssign<u32>
-    + Hash
+    + PythonNum
 {
+    fn py_index(&self) -> Result<IntegerWrapper, FirkinError>;
+}
+
+pub(crate) trait PythonMathFunctions: Sized + Neg + PartialOrd + PartialEq + Hash {
     fn py_pow(
         &self,
         other: &NumberWrapper,
         modulus: Option<&NumberWrapper>,
     ) -> Result<NumberWrapper, FirkinError>;
+    fn py_truediv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError>;
+    fn py_floordiv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError>;
+    fn py_divmod(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError>;
     fn py_abs(&self) -> Result<NumberWrapper, FirkinError>;
     fn py_int(&self) -> Result<IntegerWrapper, FirkinError>;
     fn py_float(&self) -> Result<f64, FirkinError>;

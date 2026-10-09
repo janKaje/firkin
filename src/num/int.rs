@@ -236,33 +236,28 @@ impl Shr<u32> for IntegerWrapper {
     type Output = IntegerWrapper;
 
     fn shr(self, rhs: u32) -> Self::Output {
-        
-            match self {
-                SmallInt(i) => SmallInt(i.shr(rhs)),
-                Int(integer) => IntegerWrapper::from(integer.shr(rhs)),
-            }
-        
+        match self {
+            SmallInt(i) => SmallInt(i.shr(rhs)),
+            Int(integer) => IntegerWrapper::from(integer.shr(rhs)),
+        }
     }
 }
 
 impl ShlAssign<u32> for IntegerWrapper {
     fn shl_assign(&mut self, rhs: u32) {
-        
-            match self {
-                SmallInt(i) => *self = SmallInt(i.shl(rhs)),
-                Int(integer) => integer.shl_assign(rhs),
-            }
-        
+        match self {
+            SmallInt(i) => *self = SmallInt(i.shl(rhs)),
+            Int(integer) => integer.shl_assign(rhs),
+        }
     }
 }
 
 impl ShrAssign<u32> for IntegerWrapper {
-    fn shr_assign(&mut self, rhs: u32
-    ) {
-            match self {
-                SmallInt(i) => *self = SmallInt(i.shr(rhs)),
-                Int(integer) => integer.shr_assign(rhs),
-            }
+    fn shr_assign(&mut self, rhs: u32) {
+        match self {
+            SmallInt(i) => *self = SmallInt(i.shr(rhs)),
+            Int(integer) => integer.shr_assign(rhs),
+        }
     }
 }
 
@@ -270,11 +265,10 @@ impl Shl<u32> for &IntegerWrapper {
     type Output = IntegerWrapper;
 
     fn shl(self, rhs: u32) -> Self::Output {
-            match self {
-                SmallInt(i) => SmallInt(i.shl(rhs)),
-                Int(integer) => IntegerWrapper::from(Integer::from(integer.shl(rhs))),
-            }
-        
+        match self {
+            SmallInt(i) => SmallInt(i.shl(rhs)),
+            Int(integer) => IntegerWrapper::from(Integer::from(integer.shl(rhs))),
+        }
     }
 }
 
@@ -282,10 +276,10 @@ impl Shr<u32> for &IntegerWrapper {
     type Output = IntegerWrapper;
 
     fn shr(self, rhs: u32) -> Self::Output {
-            match self {
-                SmallInt(i) => SmallInt(i.shr(rhs)),
-                Int(integer) => IntegerWrapper::from(Integer::from(integer.shr(rhs))),
-            }
+        match self {
+            SmallInt(i) => SmallInt(i.shr(rhs)),
+            Int(integer) => IntegerWrapper::from(Integer::from(integer.shr(rhs))),
+        }
     }
 }
 
@@ -714,6 +708,27 @@ impl PythonMathFunctions for IntegerWrapper {
             Int(integer) => integer.py_trunc(),
         }
     }
+
+    fn py_truediv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+        match self {
+            SmallInt(i) => i.py_truediv(other),
+            Int(integer) => integer.py_truediv(other),
+        }
+    }
+
+    fn py_floordiv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+        match self {
+            SmallInt(i) => i.py_floordiv(other),
+            Int(integer) => integer.py_floordiv(other),
+        }
+    }
+
+    fn py_divmod(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+        match self {
+            SmallInt(i) => i.py_divmod(other),
+            Int(integer) => integer.py_divmod(other),
+        }
+    }
 }
 
 impl PythonMathFunctions for i64 {
@@ -805,6 +820,18 @@ impl PythonMathFunctions for i64 {
     fn py_trunc(&self) -> Result<IntegerWrapper, FirkinError> {
         Ok(IntegerWrapper::from(*self))
     }
+
+    fn py_truediv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_floordiv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_divmod(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+        todo!()
+    }
 }
 
 impl PythonMathFunctions for Integer {
@@ -854,6 +881,18 @@ impl PythonMathFunctions for Integer {
 
     fn py_trunc(&self) -> Result<IntegerWrapper, FirkinError> {
         Ok(IntegerWrapper::from(self.clone()))
+    }
+
+    fn py_truediv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_floordiv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+        todo!()
+    }
+
+    fn py_divmod(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
+        todo!()
     }
 }
 
