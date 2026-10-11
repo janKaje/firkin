@@ -1,12 +1,8 @@
-#![allow(unused)]
-
 use std::{
     hash::Hash,
-    io::Bytes,
     ops::{
         Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div,
-        DivAssign, Mul, MulAssign, Neg, Not, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub,
-        SubAssign,
+        DivAssign, Mul, MulAssign, Neg, Not, Rem, RemAssign, Sub, SubAssign,
     },
 };
 
@@ -14,7 +10,7 @@ use rug::{Float, Integer};
 
 use crate::{
     error::FirkinError,
-    num::{float::FloatWrapper, int::IntegerWrapper, number::NumberWrapper, rat::RationalWrapper},
+    num::{int::IntegerWrapper, number::NumberWrapper},
 };
 
 pub(crate) trait PythonNum:
@@ -24,6 +20,7 @@ pub(crate) trait PythonNum:
 
 pub(crate) trait PythonRat: Sized + Hash + PythonNum {}
 
+#[allow(unused)]
 pub(crate) trait PythonInt:
     Sized
     + Rem
@@ -64,6 +61,7 @@ pub(crate) trait PythonMathFunctions: Sized + Neg + PartialOrd + PartialEq {
     fn py_trunc(&self) -> Result<IntegerWrapper, FirkinError>;
 }
 
+#[allow(unused)]
 pub(crate) trait NumpyUFuncs: PythonMathFunctions {}
 
 pub(crate) trait FromFloats: From<f64> + From<f32> + From<Float> {}

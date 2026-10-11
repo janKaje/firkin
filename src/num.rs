@@ -3,6 +3,7 @@
 mod float;
 mod int;
 mod number;
+mod python_math;
 mod rat;
 mod sign;
 mod smallrational;
