@@ -3,6 +3,7 @@
 use std::{
     fmt::Display,
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
+    str::FromStr,
 };
 
 use crate::{
@@ -30,14 +31,6 @@ use rug::{Float as RugFloat, Integer, Rational};
 impl NumberWrapper {
     pub(crate) const ZERO: Self = NumberWrapper::Int(IntegerWrapper::ZERO);
 
-    pub(crate) fn pow(&self, other: &NumberWrapper) -> NumberWrapper {
-        todo!()
-    }
-
-    pub(crate) fn log(&self, base: &NumberWrapper) -> NumberWrapper {
-        todo!()
-    }
-
     pub(crate) fn abs(&self) -> NumberWrapper {
         match self {
             Int(i) => Int(i.abs()),
@@ -45,27 +38,6 @@ impl NumberWrapper {
             Float(f) => Float(f.abs()),
         }
     }
-    // pub(crate) fn floor(&self) -> NumberWrapper {
-    //     match self {
-    //         Int(i) => Int(i.floor()),
-    //         Rat(r) => Int(r.floor()),
-    //         Float(f) => Int(f.floor()),
-    //     }
-    // }
-    // pub(crate) fn ceil(&self) -> NumberWrapper {
-    //     match self {
-    //         Int(i) => Int(i.ceil()),
-    //         Rat(r) => Int(r.ceil()),
-    //         Float(f) => Int(f.ceil()),
-    //     }
-    // }
-    // pub(crate) fn round(&self) -> NumberWrapper {
-    //     match self {
-    //         Int(i) => Int(i.round()),
-    //         Rat(r) => Int(r.round()),
-    //         Float(f) => Int(f.round()),
-    //     }
-    // }
 
     pub(crate) fn to_f64(&self) -> f64 {
         match self {
@@ -459,3 +431,21 @@ impl PythonMathFunctions for NumberWrapper {
 }
 
 impl PythonNum for NumberWrapper {}
+
+impl FromStr for NumberWrapper {
+    type Err = FirkinError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if let Ok(i) = s.parse::<IntegerWrapper>() {
+            Ok(i.into())
+        } else if let Some(r) = RationalWrapper::from_str_radix(s, 10) {
+            Ok(r.into())
+        } else if let Some(r) = RationalWrapper::from_decimal_str(s) {
+            Ok(r.into())
+        } else if let Ok(f) = s.parse::<FloatWrapper>() {
+            Ok(f.into())
+        } else {
+            Err(FirkinError::CannotConvertToNumber(s.into()))
+        }
+    }
+}

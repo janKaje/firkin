@@ -10,6 +10,8 @@ pub(crate) enum FirkinError {
     IncompatibleUnits { first: String, second: String },
     CannotConvertToFirkin(String),
     CannotConvertToNumber(String),
+    CannotConvertToInteger(String, Option<String>),
+    CannotConvertToFloat(String, Option<String>),
     PowModDoesNotExist(String, String, String),
     DivideByZero(String, String),
     CannotConvertInfinity(String),
@@ -20,25 +22,43 @@ impl std::error::Error for FirkinError {}
 impl fmt::Display for FirkinError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::UnitNotFound(query) => write!(f, "Unit {query} not found"),
-            Self::LogUnitNotFound(query) => write!(f, "Logarithmic ratio unit {query} not found"),
-            Self::ConstantNotFound(query) => write!(f, "Constant {query} not found"),
-            Self::IncompatibleUnits { first, second } => {
+            FirkinError::UnitNotFound(query) => write!(f, "Unit {query} not found"),
+            FirkinError::LogUnitNotFound(query) => {
+                write!(f, "Logarithmic ratio unit {query} not found")
+            }
+            FirkinError::ConstantNotFound(query) => write!(f, "Constant {query} not found"),
+            FirkinError::IncompatibleUnits { first, second } => {
                 write!(f, "{first} and {second} are not compatible")
             }
-            Self::CannotConvertToFirkin(other) => {
+            FirkinError::CannotConvertToFirkin(other) => {
                 write!(f, "{other} cannot be coerced into a unit")
             }
-            Self::CannotConvertToNumber(other) => {
+            FirkinError::CannotConvertToNumber(other) => {
                 write!(f, "{other} cannot be coerced into a number")
             }
-            Self::PowModDoesNotExist(base, exp, modulo) => {
+            FirkinError::PowModDoesNotExist(base, exp, modulo) => {
                 write!(f, "{base}^{exp}%{modulo} does not exist")
             }
-            Self::DivideByZero(numer, denom) => {
+            FirkinError::DivideByZero(numer, denom) => {
                 write!(f, "{numer}/{denom} does not exist - divide by zero error")
             }
-            Self::CannotConvertInfinity(msg) => write!(f, "{}", msg),
+            FirkinError::CannotConvertInfinity(msg) => write!(f, "{}", msg),
+            FirkinError::CannotConvertToInteger(input, opt_addl_info) => match opt_addl_info {
+                Some(addl_info) => write!(
+                    f,
+                    "Cannot convert \"{}\" to integer. Additional info: {}",
+                    input, addl_info
+                ),
+                None => write!(f, "Cannot convert \"{}\" to integer", input),
+            },
+            FirkinError::CannotConvertToFloat(input, opt_addl_info) => match opt_addl_info {
+                Some(addl_info) => write!(
+                    f,
+                    "Cannot convert \"{}\" to float. Additional info: {}",
+                    input, addl_info
+                ),
+                None => write!(f, "Cannot convert \"{}\" to float", input),
+            },
         }
     }
 }
@@ -46,18 +66,20 @@ impl fmt::Display for FirkinError {
 impl std::convert::From<FirkinError> for PyErr {
     fn from(err: FirkinError) -> PyErr {
         match &err {
-            FirkinError::UnitNotFound(_query) => PyLookupError::new_err(err.to_string()),
-            FirkinError::LogUnitNotFound(_query) => PyLookupError::new_err(err.to_string()),
-            FirkinError::ConstantNotFound(_query) => PyLookupError::new_err(err.to_string()),
+            FirkinError::UnitNotFound(_) => PyLookupError::new_err(err.to_string()),
+            FirkinError::LogUnitNotFound(_) => PyLookupError::new_err(err.to_string()),
+            FirkinError::ConstantNotFound(_) => PyLookupError::new_err(err.to_string()),
             FirkinError::IncompatibleUnits {
                 first: _,
                 second: _,
             } => PyTypeError::new_err(err.to_string()),
-            FirkinError::CannotConvertToFirkin(_other) => PyTypeError::new_err(err.to_string()),
-            FirkinError::CannotConvertToNumber(_other) => PyTypeError::new_err(err.to_string()),
+            FirkinError::CannotConvertToFirkin(_) => PyTypeError::new_err(err.to_string()),
+            FirkinError::CannotConvertToNumber(_) => PyTypeError::new_err(err.to_string()),
             FirkinError::PowModDoesNotExist(_, _, _) => PyTypeError::new_err(err.to_string()),
             FirkinError::DivideByZero(_, _) => PyZeroDivisionError::new_err(err.to_string()),
             FirkinError::CannotConvertInfinity(_) => PyOverflowError::new_err(err.to_string()),
+            FirkinError::CannotConvertToInteger(_, _) => PyTypeError::new_err(err.to_string()),
+            FirkinError::CannotConvertToFloat(_, _) => PyTypeError::new_err(err.to_string()),
         }
     }
 }

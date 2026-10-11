@@ -5,6 +5,7 @@ use crate::num::traits::{
     FromInts, PythonInt, PythonMathFunctions, PythonNum, PythonRat, TryFromFloats,
 };
 use crate::num::{float::FloatWrapper, number::NumberWrapper, rat::RationalWrapper};
+use regex::regex;
 use rug::integer::IntegerExt64;
 use rug::ops::Pow;
 use rug::{Float, Integer, az::Cast, float::MiniFloat};
@@ -12,6 +13,7 @@ use std::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign,
     Mul, MulAssign, Neg, Not, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
 };
+use std::str::FromStr;
 
 /// Wraps around the logic for both small and large integers
 #[derive(Clone, Debug, Hash)]
@@ -838,9 +840,26 @@ impl PythonInt for IntegerWrapper {
     }
 }
 
+impl FromStr for IntegerWrapper {
+    type Err = FirkinError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.parse::<i64>() {
+            Ok(i) => Ok(i.into()),
+            Err(_) => match s.parse::<Integer>() {
+                Ok(integer) => Ok(integer.into()),
+                Err(e) => Err(FirkinError::CannotConvertToInteger(
+                    s.into(),
+                    Some(e.to_string()),
+                )),
+            },
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::num::int::IntegerWrapper;
+    use crate::{error::FirkinError, num::int::IntegerWrapper};
     use rug::Integer;
 
     #[test]
@@ -855,5 +874,18 @@ mod tests {
         );
         assert_eq!(&small1 / &big1, IntegerWrapper::from(i64::MAX));
         assert_eq!(&big1 % &small1, IntegerWrapper::from(0));
+    }
+
+    #[test]
+    fn from_str() -> Result<(), FirkinError> {
+        let smalli = "1284";
+        let bigi = "1242310597164756218374132";
+        let noti = "19283jf";
+        let negi = "-91273";
+        assert_eq!(IntegerWrapper::from(1284), smalli.parse::<IntegerWrapper>()?);
+        assert_eq!(IntegerWrapper::from(1242310597164756218374132_i128), bigi.parse::<IntegerWrapper>()?);
+        assert!(noti.parse::<IntegerWrapper>().is_err());
+        assert_eq!(IntegerWrapper::from(-91273), negi.parse::<IntegerWrapper>()?);
+        Ok(())
     }
 }

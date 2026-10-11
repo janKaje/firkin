@@ -24,3 +24,6 @@ rug = "1.30.0"
 csv = "1.4.0"
 toml = "1.1.6"
 serde = "1.0.229"
+
+[dev-dependencies]
+rand = "0.10.3"

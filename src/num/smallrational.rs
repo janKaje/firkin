@@ -7,17 +7,23 @@ use std::{
         Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div,
         DivAssign, Mul, MulAssign, Neg, Not, Rem, Sub, SubAssign,
     },
+    str::FromStr,
 };
 
 use gcd::{binary_u64, binary_u128};
 use rug::{Assign, Integer, Rational};
 
-use crate::num::{
-    float::FloatWrapper, int::IntegerWrapper, number::NumberWrapper, rat::RationalWrapper,
+use crate::{
+    error::FirkinError,
+    num::{
+        float::FloatWrapper,
+        int::IntegerWrapper,
+        number::NumberWrapper,
+        rat::RationalWrapper,
+        sign::Sign::{self, Negative, Positive},
+        traits::PythonMathFunctions,
+    },
 };
-use crate::{error::FirkinError, num::traits::PythonMathFunctions};
-
-use super::sign::Sign::{self, Negative, Positive};
 
 /// Small rational number, to be used in unit powers and Number enum
 #[derive(Clone, Copy, Hash)]

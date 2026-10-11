@@ -18,6 +18,7 @@ use rug::{
 use std::{
     fmt::Display,
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, Sub, SubAssign},
+    str::FromStr,
 };
 
 const DEFAULT_PREC: u32 = 53;
@@ -782,11 +783,36 @@ impl PythonMathFunctions for FloatWrapper {
 
 impl PythonNum for FloatWrapper {}
 
+impl FromStr for FloatWrapper {
+    type Err = FirkinError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if DEFAULT_PREC <= 53 {
+            match s.parse::<f64>() {
+                Ok(f) => Ok(FloatWrapper::SmallFloat(f)),
+                Err(e) => Err(FirkinError::CannotConvertToFloat(
+                    s.into(),
+                    Some(e.to_string()),
+                )),
+            }
+        } else {
+            match Float::parse(s) {
+                Ok(f) => Ok(FloatWrapper::from_incomplete_float(f)),
+                Err(e) => Err(FirkinError::CannotConvertToFloat(
+                    s.into(),
+                    Some(e.to_string()),
+                )),
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use rug::Float;
+    use rand::prelude::*;
 
-    use crate::num::{float::FloatWrapper, int::IntegerWrapper};
+    use crate::{error::FirkinError, num::{float::FloatWrapper, int::IntegerWrapper}};
 
     #[test]
     fn froms() {
@@ -835,5 +861,20 @@ mod tests {
             FloatWrapper::from(146.3) * FloatWrapper::from(934),
             FloatWrapper::from(136644.2)
         );
+    }
+
+    #[test]
+    fn from_str() -> Result<(), FirkinError> {
+        let mut rng = rand::rng();
+        for _ in 0..100 {
+            // generate completely random float
+            let float: f64 = 0.0;
+            let mut as_bytes = float.to_ne_bytes();
+            rng.fill_bytes(&mut as_bytes);
+            let as_float = f64::from_ne_bytes(as_bytes);
+            assert_eq!(FloatWrapper::from(as_float), as_float.to_string().parse::<FloatWrapper>()?);
+        }
+
+        Ok(())
     }
 }
