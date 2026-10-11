@@ -9,7 +9,7 @@ pub(crate) enum FirkinError {
     ConstantNotFound(String),
     IncompatibleUnits { first: String, second: String },
     CannotConvertToFirkin(String),
-    CannotConvertToNumber(String),
+    CannotConvertToNumber(String, Option<String>),
     CannotConvertToInteger(String, Option<String>),
     CannotConvertToFloat(String, Option<String>),
     PowModDoesNotExist(String, String, String),
@@ -33,8 +33,13 @@ impl fmt::Display for FirkinError {
             FirkinError::CannotConvertToFirkin(other) => {
                 write!(f, "{other} cannot be coerced into a unit")
             }
-            FirkinError::CannotConvertToNumber(other) => {
-                write!(f, "{other} cannot be coerced into a number")
+            FirkinError::CannotConvertToNumber(input, opt_addl_info) => match opt_addl_info {
+                Some(addl_info) => write!(
+                    f,
+                    "Cannot convert \"{}\" to number. Additional info: {}",
+                    input, addl_info
+                ),
+                None => write!(f, "Cannot convert \"{}\" to number", input),
             }
             FirkinError::PowModDoesNotExist(base, exp, modulo) => {
                 write!(f, "{base}^{exp}%{modulo} does not exist")
@@ -74,7 +79,7 @@ impl std::convert::From<FirkinError> for PyErr {
                 second: _,
             } => PyTypeError::new_err(err.to_string()),
             FirkinError::CannotConvertToFirkin(_) => PyTypeError::new_err(err.to_string()),
-            FirkinError::CannotConvertToNumber(_) => PyTypeError::new_err(err.to_string()),
+            FirkinError::CannotConvertToNumber(_, _) => PyTypeError::new_err(err.to_string()),
             FirkinError::PowModDoesNotExist(_, _, _) => PyTypeError::new_err(err.to_string()),
             FirkinError::DivideByZero(_, _) => PyZeroDivisionError::new_err(err.to_string()),
             FirkinError::CannotConvertInfinity(_) => PyOverflowError::new_err(err.to_string()),

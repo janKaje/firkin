@@ -18,7 +18,7 @@ use crate::{
 };
 
 /// Single number, whether it's integer, rational, or irrational
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(crate) enum NumberWrapper {
     Int(IntegerWrapper),
     Rat(RationalWrapper),
@@ -440,12 +440,12 @@ impl FromStr for NumberWrapper {
             Ok(i.into())
         } else if let Some(r) = RationalWrapper::from_str_radix(s, 10) {
             Ok(r.into())
-        } else if let Some(r) = RationalWrapper::from_decimal_str(s) {
+        } else if let Ok(r) = RationalWrapper::from_decimal_str(s) {
             Ok(r.into())
         } else if let Ok(f) = s.parse::<FloatWrapper>() {
             Ok(f.into())
         } else {
-            Err(FirkinError::CannotConvertToNumber(s.into()))
+            Err(FirkinError::CannotConvertToNumber(s.into(), None))
         }
     }
 }

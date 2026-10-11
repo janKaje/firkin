@@ -19,6 +19,9 @@ mod firkin {
     use crate::unit::UnitCollection;
     use crate::unit::search_for_log_unit_name;
 
+    #[pymodule_export]
+    use crate::num::FirkinNumber;
+
     /// A unit-attached number that handles conversions and consistency checks
     /// during normal arithmetic and general use. Initialize with the ``unit``,
     /// ``constant``, ``empty``, or ``custom`` classmethods, or by importing
@@ -766,7 +769,7 @@ mod firkin {
             } else if let Ok(f) = obj.cast::<LogFirkin>() {
                 Ok(PyNumber::LogFirkin(f.extract::<LogFirkin>()?))
             } else {
-                Err(FirkinError::CannotConvertToNumber(obj.to_string()).into())
+                Err(FirkinError::CannotConvertToNumber(obj.to_string(), None).into())
             }
         }
     }

@@ -49,19 +49,24 @@ impl RationalWrapper {
         SmallRat(SmallRational::from((num, den)))
     }
 
-    pub(crate) fn from_decimal_str(src: &str) -> Option<Self> {
-        let m = regex!(r"\s*([-+]?\d*).?(\d*)[eE]?([-+]?\d*)\s*").captures(src)?;
+    pub(crate) fn from_decimal_str(src: &str) -> Result<Self, FirkinError> {
+        let m = match regex!(r"\s*([-+]?\d*).?(\d*)[eE]?([-+]?)(\d*)\s*").captures(src) {
+            Some(m) => m,
+            None => return Err(FirkinError::CannotConvertToNumber(src.into(), Some("from_decimal_str regex failed to capture".into()))),
+        };
 
         // be sure to test this thoroughly
         let exp: u32;
-        if (&m[3]).len() > 0 {
-            exp = match (&m[3]).parse::<u32>() {
+        if (&m[4]).len() > 0 {
+            exp = match (&m[4]).parse::<u32>() {
                 Ok(e) => e,
-                Err(_) => return None,
+                Err(e) => return Err(FirkinError::CannotConvertToNumber(src.into(), Some(e.to_string()))),
             };
         } else {
             exp = 0
         }
+
+        let neg_exp = &m[3] == "-";
 
         let whole: Integer = Integer::parse(&m[1]).unwrap().into();
 
@@ -79,12 +84,14 @@ impl RationalWrapper {
             frac_denom = Integer::from(1);
         }
 
-        let as_rat = Rational::from(dbg!(whole * &frac_denom + frac, frac_denom));
+        let as_rat = Rational::from((whole * &frac_denom + frac, frac_denom));
 
         if exp == 0 {
-            Some(RationalWrapper::from(as_rat))
+            Ok(RationalWrapper::from(as_rat))
+        } else if !neg_exp {
+            Ok(RationalWrapper::from(as_rat * Integer::from(10).pow(exp)))
         } else {
-            Some(RationalWrapper::from(as_rat * Integer::from(10).pow(exp)))
+            Ok(RationalWrapper::from(as_rat / Integer::from(10).pow(exp)))
         }
     }
 

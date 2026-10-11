@@ -1182,8 +1182,6 @@ mod tests {
             smallpos.checked_add(&bigpos).unwrap(),
             SmallRational::new(44, 5, true)
         );
-        dbg!(smallpos);
-        dbg!(bigneg);
         assert_eq!(
             smallpos.checked_add(&bigneg).unwrap(),
             SmallRational::new(10, 5, false)
