@@ -600,7 +600,7 @@ impl PythonMathFunctions for RationalWrapper {
     fn py_pow(
         &self,
         other: &NumberWrapper,
-        modulus: Option<&NumberWrapper>,
+        modulus: Option<NumberWrapper>,
     ) -> Result<NumberWrapper, FirkinError> {
         match self {
             SmallRat(r) => r.py_pow(other, modulus),

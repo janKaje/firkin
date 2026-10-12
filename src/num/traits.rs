@@ -42,7 +42,7 @@ pub(crate) trait PythonMathFunctions: Sized + Neg + PartialOrd + PartialEq {
     fn py_pow(
         &self,
         other: &NumberWrapper,
-        modulus: Option<&NumberWrapper>,
+        modulus: Option<NumberWrapper>,
     ) -> Result<NumberWrapper, FirkinError>;
     fn py_truediv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError>;
     fn py_floordiv(&self, other: &NumberWrapper) -> Result<IntegerWrapper, FirkinError>;

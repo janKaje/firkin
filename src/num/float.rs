@@ -687,7 +687,7 @@ impl PythonMathFunctions for FloatWrapper {
     fn py_pow(
         &self,
         other: &NumberWrapper,
-        modulus: Option<&NumberWrapper>,
+        modulus: Option<NumberWrapper>,
     ) -> Result<NumberWrapper, FirkinError> {
         match self {
             SmallFloat(f) => f.py_pow(other, modulus),

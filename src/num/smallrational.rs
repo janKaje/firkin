@@ -1002,7 +1002,7 @@ impl PythonMathFunctions for SmallRational {
     fn py_pow(
         &self,
         other: &NumberWrapper,
-        modulus: Option<&NumberWrapper>,
+        modulus: Option<NumberWrapper>,
     ) -> Result<NumberWrapper, FirkinError> {
         if self.is_zero() {
             return Ok(NumberWrapper::ZERO);

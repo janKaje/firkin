@@ -50,6 +50,17 @@ impl NumberWrapper {
         }
     }
 
+    pub(crate) fn to_integer(&self) -> Result<IntegerWrapper, FirkinError> {
+        match self {
+            Int(integer_wrapper) => Ok(integer_wrapper.clone()),
+            Rat(rational_wrapper) => Ok(rational_wrapper.to_integer()),
+            Float(float_wrapper) => match float_wrapper.to_integer() {
+                Ok(i) => Ok(i),
+                Err(info) => Err(FirkinError::CannotConvertToInteger(float_wrapper.to_string(), Some(info.into()))),
+            },
+        }
+    }
+
     pub(crate) fn is_zero(&self) -> bool {
         match self {
             Int(integer_wrapper) => integer_wrapper.is_zero(),
@@ -328,7 +339,7 @@ impl PythonMathFunctions for NumberWrapper {
     fn py_pow(
         &self,
         other: &NumberWrapper,
-        modulus: Option<&NumberWrapper>,
+        modulus: Option<NumberWrapper>,
     ) -> Result<NumberWrapper, FirkinError> {
         match self {
             Int(integer_wrapper) => integer_wrapper.py_pow(other, modulus),

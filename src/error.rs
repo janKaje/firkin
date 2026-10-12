@@ -15,6 +15,7 @@ pub(crate) enum FirkinError {
     PowModDoesNotExist(String, String, String),
     DivideByZero(String, String),
     CannotConvertInfinity(String),
+    OverflowError(String),
 }
 
 impl std::error::Error for FirkinError {}
@@ -64,6 +65,7 @@ impl fmt::Display for FirkinError {
                 ),
                 None => write!(f, "Cannot convert \"{}\" to float", input),
             },
+            FirkinError::OverflowError(msg) => write!(f, "{}", msg),
         }
     }
 }
@@ -85,6 +87,7 @@ impl std::convert::From<FirkinError> for PyErr {
             FirkinError::CannotConvertInfinity(_) => PyOverflowError::new_err(err.to_string()),
             FirkinError::CannotConvertToInteger(_, _) => PyTypeError::new_err(err.to_string()),
             FirkinError::CannotConvertToFloat(_, _) => PyTypeError::new_err(err.to_string()),
+            FirkinError::OverflowError(_) => PyOverflowError::new_err(err.to_string()),
         }
     }
 }

@@ -17,18 +17,20 @@ use crate::{
     },
 };
 
+// external implementations of PythonMathFunctions
+
 impl PythonMathFunctions for i64 {
     fn py_pow(
         &self,
         other: &NumberWrapper,
-        modulus: Option<&NumberWrapper>,
+        modulus: Option<NumberWrapper>,
     ) -> Result<NumberWrapper, FirkinError> {
         if *self == 0 {
             return Ok(NumberWrapper::ZERO);
         }
         match other {
             NumberWrapper::Int(integer_wrapper) => match integer_wrapper {
-                SmallInt(i_exp) => match modulus {
+                SmallInt(i_exp) => match &modulus {
                     Some(m) => match m {
                         NumberWrapper::Int(integer_mod) => {
                             match Integer::from(*self)
@@ -39,7 +41,7 @@ impl PythonMathFunctions for i64 {
                                     self.to_string(),
                                     other.to_string(),
                                     match modulus {
-                                        Some(m) => m.to_string(),
+                                        Some(m_) => m_.to_string(),
                                         None => String::from("no modulus"),
                                     },
                                 )),
@@ -174,14 +176,14 @@ impl PythonMathFunctions for Integer {
     fn py_pow(
         &self,
         other: &NumberWrapper,
-        modulus: Option<&NumberWrapper>,
+        modulus: Option<NumberWrapper>,
     ) -> Result<NumberWrapper, FirkinError> {
         if self.is_zero() {
             return Ok(NumberWrapper::ZERO);
         }
         match other {
             NumberWrapper::Int(integer_wrapper) => match integer_wrapper {
-                SmallInt(i_exp) => match modulus {
+                SmallInt(i_exp) => match &modulus {
                     Some(m) => match m {
                         NumberWrapper::Int(integer_mod) => {
                             match self
@@ -193,7 +195,7 @@ impl PythonMathFunctions for Integer {
                                     self.to_string(),
                                     other.to_string(),
                                     match modulus {
-                                        Some(m) => m.to_string(),
+                                        Some(m_) => m_.to_string(),
                                         None => String::from("no modulus"),
                                     },
                                 )),
@@ -316,7 +318,7 @@ impl PythonMathFunctions for Rational {
     fn py_pow(
         &self,
         other: &NumberWrapper,
-        modulus: Option<&NumberWrapper>,
+        modulus: Option<NumberWrapper>,
     ) -> Result<NumberWrapper, FirkinError> {
         if self.is_zero() {
             return Ok(NumberWrapper::ZERO);
@@ -329,7 +331,7 @@ impl PythonMathFunctions for Rational {
         }
         match other {
             NumberWrapper::Int(integer_wrapper) => match modulus {
-                Some(m) => self.py_pow(other, None)?.py_mod(m),
+                Some(m) => self.py_pow(other, None)?.py_mod(&m),
                 None => match integer_wrapper {
                     SmallInt(i) => {
                         if i.unsigned_abs() > u32::MAX as u64 {
@@ -509,10 +511,10 @@ impl PythonMathFunctions for f64 {
     fn py_pow(
         &self,
         other: &NumberWrapper,
-        modulus: Option<&NumberWrapper>,
+        modulus: Option<NumberWrapper>,
     ) -> Result<NumberWrapper, FirkinError> {
         match modulus {
-            Some(m) => self.py_pow(other, None)?.py_mod(m),
+            Some(m) => self.py_pow(other, None)?.py_mod(&m),
             None => match other {
                 NumberWrapper::Int(integer_wrapper) => match integer_wrapper {
                     IntegerWrapper::SmallInt(i) => Ok(self.powf(*i as f64).into()),
@@ -649,10 +651,10 @@ impl PythonMathFunctions for Float {
     fn py_pow(
         &self,
         other: &NumberWrapper,
-        modulus: Option<&NumberWrapper>,
+        modulus: Option<NumberWrapper>,
     ) -> Result<NumberWrapper, FirkinError> {
         match modulus {
-            Some(m) => self.py_pow(other, None)?.py_mod(m),
+            Some(m) => self.py_pow(other, None)?.py_mod(&m),
             None => match other {
                 NumberWrapper::Int(integer_wrapper) => match integer_wrapper {
                     IntegerWrapper::SmallInt(i) => {

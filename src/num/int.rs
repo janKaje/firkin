@@ -5,15 +5,19 @@ use crate::num::traits::{
     FromInts, PythonInt, PythonMathFunctions, PythonNum, PythonRat, RichDisplay, TryFromFloats,
 };
 use crate::num::{float::FloatWrapper, number::NumberWrapper, rat::RationalWrapper};
+use pyo3::IntoPyObject;
+use pyo3::types::PyInt;
 use regex::regex;
 use rug::integer::IntegerExt64;
 use rug::ops::Pow;
 use rug::{Float, Integer, az::Cast, float::MiniFloat};
+use std::convert::Infallible;
 use std::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign,
     Mul, MulAssign, Neg, Not, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
 };
 use std::str::FromStr;
+use pyo3::prelude::*;
 
 /// Wraps around the logic for both small and large integers
 #[derive(Clone, Debug, Hash)]
@@ -53,6 +57,20 @@ impl IntegerWrapper {
             SmallInt(i) => *i,
             Int(i) => i.to_i64_wrapping(),
         }
+    }
+
+    pub(crate) fn to_i32(&self) -> Result<i32, &'static str> {
+        match self {
+            SmallInt(i) => {if *i > i32::MAX as i64 || *i < i32::MIN as i64 {
+                Err("Overflow")
+            } else {
+                Ok(*i as i32)
+            }},
+            Int(integer) => match integer.to_i32() {
+                Some(i) => Ok(i),
+                None => Err("Overflow"),
+            }
+        } 
     }
 
     pub(crate) fn as_integer(&self) -> Integer {
@@ -742,7 +760,7 @@ impl PythonMathFunctions for IntegerWrapper {
     fn py_pow(
         &self,
         other: &NumberWrapper,
-        modulus: Option<&NumberWrapper>,
+        modulus: Option<NumberWrapper>,
     ) -> Result<NumberWrapper, FirkinError> {
         match self {
             SmallInt(i) => i.py_pow(other, modulus),
@@ -871,6 +889,19 @@ impl RichDisplay for IntegerWrapper {
 
     fn format(&self, format_specifier:String) -> String {
         todo!()
+    }
+}
+
+impl<'py> IntoPyObject<'py> for IntegerWrapper {
+    type Target = PyInt;
+    type Output = Bound<'py, Self::Target>;
+    type Error = Infallible;
+
+    fn into_pyobject(self, py: Python<'py>) -> Result<Self::Output, Self::Error> {
+        match self {
+            SmallInt(i) => i.into_pyobject(py),
+            Int(integer) => todo!(), // that's not going to be fun
+        }
     }
 }
 
