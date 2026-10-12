@@ -2,7 +2,7 @@
 
 use crate::error::FirkinError;
 use crate::num::traits::{
-    FromInts, PythonInt, PythonMathFunctions, PythonNum, PythonRat, TryFromFloats,
+    FromInts, PythonInt, PythonMathFunctions, PythonNum, PythonRat, RichDisplay, TryFromFloats,
 };
 use crate::num::{float::FloatWrapper, number::NumberWrapper, rat::RationalWrapper};
 use regex::regex;
@@ -854,6 +854,23 @@ impl FromStr for IntegerWrapper {
                 )),
             },
         }
+    }
+}
+
+impl RichDisplay for IntegerWrapper {
+    fn display_default(&self) -> String {
+        self.to_string()
+    }
+
+    fn display_debug(&self) -> String {
+        match self {
+            SmallInt(i) => format!("<SmallInteger {}>", i),
+            Int(integer) => format!("<BigInteger {}>", integer),
+        }
+    }
+
+    fn format(&self, format_specifier:String) -> String {
+        todo!()
     }
 }
 

@@ -7,13 +7,8 @@ use std::{
 };
 
 use crate::{
-    error::FirkinError,
-    num::{
-        float::FloatWrapper,
-        int::IntegerWrapper,
-        rat::RationalWrapper,
-        smallrational::SmallRational,
-        traits::{FromFloats, FromInts, PythonMathFunctions, PythonNum},
+    error::FirkinError, num::{
+        float::FloatWrapper, int::IntegerWrapper, rat::RationalWrapper, smallrational::SmallRational, traits::{FromFloats, FromInts, PythonMathFunctions, PythonNum, RichDisplay},
     },
 };
 
@@ -225,7 +220,11 @@ impl From<IntegerWrapper> for NumberWrapper {
 
 impl From<RationalWrapper> for NumberWrapper {
     fn from(value: RationalWrapper) -> Self {
-        Rat(value)
+        if value.is_integer() {
+            Int(value.to_integer())
+        } else {
+            Rat(value)
+        }
     }
 }
 
@@ -446,6 +445,32 @@ impl FromStr for NumberWrapper {
             Ok(f.into())
         } else {
             Err(FirkinError::CannotConvertToNumber(s.into(), None))
+        }
+    }
+}
+
+impl RichDisplay for NumberWrapper {
+    fn display_default(&self) -> String {
+        match self {
+            Int(integer_wrapper) => integer_wrapper.display_default(),
+            Rat(rational_wrapper) => rational_wrapper.display_default(),
+            Float(float_wrapper) => float_wrapper.display_default(),
+        }
+    }
+
+    fn display_debug(&self) -> String {
+        match self {
+            Int(integer_wrapper) => integer_wrapper.display_debug(),
+            Rat(rational_wrapper) => rational_wrapper.display_debug(),
+            Float(float_wrapper) => float_wrapper.display_debug(),
+        }
+    }
+
+    fn format(&self, format_specifier:String) -> String {
+        match self {
+            Int(integer_wrapper) => integer_wrapper.format(format_specifier),
+            Rat(rational_wrapper) => rational_wrapper.format(format_specifier),
+            Float(float_wrapper) => float_wrapper.format(format_specifier),
         }
     }
 }

@@ -84,3 +84,9 @@ pub(crate) trait FromInts:
     + From<Integer>
 {
 }
+
+pub(crate) trait RichDisplay {
+    fn display_default(&self) -> String;
+    fn display_debug(&self) -> String;
+    fn format(&self, format_specifier:String) -> String;
+}

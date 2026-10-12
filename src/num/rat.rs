@@ -4,7 +4,7 @@ use crate::error::FirkinError;
 use crate::num::int::IntegerWrapper::{self, Int, SmallInt};
 use crate::num::smallrational::SmallRational;
 use crate::num::traits::{
-    FromFloats, FromInts, PythonMathFunctions, PythonNum, PythonRat, TryFromFloats,
+    FromFloats, FromInts, PythonMathFunctions, PythonNum, PythonRat, RichDisplay, TryFromFloats,
 };
 use crate::num::{float::FloatWrapper, number::NumberWrapper};
 
@@ -691,6 +691,26 @@ impl PythonMathFunctions for RationalWrapper {
 
 impl PythonNum for RationalWrapper {}
 impl PythonRat for RationalWrapper {}
+
+impl RichDisplay for RationalWrapper {
+    fn display_default(&self) -> String {
+        match self {
+            SmallRat(r) => r.display_default(),
+            Rat(rational) => format!("{:?}", rational.to_f64()),
+        }
+    }
+
+    fn display_debug(&self) -> String {
+        match self {
+            SmallRat(r) => r.display_debug(),
+            Rat(rational) => format!("<BigRational {}>", rational),
+        }
+    }
+
+    fn format(&self, format_specifier:String) -> String {
+        todo!()
+    }
+}
 
 #[cfg(test)]
 mod tests {

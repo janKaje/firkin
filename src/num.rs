@@ -14,7 +14,7 @@ mod traits;
 
 use number::NumberWrapper;
 
-use crate::{error::FirkinError, num::rat::RationalWrapper};
+use crate::{error::FirkinError, num::{int::IntegerWrapper, rat::RationalWrapper, traits::RichDisplay}};
 
 const DEFAULT_RATIONAL_SIG_FIGS: usize = 5;
 
@@ -32,11 +32,11 @@ impl FirkinNumber {
     }
 
     fn __repr__(&self) -> PyResult<String> {
-        Ok(self.to_string())
+        Ok(self.display_default())
     }
 
     fn debug(&self) -> PyResult<String> {
-        Ok(dbg!(self).to_string())
+        Ok(self.display_debug())
     }
 }
 
@@ -102,7 +102,7 @@ impl FirkinNumber {
                 }
 
                 if consider_rational {
-                    Ok( FirkinNumber {value: NumberWrapper::Rat(match RationalWrapper::from_decimal_str(&s) {
+                    Ok( FirkinNumber {value: NumberWrapper::from(match RationalWrapper::from_decimal_str(&s) {
                         Ok(r) => r,
                         Err(e) => return Err(e.into()),
                     })})
@@ -169,5 +169,19 @@ for i in [
                 None,
             )
         })
+    }
+}
+
+impl RichDisplay for FirkinNumber {
+    fn display_default(&self) -> String {
+        self.value.display_default()
+    }
+
+    fn display_debug(&self) -> String {
+        self.value.display_debug()
+    }
+
+    fn format(&self, format_specifier:String) -> String {
+        self.value.format(format_specifier)
     }
 }

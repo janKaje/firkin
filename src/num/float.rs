@@ -1,13 +1,8 @@
 #![allow(unused)]
 
 use crate::{
-    error::FirkinError,
-    num::{
-        int::IntegerWrapper,
-        number::NumberWrapper,
-        rat::RationalWrapper,
-        smallrational::SmallRational,
-        traits::{FromFloats, FromInts, PythonMathFunctions, PythonNum},
+    error::FirkinError, num::{
+        int::IntegerWrapper, number::NumberWrapper, rat::RationalWrapper, smallrational::SmallRational, traits::{FromFloats, FromInts, PythonMathFunctions, PythonNum, RichDisplay},
     },
 };
 use rug::{
@@ -804,6 +799,26 @@ impl FromStr for FloatWrapper {
                 )),
             }
         }
+    }
+}
+
+impl RichDisplay for FloatWrapper {
+    fn display_default(&self) -> String {
+        match self {
+            SmallFloat(f) => format!("{:?}", f),
+            BigFloat(float) => format!("{:?}", float),
+        }
+    }
+
+    fn display_debug(&self) -> String {
+        match self {
+            SmallFloat(f) => format!("<SmallFloat {:?}>", f),
+            BigFloat(float) => format!("<BigFloat {:?}>", float),
+        }
+    }
+
+    fn format(&self, format_specifier:String) -> String {
+        todo!()
     }
 }
 
