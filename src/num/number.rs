@@ -6,9 +6,13 @@ use std::{
     str::FromStr,
 };
 
+use pyo3::{prelude::*, types::*};
+use regex::regex;
+
 use crate::{
     error::FirkinError,
     num::{
+        DEFAULT_RATIONAL_SIG_FIGS, FirkinNumber,
         float::FloatWrapper,
         int::IntegerWrapper,
         rat::RationalWrapper,
@@ -17,7 +21,7 @@ use crate::{
     },
 };
 
-pub(crate) const MAX_MEMORY_EXACT: u32 = 8*256; // 256 bytes is just too much for a single number. convert to float.
+pub(crate) const MAX_MEMORY_EXACT: u32 = 8 * 256; // 256 bytes is just too much for a single number. convert to float.
 
 /// Single number, whether it's integer, rational, or irrational
 #[derive(Clone, Debug)]
@@ -76,6 +80,109 @@ impl NumberWrapper {
             Int(integer_wrapper) => integer_wrapper.is_zero(),
             Rat(rational_wrapper) => rational_wrapper.is_zero(),
             Float(float_wrapper) => float_wrapper.is_zero(),
+        }
+    }
+
+    fn from_py_int(py_int: Bound<'_, PyInt>) -> PyResult<NumberWrapper> {
+        if let Ok(i) = py_int.extract::<i64>() {
+            return Ok(NumberWrapper::from(i));
+        } else if let Ok(i) = py_int.extract::<i128>() {
+            return Ok(NumberWrapper::from(i));
+        } else if let Ok(u) = py_int.extract::<u128>() {
+            return Ok(NumberWrapper::from(u));
+        }
+
+        let py_str = py_int.getattr("__str__")?.call0()?;
+        let py_str = py_str.cast::<PyString>()?;
+        if let Ok(s) = py_str.extract::<String>() {
+            return Ok(NumberWrapper::from_str(&s)?);
+        }
+
+        Err(FirkinError::CannotConvertToNumber(
+            py_int.to_string(),
+            Some("Unable to convert to integer.".into()),
+        )
+        .into())
+    }
+
+    fn from_py_float(py_float: Bound<'_, PyFloat>) -> PyResult<NumberWrapper> {
+        let py_str = py_float.getattr("__str__")?.call0()?;
+        let py_str = py_str.cast::<PyString>()?;
+        match py_str.extract::<String>() {
+            Ok(s) => NumberWrapper::from_string(s),
+            Err(_) => match py_float.extract::<f64>() {
+                Ok(f) => Ok(NumberWrapper::from(f)),
+                Err(_) => Err(FirkinError::CannotConvertToNumber(
+                    py_float.to_string(),
+                    Some("float format spec fail".into()),
+                )
+                .into()),
+            },
+        }
+    }
+
+    fn from_string(py_string: String) -> PyResult<NumberWrapper> {
+        // this captures floats, integers, and rational numbers
+        let m = match regex!(r"\s*([-+]?\d*).?(\d*)[eE]?([-+]?\d*)\s*").captures(&py_string) {
+            Some(m) => m,
+            None => match RationalWrapper::from_str_radix(&py_string, 10) {
+                Some(rational) => {
+                    return Ok(rational.into());
+                }
+                None => {
+                    return Err(FirkinError::CannotConvertToNumber(
+                        py_string,
+                        Some("string did not meet format specifications".into()),
+                    )
+                    .into());
+                }
+            },
+        };
+
+        // if sig figs is <= default rational, parse the string as a rational number
+        let consider_rational: bool;
+
+        if (&m[1]).trim_start_matches('0').len() == 0 {
+            // no pre-decimal digits
+            if (&m[2]).trim_matches('0').len() <= DEFAULT_RATIONAL_SIG_FIGS {
+                consider_rational = true;
+            } else {
+                consider_rational = false;
+            }
+        } else if (&m[2]).trim_end_matches('0').len() == 0 {
+            // no post-decimal digits
+            if (&m[1]).trim_matches('0').len() <= DEFAULT_RATIONAL_SIG_FIGS {
+                consider_rational = true;
+            } else {
+                consider_rational = false;
+            }
+        } else {
+            // both pre and post decimal digits
+            if (&m[1]).trim_start_matches('0').len() + (&m[2]).trim_end_matches('0').len()
+                <= DEFAULT_RATIONAL_SIG_FIGS
+            {
+                consider_rational = true;
+            } else {
+                consider_rational = false;
+            }
+        }
+
+        if consider_rational {
+            Ok(NumberWrapper::from(
+                match RationalWrapper::from_decimal_str(&py_string) {
+                    Ok(r) => r,
+                    Err(e) => return Err(e.into()),
+                },
+            ))
+        } else {
+            match py_string.parse::<f64>() {
+                Ok(f) => Ok(NumberWrapper::from(f)),
+                Err(_) => Err(FirkinError::CannotConvertToNumber(
+                    py_string,
+                    Some("float format spec fail".into()),
+                )
+                .into()),
+            }
         }
     }
 }
@@ -511,6 +618,24 @@ impl RichDisplay for NumberWrapper {
             Int(integer_wrapper) => integer_wrapper.format(format_specifier),
             Rat(rational_wrapper) => rational_wrapper.format(format_specifier),
             Float(float_wrapper) => float_wrapper.format(format_specifier),
+        }
+    }
+}
+
+impl FromPyObject<'_, '_> for NumberWrapper {
+    type Error = PyErr;
+
+    fn extract(obj: Borrowed<'_, '_, PyAny>) -> Result<Self, Self::Error> {
+        if let Ok(f) = obj.cast::<FirkinNumber>() {
+            Ok(f.extract::<FirkinNumber>()?.value)
+        } else if let Ok(f) = obj.cast::<PyInt>() {
+            NumberWrapper::from_py_int(f.to_owned())
+        } else if let Ok(f) = obj.cast::<PyFloat>() {
+            NumberWrapper::from_py_float(f.to_owned())
+        } else if let Ok(s) = obj.cast::<PyString>() {
+            NumberWrapper::from_string(s.extract::<String>()?)
+        } else {
+            Err(FirkinError::CannotConvertToNumber(obj.to_string(), None).into())
         }
     }
 }

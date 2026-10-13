@@ -80,21 +80,24 @@ impl RationalWrapper {
 
         let whole: Integer = Integer::parse(&m[1]).unwrap().into();
 
-        let frac: Integer;
         let frac_denom: Integer;
+        let as_rat: Rational;
         if (&m[2]).len() > 0 {
-            if whole.is_positive() {
-                frac = Integer::parse(&m[2]).unwrap().into();
-            } else {
-                frac = Integer::from(Integer::parse(&m[2]).unwrap()).neg();
-            }
             frac_denom = Integer::from(10).pow((&m[2]).len() as u32);
+            if !whole.is_negative() {
+                as_rat = Rational::from((
+                    whole * &frac_denom + Integer::from(Integer::parse(&m[2]).unwrap()),
+                    frac_denom,
+                ));
+            } else {
+                as_rat = Rational::from((
+                    whole * &frac_denom - Integer::from(Integer::parse(&m[2]).unwrap()),
+                    frac_denom,
+                ));
+            }
         } else {
-            frac = Integer::from(0);
-            frac_denom = Integer::from(1);
+            as_rat = Rational::from((whole, 1));
         }
-
-        let as_rat = Rational::from((whole * &frac_denom + frac, frac_denom));
 
         if exp == 0 {
             Ok(RationalWrapper::from(as_rat))

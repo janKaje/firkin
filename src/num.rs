@@ -4,11 +4,9 @@ use std::{
         BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not, Shl, ShlAssign, Shr,
         ShrAssign,
     },
-    str::FromStr,
 };
 
 use pyo3::{prelude::*, types::*};
-use regex::regex;
 
 mod float;
 mod int;
@@ -25,14 +23,13 @@ use crate::{
     error::FirkinError,
     num::{
         int::IntegerWrapper,
-        rat::RationalWrapper,
         traits::{PythonInt, PythonMathFunctions, RichDisplay},
     },
 };
 
 const DEFAULT_RATIONAL_SIG_FIGS: usize = 5;
 
-#[pyclass(skip_from_py_object)]
+#[pyclass(from_py_object)]
 #[derive(Clone, Debug)]
 pub struct FirkinNumber {
     value: NumberWrapper,
@@ -41,8 +38,8 @@ pub struct FirkinNumber {
 #[pymethods]
 impl FirkinNumber {
     #[classmethod]
-    fn new(_cls: &Bound<'_, PyType>, int: FirkinNumber) -> PyResult<FirkinNumber> {
-        Ok(int)
+    fn new(_cls: &Bound<'_, PyType>, input: NumberWrapper) -> PyResult<FirkinNumber> {
+        Ok(FirkinNumber { value: input })
     }
 
     fn __repr__(&self) -> PyResult<String> {
@@ -61,124 +58,122 @@ impl FirkinNumber {
         Ok(self.display_default())
     }
 
-    fn __lt__(&self, other: FirkinNumber) -> PyResult<bool> {
-        Ok(self.value < other.value)
+    fn __lt__(&self, other: NumberWrapper) -> PyResult<bool> {
+        Ok(self.value < other)
     }
 
-    fn __le__(&self, other: FirkinNumber) -> PyResult<bool> {
-        Ok(self.value <= other.value)
+    fn __le__(&self, other: NumberWrapper) -> PyResult<bool> {
+        Ok(self.value <= other)
     }
 
-    fn __gt__(&self, other: FirkinNumber) -> PyResult<bool> {
-        Ok(self.value > other.value)
+    fn __gt__(&self, other: NumberWrapper) -> PyResult<bool> {
+        Ok(self.value > other)
     }
 
-    fn __ge__(&self, other: FirkinNumber) -> PyResult<bool> {
-        Ok(self.value >= other.value)
+    fn __ge__(&self, other: NumberWrapper) -> PyResult<bool> {
+        Ok(self.value >= other)
     }
 
-    fn __eq__(&self, other: FirkinNumber) -> PyResult<bool> {
-        Ok(self.value == other.value)
+    fn __eq__(&self, other: NumberWrapper) -> PyResult<bool> {
+        Ok(self.value == other)
     }
 
-    fn __ne__(&self, other: FirkinNumber) -> PyResult<bool> {
-        Ok(self.value != other.value)
+    fn __ne__(&self, other: NumberWrapper) -> PyResult<bool> {
+        Ok(self.value != other)
     }
 
-    fn __add__(&self, other: FirkinNumber) -> PyResult<FirkinNumber> {
+    fn __add__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
         Ok(FirkinNumber {
-            value: &self.value + other.value,
+            value: &self.value + other,
         })
     }
 
-    fn __sub__(&self, other: FirkinNumber) -> PyResult<FirkinNumber> {
+    fn __sub__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
         Ok(FirkinNumber {
-            value: &self.value - other.value,
+            value: &self.value - other,
         })
     }
 
-    fn __mul__(&self, other: FirkinNumber) -> PyResult<FirkinNumber> {
+    fn __mul__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
         Ok(FirkinNumber {
-            value: &self.value * other.value,
+            value: &self.value * other,
         })
     }
 
-    fn __truediv__(&self, other: FirkinNumber) -> PyResult<FirkinNumber> {
+    fn __truediv__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
         Ok(FirkinNumber {
-            value: self.value.py_truediv(&other.value)?,
+            value: self.value.py_truediv(&other)?,
         })
     }
 
-    fn __floordiv__(&self, other: FirkinNumber) -> PyResult<FirkinNumber> {
+    fn __floordiv__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
         Ok(FirkinNumber {
-            value: self.value.py_floordiv(&other.value)?.into(),
+            value: self.value.py_floordiv(&other)?.into(),
         })
     }
 
-    fn __mod__(&self, other: FirkinNumber) -> PyResult<FirkinNumber> {
+    fn __mod__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
         Ok(FirkinNumber {
-            value: self.value.py_mod(&other.value)?,
+            value: self.value.py_mod(&other)?,
         })
     }
 
-    fn __divmod__(&self, other: FirkinNumber) -> PyResult<(FirkinNumber, FirkinNumber)> {
-        let (numa, numb) = self.value.py_divmod(&other.value)?;
+    fn __divmod__(&self, other: NumberWrapper) -> PyResult<(FirkinNumber, FirkinNumber)> {
+        let (numa, numb) = self.value.py_divmod(&other)?;
         Ok((
             FirkinNumber { value: numa.into() },
             FirkinNumber { value: numb },
         ))
     }
 
-    fn __pow__(&self, other: FirkinNumber, modulo: Option<FirkinNumber>) -> PyResult<FirkinNumber> {
+    fn __pow__(
+        &self,
+        other: NumberWrapper,
+        modulo: Option<NumberWrapper>,
+    ) -> PyResult<FirkinNumber> {
         Ok(FirkinNumber {
-            value: self.value.py_pow(
-                &other.value,
-                match modulo {
-                    Some(m) => Some(m.value),
-                    None => None,
-                },
-            )?,
+            value: self.value.py_pow(&other, modulo)?,
         })
     }
 
-    fn __radd__(&self, other: FirkinNumber) -> PyResult<FirkinNumber> {
+    fn __radd__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
         Ok(FirkinNumber {
-            value: other.value + &self.value,
+            value: other + &self.value,
         })
     }
 
-    fn __rsub__(&self, other: FirkinNumber) -> PyResult<FirkinNumber> {
+    fn __rsub__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
         Ok(FirkinNumber {
-            value: other.value - &self.value,
+            value: other - &self.value,
         })
     }
 
-    fn __rmul__(&self, other: FirkinNumber) -> PyResult<FirkinNumber> {
+    fn __rmul__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
         Ok(FirkinNumber {
-            value: other.value * &self.value,
+            value: other * &self.value,
         })
     }
 
-    fn __rtruediv__(&self, other: FirkinNumber) -> PyResult<FirkinNumber> {
+    fn __rtruediv__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
         Ok(FirkinNumber {
-            value: other.value.py_truediv(&self.value)?,
+            value: other.py_truediv(&self.value)?,
         })
     }
 
-    fn __rfloordiv__(&self, other: FirkinNumber) -> PyResult<FirkinNumber> {
+    fn __rfloordiv__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
         Ok(FirkinNumber {
-            value: other.value.py_floordiv(&self.value)?.into(),
+            value: other.py_floordiv(&self.value)?.into(),
         })
     }
 
-    fn __rmod__(&self, other: FirkinNumber) -> PyResult<FirkinNumber> {
+    fn __rmod__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
         Ok(FirkinNumber {
-            value: other.value.py_mod(&self.value)?,
+            value: other.py_mod(&self.value)?,
         })
     }
 
-    fn __rdivmod__(&self, other: FirkinNumber) -> PyResult<(FirkinNumber, FirkinNumber)> {
-        let (numa, numb) = other.value.py_divmod(&self.value)?;
+    fn __rdivmod__(&self, other: NumberWrapper) -> PyResult<(FirkinNumber, FirkinNumber)> {
+        let (numa, numb) = other.py_divmod(&self.value)?;
         Ok((
             FirkinNumber { value: numa.into() },
             FirkinNumber { value: numb },
@@ -187,58 +182,46 @@ impl FirkinNumber {
 
     fn __rpow__(
         &self,
-        other: FirkinNumber,
-        modulo: Option<FirkinNumber>,
+        other: NumberWrapper,
+        modulo: Option<NumberWrapper>,
     ) -> PyResult<FirkinNumber> {
         Ok(FirkinNumber {
-            value: other.value.py_pow(
-                &self.value,
-                match modulo {
-                    Some(m) => Some(m.value),
-                    None => None,
-                },
-            )?,
+            value: other.py_pow(&self.value, modulo)?,
         })
     }
 
-    fn __iadd__(&mut self, other: FirkinNumber) -> PyResult<()> {
-        self.value = &self.value + other.value;
+    fn __iadd__(&mut self, other: NumberWrapper) -> PyResult<()> {
+        self.value = &self.value + other;
         Ok(())
     }
 
-    fn __isub__(&mut self, other: FirkinNumber) -> PyResult<()> {
-        self.value = &self.value - other.value;
+    fn __isub__(&mut self, other: NumberWrapper) -> PyResult<()> {
+        self.value = &self.value - other;
         Ok(())
     }
 
-    fn __imul__(&mut self, other: FirkinNumber) -> PyResult<()> {
-        self.value = &self.value * other.value;
+    fn __imul__(&mut self, other: NumberWrapper) -> PyResult<()> {
+        self.value = &self.value * other;
         Ok(())
     }
 
-    fn __itruediv__(&mut self, other: FirkinNumber) -> PyResult<()> {
-        self.value = self.value.py_truediv(&other.value)?;
+    fn __itruediv__(&mut self, other: NumberWrapper) -> PyResult<()> {
+        self.value = self.value.py_truediv(&other)?;
         Ok(())
     }
 
-    fn __ifloordiv__(&mut self, other: FirkinNumber) -> PyResult<()> {
-        self.value = self.value.py_floordiv(&other.value)?.into();
+    fn __ifloordiv__(&mut self, other: NumberWrapper) -> PyResult<()> {
+        self.value = self.value.py_floordiv(&other)?.into();
         Ok(())
     }
 
-    fn __imod__(&mut self, other: FirkinNumber) -> PyResult<()> {
-        self.value = self.value.py_mod(&other.value)?;
+    fn __imod__(&mut self, other: NumberWrapper) -> PyResult<()> {
+        self.value = self.value.py_mod(&other)?;
         Ok(())
     }
 
-    fn __ipow__(&mut self, other: FirkinNumber, modulo: Option<FirkinNumber>) -> PyResult<()> {
-        self.value = self.value.py_pow(
-            &other.value,
-            match modulo {
-                Some(m) => Some(m.value),
-                None => None,
-            },
-        )?;
+    fn __ipow__(&mut self, other: NumberWrapper, modulo: Option<NumberWrapper>) -> PyResult<()> {
+        self.value = self.value.py_pow(&other, modulo)?;
         Ok(())
     }
 
@@ -268,10 +251,10 @@ impl FirkinNumber {
         Ok(self.value.py_float()?)
     }
 
-    fn __round__(&self, ndigits: Option<FirkinNumber>) -> PyResult<FirkinNumber> {
+    fn __round__(&self, ndigits: Option<NumberWrapper>) -> PyResult<FirkinNumber> {
         match &ndigits {
             Some(n) => Ok(FirkinNumber {
-                value: self.value.py_round(match n.value.to_integer()?.to_i32() {
+                value: self.value.py_round(match n.to_integer()?.to_i32() {
                     Ok(i) => i,
                     Err(_) => {
                         return Err(FirkinError::OverflowError(format!(
@@ -331,8 +314,8 @@ impl FirkinNumber {
         }
     }
 
-    fn __and__(&self, other: FirkinNumber) -> PyResult<FirkinNumber> {
-        match (&self.value, &other.value) {
+    fn __and__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
+        match (&self.value, &other) {
             (NumberWrapper::Int(i), NumberWrapper::Int(i2)) => Ok(FirkinNumber {
                 value: i.bitand(i2).into(),
             }),
@@ -343,8 +326,8 @@ impl FirkinNumber {
         }
     }
 
-    fn __or__(&self, other: FirkinNumber) -> PyResult<FirkinNumber> {
-        match (&self.value, &other.value) {
+    fn __or__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
+        match (&self.value, &other) {
             (NumberWrapper::Int(i), NumberWrapper::Int(i2)) => Ok(FirkinNumber {
                 value: i.bitor(i2).into(),
             }),
@@ -355,8 +338,8 @@ impl FirkinNumber {
         }
     }
 
-    fn __xor__(&self, other: FirkinNumber) -> PyResult<FirkinNumber> {
-        match (&self.value, &other.value) {
+    fn __xor__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
+        match (&self.value, &other) {
             (NumberWrapper::Int(i), NumberWrapper::Int(i2)) => Ok(FirkinNumber {
                 value: i.bitxor(i2).into(),
             }),
@@ -367,10 +350,10 @@ impl FirkinNumber {
         }
     }
 
-    fn __rlshift__(&self, other: FirkinNumber) -> PyResult<FirkinNumber> {
+    fn __rlshift__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
         match &self.value {
             NumberWrapper::Int(i) => match i.to_u32() {
-                Ok(u) => other.__lshift__(u),
+                Ok(u) => FirkinNumber { value: other }.__lshift__(u),
                 Err(_) => Err(FirkinError::OverflowError(
                     "Right side of bit shift must be between 0 and 2^32 - 1".into(),
                 )
@@ -383,10 +366,10 @@ impl FirkinNumber {
         }
     }
 
-    fn __rrshift__(&self, other: FirkinNumber) -> PyResult<FirkinNumber> {
+    fn __rrshift__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
         match &self.value {
             NumberWrapper::Int(i) => match i.to_u32() {
-                Ok(u) => other.__rshift__(u),
+                Ok(u) => FirkinNumber { value: other }.__rshift__(u),
                 Err(_) => Err(FirkinError::OverflowError(
                     "Right side of bit shift must be between 0 and 2^32 - 1".into(),
                 )
@@ -399,8 +382,8 @@ impl FirkinNumber {
         }
     }
 
-    fn __rand__(&self, other: FirkinNumber) -> PyResult<FirkinNumber> {
-        match (&self.value, &other.value) {
+    fn __rand__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
+        match (&self.value, &other) {
             (NumberWrapper::Int(i), NumberWrapper::Int(i2)) => Ok(FirkinNumber {
                 value: i2.bitand(i).into(),
             }),
@@ -411,8 +394,8 @@ impl FirkinNumber {
         }
     }
 
-    fn __ror__(&self, other: FirkinNumber) -> PyResult<FirkinNumber> {
-        match (&self.value, &other.value) {
+    fn __ror__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
+        match (&self.value, &other) {
             (NumberWrapper::Int(i), NumberWrapper::Int(i2)) => Ok(FirkinNumber {
                 value: i2.bitor(i).into(),
             }),
@@ -423,8 +406,8 @@ impl FirkinNumber {
         }
     }
 
-    fn __rxor__(&self, other: FirkinNumber) -> PyResult<FirkinNumber> {
-        match (&self.value, &other.value) {
+    fn __rxor__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
+        match (&self.value, &other) {
             (NumberWrapper::Int(i), NumberWrapper::Int(i2)) => Ok(FirkinNumber {
                 value: i2.bitxor(i).into(),
             }),
@@ -461,8 +444,8 @@ impl FirkinNumber {
         }
     }
 
-    fn __iand__(&mut self, other: FirkinNumber) -> PyResult<()> {
-        match (&mut self.value, &other.value) {
+    fn __iand__(&mut self, other: NumberWrapper) -> PyResult<()> {
+        match (&mut self.value, &other) {
             (NumberWrapper::Int(i), NumberWrapper::Int(i2)) => {
                 i.bitand_assign(i2);
                 Ok(())
@@ -474,8 +457,8 @@ impl FirkinNumber {
         }
     }
 
-    fn __ior__(&mut self, other: FirkinNumber) -> PyResult<()> {
-        match (&mut self.value, &other.value) {
+    fn __ior__(&mut self, other: NumberWrapper) -> PyResult<()> {
+        match (&mut self.value, &other) {
             (NumberWrapper::Int(i), NumberWrapper::Int(i2)) => {
                 i.bitor_assign(i2);
                 Ok(())
@@ -487,8 +470,8 @@ impl FirkinNumber {
         }
     }
 
-    fn __ixor__(&mut self, other: FirkinNumber) -> PyResult<()> {
-        match (&mut self.value, &other.value) {
+    fn __ixor__(&mut self, other: NumberWrapper) -> PyResult<()> {
+        match (&mut self.value, &other) {
             (NumberWrapper::Int(i), NumberWrapper::Int(i2)) => {
                 i.bitxor_assign(i2);
                 Ok(())
@@ -532,141 +515,6 @@ impl Display for FirkinNumber {
     }
 }
 
-impl FirkinNumber {
-    fn from_py_int(py_int: Bound<'_, PyInt>) -> PyResult<FirkinNumber> {
-        if let Ok(i) = py_int.extract::<i64>() {
-            return Ok(FirkinNumber {
-                value: NumberWrapper::from(i),
-            });
-        } else if let Ok(i) = py_int.extract::<i128>() {
-            return Ok(FirkinNumber {
-                value: NumberWrapper::from(i),
-            });
-        } else if let Ok(u) = py_int.extract::<u128>() {
-            return Ok(FirkinNumber {
-                value: NumberWrapper::from(u),
-            });
-        }
-
-        let py_str = py_int.getattr("__str__")?.call0()?;
-        let py_str = py_str.cast::<PyString>()?;
-        if let Ok(s) = py_str.extract::<String>() {
-            return Ok(FirkinNumber {
-                value: NumberWrapper::from_str(&s)?,
-            });
-        }
-
-        Err(FirkinError::CannotConvertToNumber(
-            py_int.to_string(),
-            Some("Unable to convert to integer.".into()),
-        )
-        .into())
-    }
-
-    fn from_py_float(py_float: Bound<'_, PyFloat>) -> PyResult<FirkinNumber> {
-        let py_str = py_float.getattr("__str__")?.call0()?;
-        let py_str = py_str.cast::<PyString>()?;
-        match py_str.extract::<String>() {
-            Ok(s) => FirkinNumber::from_string(s),
-            Err(_) => match py_float.extract::<f64>() {
-                Ok(f) => Ok(FirkinNumber {
-                    value: NumberWrapper::from(f),
-                }),
-                Err(_) => Err(FirkinError::CannotConvertToNumber(
-                    py_float.to_string(),
-                    Some("float format spec fail".into()),
-                )
-                .into()),
-            },
-        }
-    }
-
-    fn from_string(py_string: String) -> PyResult<FirkinNumber> {
-        // this captures floats, integers, and rational numbers
-        let m = match regex!(r"\s*([-+]?\d*).?(\d*)[eE]?([-+]?\d*)\s*").captures(&py_string) {
-            Some(m) => m,
-            None => match RationalWrapper::from_str_radix(&py_string, 10) {
-                Some(rational) => {
-                    return Ok(FirkinNumber {
-                        value: rational.into(),
-                    });
-                }
-                None => {
-                    return Err(FirkinError::CannotConvertToNumber(
-                        py_string,
-                        Some("string did not meet format specifications".into()),
-                    )
-                    .into());
-                }
-            },
-        };
-
-        // if sig figs is <= default rational, parse the string as a rational number
-        let consider_rational: bool;
-
-        if (&m[1]).trim_start_matches('0').len() == 0 {
-            // no pre-decimal digits
-            if (&m[2]).trim_matches('0').len() <= DEFAULT_RATIONAL_SIG_FIGS {
-                consider_rational = true;
-            } else {
-                consider_rational = false;
-            }
-        } else if (&m[2]).trim_end_matches('0').len() == 0 {
-            // no post-decimal digits
-            if (&m[1]).trim_matches('0').len() <= DEFAULT_RATIONAL_SIG_FIGS {
-                consider_rational = true;
-            } else {
-                consider_rational = false;
-            }
-        } else {
-            // both pre and post decimal digits
-            if (&m[1]).trim_start_matches('0').len() + (&m[2]).trim_end_matches('0').len()
-                <= DEFAULT_RATIONAL_SIG_FIGS
-            {
-                consider_rational = true;
-            } else {
-                consider_rational = false;
-            }
-        }
-
-        if consider_rational {
-            Ok(FirkinNumber {
-                value: NumberWrapper::from(match RationalWrapper::from_decimal_str(&py_string) {
-                    Ok(r) => r,
-                    Err(e) => return Err(e.into()),
-                }),
-            })
-        } else {
-            match py_string.parse::<f64>() {
-                Ok(f) => Ok(FirkinNumber {
-                    value: NumberWrapper::from(f),
-                }),
-                Err(_) => Err(FirkinError::CannotConvertToNumber(
-                    py_string,
-                    Some("float format spec fail".into()),
-                )
-                .into()),
-            }
-        }
-    }
-}
-
-impl FromPyObject<'_, '_> for FirkinNumber {
-    type Error = PyErr;
-
-    fn extract(obj: Borrowed<'_, '_, PyAny>) -> Result<Self, Self::Error> {
-        if let Ok(f) = obj.cast::<PyInt>() {
-            FirkinNumber::from_py_int(f.to_owned())
-        } else if let Ok(f) = obj.cast::<PyFloat>() {
-            FirkinNumber::from_py_float(f.to_owned())
-        } else if let Ok(s) = obj.cast::<PyString>() {
-            FirkinNumber::from_string(s.extract::<String>()?)
-        } else {
-            Err(FirkinError::CannotConvertToNumber(obj.to_string(), None).into())
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use pyo3::{PyResult, Python};
@@ -694,6 +542,24 @@ for i in [
 -128349712349817265916236498762985612347198237648172359817236491562384716289576192344871234,
 ]:
     assert str(FirkinNumber.new(i)) == str(i)
+"#,
+                None,
+                None,
+            )
+        })
+    }
+
+    #[test]
+    fn test_to_int() -> PyResult<()> {
+        run_closure(|py| {
+            py.run(
+                cr#"from firkin import FirkinNumber
+for i in [
+1234812,
+-129873587561632981623847125461234,
+-128349712349817265916236498762985612347198237648172359817236491562384716289576192344871234,
+]:
+    assert int(FirkinNumber.new(i)) == i
 "#,
                 None,
                 None,

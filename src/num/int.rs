@@ -918,8 +918,7 @@ impl<'py> IntoPyObject<'py> for IntegerWrapper {
     fn into_pyobject(self, py: Python<'py>) -> Result<Self::Output, Self::Error> {
         match self {
             SmallInt(i) => i.into_pyobject(py),
-            Int(integer) => Ok(
-                PyModule::import(py, "builtins")
+            Int(integer) => Ok(PyModule::import(py, "builtins")
                 .unwrap()
                 .getattr("int")
                 .unwrap()
