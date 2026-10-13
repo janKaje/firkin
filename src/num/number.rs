@@ -17,6 +17,8 @@ use crate::{
     },
 };
 
+pub(crate) const MAX_MEMORY_EXACT: u32 = 8*256; // 256 bytes is just too much for a single number. convert to float.
+
 /// Single number, whether it's integer, rational, or irrational
 #[derive(Clone, Debug)]
 pub(crate) enum NumberWrapper {
@@ -233,7 +235,10 @@ impl Neg for NumberWrapper {
 
 impl From<IntegerWrapper> for NumberWrapper {
     fn from(value: IntegerWrapper) -> Self {
-        Int(value)
+        match value {
+            IntegerWrapper::SmallInt(i) => Int(value),
+            IntegerWrapper::Int(integer) => integer.into(),
+        }
     }
 }
 
@@ -242,7 +247,10 @@ impl From<RationalWrapper> for NumberWrapper {
         if value.is_integer() {
             Int(value.to_integer())
         } else {
-            Rat(value)
+            match value {
+                RationalWrapper::SmallRat(r) => Rat(value),
+                RationalWrapper::Rat(rational) => rational.into(),
+            }
         }
     }
 }
@@ -277,7 +285,16 @@ from_int! {u32}
 from_int! {u64}
 from_int! {u128}
 from_int! {usize}
-from_int! {Integer}
+
+impl From<Integer> for NumberWrapper {
+    fn from(value: Integer) -> Self {
+        if value.signed_bits() > MAX_MEMORY_EXACT {
+            Float(FloatWrapper::from(value))
+        } else {
+            Int(value.into())
+        }
+    }
+}
 
 macro_rules! from_float {
     (
@@ -303,7 +320,11 @@ impl From<SmallRational> for NumberWrapper {
 
 impl From<Rational> for NumberWrapper {
     fn from(value: Rational) -> Self {
-        Rat(RationalWrapper::Rat(value))
+        if value.numer().signed_bits() + value.denom().signed_bits() > MAX_MEMORY_EXACT {
+            Float(FloatWrapper::from(value))
+        } else {
+            Rat(value.into())
+        }
     }
 }
 
