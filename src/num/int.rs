@@ -6,9 +6,10 @@ use crate::num::traits::{
 };
 use crate::num::{float::FloatWrapper, number::NumberWrapper, rat::RationalWrapper};
 use pyo3::IntoPyObject;
+use pyo3::prelude::*;
 use pyo3::types::PyInt;
 use regex::regex;
-use rug::integer::IntegerExt64;
+use rug::integer::{IntegerExt64, Order};
 use rug::ops::Pow;
 use rug::{Float, Integer, az::Cast, float::MiniFloat};
 use std::convert::Infallible;
@@ -17,7 +18,6 @@ use std::ops::{
     Mul, MulAssign, Neg, Not, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
 };
 use std::str::FromStr;
-use pyo3::prelude::*;
 
 /// Wraps around the logic for both small and large integers
 #[derive(Clone, Debug, Hash)]
@@ -61,16 +61,34 @@ impl IntegerWrapper {
 
     pub(crate) fn to_i32(&self) -> Result<i32, &'static str> {
         match self {
-            SmallInt(i) => {if *i > i32::MAX as i64 || *i < i32::MIN as i64 {
-                Err("Overflow")
-            } else {
-                Ok(*i as i32)
-            }},
+            SmallInt(i) => {
+                if *i > i32::MAX as i64 || *i < i32::MIN as i64 {
+                    Err("Overflow")
+                } else {
+                    Ok(*i as i32)
+                }
+            }
             Int(integer) => match integer.to_i32() {
                 Some(i) => Ok(i),
                 None => Err("Overflow"),
+            },
+        }
+    }
+
+    pub(crate) fn to_u32(&self) -> Result<u32, &'static str> {
+        match self {
+            SmallInt(i) => {
+                if *i > u32::MAX as i64 || *i < 0 {
+                    Err("Overflow")
+                } else {
+                    Ok(*i as u32)
+                }
             }
-        } 
+            Int(integer) => match integer.to_u32() {
+                Some(i) => Ok(i),
+                None => Err("Overflow"),
+            },
+        }
     }
 
     pub(crate) fn as_integer(&self) -> Integer {
@@ -887,7 +905,7 @@ impl RichDisplay for IntegerWrapper {
         }
     }
 
-    fn format(&self, format_specifier:String) -> String {
+    fn format(&self, format_specifier: String) -> String {
         todo!()
     }
 }
@@ -900,7 +918,15 @@ impl<'py> IntoPyObject<'py> for IntegerWrapper {
     fn into_pyobject(self, py: Python<'py>) -> Result<Self::Output, Self::Error> {
         match self {
             SmallInt(i) => i.into_pyobject(py),
-            Int(integer) => todo!(), // that's not going to be fun
+            Int(integer) => Ok(
+                PyModule::import(py, "builtins")
+                .unwrap()
+                .getattr("int")
+                .unwrap()
+                .call1((integer.to_string_radix(10),))
+                .unwrap()
+                .cast_into::<PyInt>()
+                .unwrap()),
         }
     }
 }
@@ -930,10 +956,19 @@ mod tests {
         let bigi = "1242310597164756218374132";
         let noti = "19283jf";
         let negi = "-91273";
-        assert_eq!(IntegerWrapper::from(1284), smalli.parse::<IntegerWrapper>()?);
-        assert_eq!(IntegerWrapper::from(1242310597164756218374132_i128), bigi.parse::<IntegerWrapper>()?);
+        assert_eq!(
+            IntegerWrapper::from(1284),
+            smalli.parse::<IntegerWrapper>()?
+        );
+        assert_eq!(
+            IntegerWrapper::from(1242310597164756218374132_i128),
+            bigi.parse::<IntegerWrapper>()?
+        );
         assert!(noti.parse::<IntegerWrapper>().is_err());
-        assert_eq!(IntegerWrapper::from(-91273), negi.parse::<IntegerWrapper>()?);
+        assert_eq!(
+            IntegerWrapper::from(-91273),
+            negi.parse::<IntegerWrapper>()?
+        );
         Ok(())
     }
 }

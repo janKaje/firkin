@@ -14,8 +14,14 @@ use gcd::{binary_u64, binary_u128};
 use rug::{Assign, Integer, Rational};
 
 use crate::{
-    error::FirkinError, num::{
-        float::FloatWrapper, int::IntegerWrapper, number::NumberWrapper, rat::RationalWrapper, sign::Sign::{self, Negative, Positive}, traits::{PythonMathFunctions, RichDisplay},
+    error::FirkinError,
+    num::{
+        float::FloatWrapper,
+        int::IntegerWrapper,
+        number::NumberWrapper,
+        rat::RationalWrapper,
+        sign::Sign::{self, Negative, Positive},
+        traits::{PythonMathFunctions, RichDisplay},
     },
 };
 
@@ -1141,7 +1147,7 @@ impl RichDisplay for SmallRational {
         format!("<SmallRational {}>", self.to_string())
     }
 
-    fn format(&self, format_specifier:String) -> String {
+    fn format(&self, format_specifier: String) -> String {
         todo!()
     }
 }
@@ -1150,7 +1156,7 @@ impl RichDisplay for SmallRational {
 mod tests {
     use crate::num::traits::RichDisplay;
 
-use super::SmallRational;
+    use super::SmallRational;
 
     #[test]
     fn new() {
@@ -1288,8 +1294,13 @@ use super::SmallRational;
     #[test]
     fn rich_display() {
         assert_eq!(SmallRational::new(4, 5, true).display_default(), "0.8");
-        assert_eq!(SmallRational::new(4, 5, true).display_debug(), "<SmallRational 4/5>");
-        assert_eq!(SmallRational::new(45822172, 7831, false).display_default(), "-5851.381943557655");
-        
+        assert_eq!(
+            SmallRational::new(4, 5, true).display_debug(),
+            "<SmallRational 4/5>"
+        );
+        assert_eq!(
+            SmallRational::new(45822172, 7831, false).display_default(),
+            "-5851.381943557655"
+        );
     }
 }

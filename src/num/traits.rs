@@ -2,7 +2,8 @@ use std::{
     hash::Hash,
     ops::{
         Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div,
-        DivAssign, Mul, MulAssign, Neg, Not, Rem, RemAssign, Sub, SubAssign,
+        DivAssign, Mul, MulAssign, Neg, Not, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub,
+        SubAssign,
     },
 };
 
@@ -32,6 +33,10 @@ pub(crate) trait PythonInt:
     + BitXor
     + BitXorAssign
     + Not
+    + Shl<u32>
+    + ShlAssign<u32>
+    + Shr<u32>
+    + ShrAssign<u32>
     + PythonNum
 {
     fn py_index(&self) -> Result<IntegerWrapper, FirkinError>;
@@ -88,5 +93,5 @@ pub(crate) trait FromInts:
 pub(crate) trait RichDisplay {
     fn display_default(&self) -> String;
     fn display_debug(&self) -> String;
-    fn format(&self, format_specifier:String) -> String;
+    fn format(&self, format_specifier: String) -> String;
 }

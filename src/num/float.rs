@@ -1,8 +1,13 @@
 #![allow(unused)]
 
 use crate::{
-    error::FirkinError, num::{
-        int::IntegerWrapper, number::NumberWrapper, rat::RationalWrapper, smallrational::SmallRational, traits::{FromFloats, FromInts, PythonMathFunctions, PythonNum, RichDisplay},
+    error::FirkinError,
+    num::{
+        int::IntegerWrapper,
+        number::NumberWrapper,
+        rat::RationalWrapper,
+        smallrational::SmallRational,
+        traits::{FromFloats, FromInts, PythonMathFunctions, PythonNum, RichDisplay},
     },
 };
 use rug::{
@@ -817,17 +822,20 @@ impl RichDisplay for FloatWrapper {
         }
     }
 
-    fn format(&self, format_specifier:String) -> String {
+    fn format(&self, format_specifier: String) -> String {
         todo!()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use rug::Float;
     use rand::prelude::*;
+    use rug::Float;
 
-    use crate::{error::FirkinError, num::{float::FloatWrapper, int::IntegerWrapper}};
+    use crate::{
+        error::FirkinError,
+        num::{float::FloatWrapper, int::IntegerWrapper},
+    };
 
     #[test]
     fn froms() {
@@ -887,7 +895,10 @@ mod tests {
             let mut as_bytes = float.to_ne_bytes();
             rng.fill_bytes(&mut as_bytes);
             let as_float = f64::from_ne_bytes(as_bytes);
-            assert_eq!(FloatWrapper::from(as_float), as_float.to_string().parse::<FloatWrapper>()?);
+            assert_eq!(
+                FloatWrapper::from(as_float),
+                as_float.to_string().parse::<FloatWrapper>()?
+            );
         }
 
         Ok(())

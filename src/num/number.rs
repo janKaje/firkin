@@ -7,8 +7,13 @@ use std::{
 };
 
 use crate::{
-    error::FirkinError, num::{
-        float::FloatWrapper, int::IntegerWrapper, rat::RationalWrapper, smallrational::SmallRational, traits::{FromFloats, FromInts, PythonMathFunctions, PythonNum, RichDisplay},
+    error::FirkinError,
+    num::{
+        float::FloatWrapper,
+        int::IntegerWrapper,
+        rat::RationalWrapper,
+        smallrational::SmallRational,
+        traits::{FromFloats, FromInts, PythonMathFunctions, PythonNum, RichDisplay},
     },
 };
 
@@ -56,7 +61,10 @@ impl NumberWrapper {
             Rat(rational_wrapper) => Ok(rational_wrapper.to_integer()),
             Float(float_wrapper) => match float_wrapper.to_integer() {
                 Ok(i) => Ok(i),
-                Err(info) => Err(FirkinError::CannotConvertToInteger(float_wrapper.to_string(), Some(info.into()))),
+                Err(info) => Err(FirkinError::CannotConvertToInteger(
+                    float_wrapper.to_string(),
+                    Some(info.into()),
+                )),
             },
         }
     }
@@ -477,7 +485,7 @@ impl RichDisplay for NumberWrapper {
         }
     }
 
-    fn format(&self, format_specifier:String) -> String {
+    fn format(&self, format_specifier: String) -> String {
         match self {
             Int(integer_wrapper) => integer_wrapper.format(format_specifier),
             Rat(rational_wrapper) => rational_wrapper.format(format_specifier),

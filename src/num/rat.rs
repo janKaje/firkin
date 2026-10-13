@@ -52,7 +52,12 @@ impl RationalWrapper {
     pub(crate) fn from_decimal_str(src: &str) -> Result<Self, FirkinError> {
         let m = match regex!(r"\s*([-+]?\d*).?(\d*)[eE]?([-+]?)(\d*)\s*").captures(src) {
             Some(m) => m,
-            None => return Err(FirkinError::CannotConvertToNumber(src.into(), Some("from_decimal_str regex failed to capture".into()))),
+            None => {
+                return Err(FirkinError::CannotConvertToNumber(
+                    src.into(),
+                    Some("from_decimal_str regex failed to capture".into()),
+                ));
+            }
         };
 
         // be sure to test this thoroughly
@@ -60,7 +65,12 @@ impl RationalWrapper {
         if (&m[4]).len() > 0 {
             exp = match (&m[4]).parse::<u32>() {
                 Ok(e) => e,
-                Err(e) => return Err(FirkinError::CannotConvertToNumber(src.into(), Some(e.to_string()))),
+                Err(e) => {
+                    return Err(FirkinError::CannotConvertToNumber(
+                        src.into(),
+                        Some(e.to_string()),
+                    ));
+                }
             };
         } else {
             exp = 0
@@ -707,7 +717,7 @@ impl RichDisplay for RationalWrapper {
         }
     }
 
-    fn format(&self, format_specifier:String) -> String {
+    fn format(&self, format_specifier: String) -> String {
         todo!()
     }
 }

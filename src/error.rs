@@ -16,6 +16,7 @@ pub(crate) enum FirkinError {
     DivideByZero(String, String),
     CannotConvertInfinity(String),
     OverflowError(String),
+    IntegerOnlyMethod(String),
 }
 
 impl std::error::Error for FirkinError {}
@@ -41,7 +42,7 @@ impl fmt::Display for FirkinError {
                     input, addl_info
                 ),
                 None => write!(f, "Cannot convert \"{}\" to number", input),
-            }
+            },
             FirkinError::PowModDoesNotExist(base, exp, modulo) => {
                 write!(f, "{base}^{exp}%{modulo} does not exist")
             }
@@ -66,6 +67,7 @@ impl fmt::Display for FirkinError {
                 None => write!(f, "Cannot convert \"{}\" to float", input),
             },
             FirkinError::OverflowError(msg) => write!(f, "{}", msg),
+            FirkinError::IntegerOnlyMethod(msg) => write!(f, "{}", msg),
         }
     }
 }
@@ -88,6 +90,7 @@ impl std::convert::From<FirkinError> for PyErr {
             FirkinError::CannotConvertToInteger(_, _) => PyTypeError::new_err(err.to_string()),
             FirkinError::CannotConvertToFloat(_, _) => PyTypeError::new_err(err.to_string()),
             FirkinError::OverflowError(_) => PyOverflowError::new_err(err.to_string()),
+            FirkinError::IntegerOnlyMethod(_) => PyNotImplementedError::new_err(err.to_string()),
         }
     }
 }
