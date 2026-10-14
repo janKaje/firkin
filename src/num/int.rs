@@ -2,7 +2,8 @@
 
 use crate::error::FirkinError;
 use crate::num::traits::{
-    FromInts, PythonInt, PythonMathFunctions, PythonNum, PythonRat, RichDisplay, TryFromFloats,
+    FromInts, NumpyUFuncs, PythonInt, PythonMathFunctions, PythonNum, PythonRat, RichDisplay,
+    TryFromFloats, auto_impl_numpy_ufunc_trait, auto_impl_pymath_trait,
 };
 use crate::num::{float::FloatWrapper, number::NumberWrapper, rat::RationalWrapper};
 use pyo3::IntoPyObject;
@@ -30,6 +31,7 @@ use IntegerWrapper::{Int, SmallInt};
 
 impl IntegerWrapper {
     pub(crate) const ZERO: Self = IntegerWrapper::SmallInt(0);
+    pub(crate) const ONE: Self = IntegerWrapper::SmallInt(1);
 
     pub(crate) const fn is_positive(&self) -> bool {
         match self {
@@ -774,98 +776,8 @@ impl FromInts for IntegerWrapper {}
 
 impl TryFromFloats for IntegerWrapper {}
 
-impl PythonMathFunctions for IntegerWrapper {
-    fn py_pow(
-        &self,
-        other: &NumberWrapper,
-        modulus: Option<NumberWrapper>,
-    ) -> Result<NumberWrapper, FirkinError> {
-        match self {
-            SmallInt(i) => i.py_pow(other, modulus),
-            Int(integer) => integer.py_pow(other, modulus),
-        }
-    }
-
-    fn py_abs(&self) -> Result<NumberWrapper, FirkinError> {
-        match self {
-            SmallInt(i) => i.py_abs(),
-            Int(integer) => integer.py_abs(),
-        }
-    }
-
-    fn py_int(&self) -> Result<IntegerWrapper, FirkinError> {
-        match self {
-            SmallInt(i) => i.py_int(),
-            Int(integer) => integer.py_int(),
-        }
-    }
-
-    fn py_float(&self) -> Result<f64, FirkinError> {
-        match self {
-            SmallInt(i) => i.py_float(),
-            Int(integer) => integer.py_float(),
-        }
-    }
-
-    fn py_round(&self, ndigits: i32) -> Result<NumberWrapper, FirkinError> {
-        match self {
-            SmallInt(i) => i.py_round(ndigits),
-            Int(integer) => integer.py_round(ndigits),
-        }
-    }
-
-    fn py_floor(&self) -> Result<IntegerWrapper, FirkinError> {
-        match self {
-            SmallInt(i) => i.py_floor(),
-            Int(integer) => integer.py_floor(),
-        }
-    }
-
-    fn py_ceil(&self) -> Result<IntegerWrapper, FirkinError> {
-        match self {
-            SmallInt(i) => i.py_ceil(),
-            Int(integer) => integer.py_ceil(),
-        }
-    }
-
-    fn py_trunc(&self) -> Result<IntegerWrapper, FirkinError> {
-        match self {
-            SmallInt(i) => i.py_trunc(),
-            Int(integer) => integer.py_trunc(),
-        }
-    }
-
-    fn py_truediv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
-        match self {
-            SmallInt(i) => i.py_truediv(other),
-            Int(integer) => integer.py_truediv(other),
-        }
-    }
-
-    fn py_floordiv(&self, other: &NumberWrapper) -> Result<IntegerWrapper, FirkinError> {
-        match self {
-            SmallInt(i) => i.py_floordiv(other),
-            Int(integer) => integer.py_floordiv(other),
-        }
-    }
-
-    fn py_divmod(
-        &self,
-        other: &NumberWrapper,
-    ) -> Result<(IntegerWrapper, NumberWrapper), FirkinError> {
-        match self {
-            SmallInt(i) => i.py_divmod(other),
-            Int(integer) => integer.py_divmod(other),
-        }
-    }
-
-    fn py_mod(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
-        match self {
-            SmallInt(i) => i.py_mod(other),
-            Int(integer) => integer.py_mod(other),
-        }
-    }
-}
+auto_impl_pymath_trait! {IntegerWrapper {SmallInt Int}}
+auto_impl_numpy_ufunc_trait! {IntegerWrapper {Int SmallInt}}
 
 impl PythonNum for IntegerWrapper {}
 impl PythonRat for IntegerWrapper {}

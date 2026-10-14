@@ -21,7 +21,7 @@ use crate::{
         number::NumberWrapper,
         rat::RationalWrapper,
         sign::Sign::{self, Negative, Positive},
-        traits::{PythonMathFunctions, RichDisplay},
+        traits::{NumpyUFuncs, PythonMathFunctions, RichDisplay},
     },
 };
 
@@ -48,6 +48,12 @@ impl SmallRational {
 
     const ZERO: SmallRational = SmallRational {
         numerator: 0,
+        denominator: 1,
+        sign: Positive,
+    };
+
+    const ONE: SmallRational = SmallRational {
+        numerator: 1,
         denominator: 1,
         sign: Positive,
     };
@@ -1133,6 +1139,68 @@ impl PythonMathFunctions for SmallRational {
                 RationalWrapper::Rat(rational) => Rational::from(self).py_mod(other),
             },
             NumberWrapper::Float(float_wrapper) => FloatWrapper::from(*self).py_mod(other),
+        }
+    }
+}
+
+impl NumpyUFuncs for SmallRational {
+    fn np_exp(&self) -> Result<NumberWrapper, FirkinError> {
+        if self == &SmallRational::ZERO {
+            Ok(NumberWrapper::ONE)
+        } else {
+            FloatWrapper::from(*self).np_exp()
+        }
+    }
+
+    fn np_exp2(&self) -> Result<NumberWrapper, FirkinError> {
+        if self == &SmallRational::ZERO {
+            Ok(NumberWrapper::ONE)
+        } else {
+            FloatWrapper::from(*self).np_exp2()
+        }
+    }
+
+    fn np_log(&self) -> Result<NumberWrapper, FirkinError> {
+        if self == &SmallRational::ONE {
+            Ok(NumberWrapper::ZERO)
+        } else if self <= &SmallRational::ZERO {
+            Err(FirkinError::Undefined("ln".into(), self.to_string()))
+        } else {
+            FloatWrapper::from(*self).np_log()
+        }
+    }
+
+    fn np_log2(&self) -> Result<NumberWrapper, FirkinError> {
+        if self == &SmallRational::ONE {
+            Ok(NumberWrapper::ZERO)
+        } else if self <= &SmallRational::ZERO {
+            Err(FirkinError::Undefined("log2".into(), self.to_string()))
+        } else {
+            FloatWrapper::from(*self).np_log2()
+        }
+    }
+
+    fn np_log10(&self) -> Result<NumberWrapper, FirkinError> {
+        if self == &SmallRational::ONE {
+            Ok(NumberWrapper::ZERO)
+        } else if self <= &SmallRational::ZERO {
+            Err(FirkinError::Undefined("log10".into(), self.to_string()))
+        } else {
+            FloatWrapper::from(*self).np_log10()
+        }
+    }
+
+    fn np_sqrt(&self) -> Result<NumberWrapper, FirkinError> {
+        if self == &SmallRational::ONE {
+            Ok(NumberWrapper::ONE)
+        } else if self.is_zero() {
+            Ok(NumberWrapper::ZERO)
+        } else if self < &SmallRational::ZERO {
+            Err(FirkinError::Undefined("sqrt".into(), self.to_string()))
+        } else if self.is_integer() {
+            self.to_integer().np_log()
+        } else {
+            FloatWrapper::from(*self).np_log()
         }
     }
 }

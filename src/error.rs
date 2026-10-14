@@ -17,6 +17,7 @@ pub(crate) enum FirkinError {
     CannotConvertInfinity(String),
     OverflowError(String),
     IntegerOnlyMethod(String),
+    Undefined(String, String),
 }
 
 impl std::error::Error for FirkinError {}
@@ -68,6 +69,9 @@ impl fmt::Display for FirkinError {
             },
             FirkinError::OverflowError(msg) => write!(f, "{}", msg),
             FirkinError::IntegerOnlyMethod(msg) => write!(f, "{}", msg),
+            FirkinError::Undefined(func, input) => {
+                write!(f, "Function {func} of {input} is undefined")
+            }
         }
     }
 }
@@ -91,6 +95,7 @@ impl std::convert::From<FirkinError> for PyErr {
             FirkinError::CannotConvertToFloat(_, _) => PyTypeError::new_err(err.to_string()),
             FirkinError::OverflowError(_) => PyOverflowError::new_err(err.to_string()),
             FirkinError::IntegerOnlyMethod(_) => PyNotImplementedError::new_err(err.to_string()),
+            FirkinError::Undefined(_, _) => PyArithmeticError::new_err(err.to_string()),
         }
     }
 }

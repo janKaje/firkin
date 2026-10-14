@@ -7,7 +7,10 @@ use crate::{
         number::NumberWrapper,
         rat::RationalWrapper,
         smallrational::SmallRational,
-        traits::{FromFloats, FromInts, PythonMathFunctions, PythonNum, RichDisplay},
+        traits::{
+            FromFloats, FromInts, NumpyUFuncs, PythonMathFunctions, PythonNum, RichDisplay,
+            auto_impl_numpy_ufunc_trait, auto_impl_pymath_trait,
+        },
     },
 };
 use rug::{
@@ -688,100 +691,10 @@ impl FromFloats for FloatWrapper {}
 
 impl FromInts for FloatWrapper {}
 
-impl PythonMathFunctions for FloatWrapper {
-    fn py_pow(
-        &self,
-        other: &NumberWrapper,
-        modulus: Option<NumberWrapper>,
-    ) -> Result<NumberWrapper, FirkinError> {
-        match self {
-            SmallFloat(f) => f.py_pow(other, modulus),
-            BigFloat(float) => float.py_pow(other, modulus),
-        }
-    }
-
-    fn py_truediv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
-        match self {
-            SmallFloat(f) => f.py_truediv(other),
-            BigFloat(float) => float.py_truediv(other),
-        }
-    }
-
-    fn py_floordiv(&self, other: &NumberWrapper) -> Result<IntegerWrapper, FirkinError> {
-        match self {
-            SmallFloat(f) => f.py_floordiv(other),
-            BigFloat(float) => float.py_floordiv(other),
-        }
-    }
-
-    fn py_abs(&self) -> Result<NumberWrapper, FirkinError> {
-        match self {
-            SmallFloat(f) => f.py_abs(),
-            BigFloat(float) => float.py_abs(),
-        }
-    }
-
-    fn py_int(&self) -> Result<IntegerWrapper, FirkinError> {
-        match self {
-            SmallFloat(f) => f.py_int(),
-            BigFloat(float) => float.py_int(),
-        }
-    }
-
-    fn py_float(&self) -> Result<f64, FirkinError> {
-        match self {
-            SmallFloat(f) => f.py_float(),
-            BigFloat(float) => float.py_float(),
-        }
-    }
-
-    fn py_round(&self, ndigits: i32) -> Result<NumberWrapper, FirkinError> {
-        match self {
-            SmallFloat(f) => f.py_round(ndigits),
-            BigFloat(float) => float.py_round(ndigits),
-        }
-    }
-
-    fn py_floor(&self) -> Result<IntegerWrapper, FirkinError> {
-        match self {
-            SmallFloat(f) => f.py_floor(),
-            BigFloat(float) => float.py_floor(),
-        }
-    }
-
-    fn py_ceil(&self) -> Result<IntegerWrapper, FirkinError> {
-        match self {
-            SmallFloat(f) => f.py_ceil(),
-            BigFloat(float) => float.py_ceil(),
-        }
-    }
-
-    fn py_trunc(&self) -> Result<IntegerWrapper, FirkinError> {
-        match self {
-            SmallFloat(f) => f.py_trunc(),
-            BigFloat(float) => float.py_trunc(),
-        }
-    }
-
-    fn py_divmod(
-        &self,
-        other: &NumberWrapper,
-    ) -> Result<(IntegerWrapper, NumberWrapper), FirkinError> {
-        match self {
-            SmallFloat(f) => f.py_divmod(other),
-            BigFloat(float) => float.py_divmod(other),
-        }
-    }
-
-    fn py_mod(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
-        match self {
-            SmallFloat(f) => f.py_mod(other),
-            BigFloat(float) => float.py_mod(other),
-        }
-    }
-}
-
 impl PythonNum for FloatWrapper {}
+
+auto_impl_pymath_trait! {FloatWrapper {BigFloat SmallFloat}}
+auto_impl_numpy_ufunc_trait! {FloatWrapper {BigFloat SmallFloat}}
 
 impl FromStr for FloatWrapper {
     type Err = FirkinError;

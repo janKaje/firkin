@@ -11,6 +11,7 @@ use pyo3::{prelude::*, types::*};
 mod float;
 mod int;
 mod number;
+mod numpy_math;
 mod python_math;
 mod rat;
 mod sign;

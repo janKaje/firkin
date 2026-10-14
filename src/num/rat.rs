@@ -4,7 +4,8 @@ use crate::error::FirkinError;
 use crate::num::int::IntegerWrapper::{self, Int, SmallInt};
 use crate::num::smallrational::SmallRational;
 use crate::num::traits::{
-    FromFloats, FromInts, PythonMathFunctions, PythonNum, PythonRat, RichDisplay, TryFromFloats,
+    FromFloats, FromInts, NumpyUFuncs, PythonMathFunctions, PythonNum, PythonRat, RichDisplay,
+    TryFromFloats, auto_impl_numpy_ufunc_trait, auto_impl_pymath_trait,
 };
 use crate::num::{float::FloatWrapper, number::NumberWrapper};
 
@@ -609,101 +610,11 @@ impl PartialOrd for RationalWrapper {
     }
 }
 
-impl PythonMathFunctions for RationalWrapper {
-    fn py_pow(
-        &self,
-        other: &NumberWrapper,
-        modulus: Option<NumberWrapper>,
-    ) -> Result<NumberWrapper, FirkinError> {
-        match self {
-            SmallRat(r) => r.py_pow(other, modulus),
-            Rat(rational) => rational.py_pow(other, modulus),
-        }
-    }
-
-    fn py_truediv(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
-        match self {
-            SmallRat(r) => r.py_truediv(other),
-            Rat(rational) => rational.py_truediv(other),
-        }
-    }
-
-    fn py_floordiv(&self, other: &NumberWrapper) -> Result<IntegerWrapper, FirkinError> {
-        match self {
-            SmallRat(r) => r.py_floordiv(other),
-            Rat(rational) => rational.py_floordiv(other),
-        }
-    }
-
-    fn py_abs(&self) -> Result<NumberWrapper, FirkinError> {
-        match self {
-            SmallRat(r) => r.py_abs(),
-            Rat(rational) => rational.py_abs(),
-        }
-    }
-
-    fn py_int(&self) -> Result<IntegerWrapper, FirkinError> {
-        match self {
-            SmallRat(r) => r.py_int(),
-            Rat(rational) => rational.py_int(),
-        }
-    }
-
-    fn py_float(&self) -> Result<f64, FirkinError> {
-        match self {
-            SmallRat(r) => r.py_float(),
-            Rat(rational) => rational.py_float(),
-        }
-    }
-
-    fn py_round(&self, ndigits: i32) -> Result<NumberWrapper, FirkinError> {
-        match self {
-            SmallRat(r) => r.py_round(ndigits),
-            Rat(rational) => rational.py_round(ndigits),
-        }
-    }
-
-    fn py_floor(&self) -> Result<IntegerWrapper, FirkinError> {
-        match self {
-            SmallRat(r) => r.py_floor(),
-            Rat(rational) => rational.py_floor(),
-        }
-    }
-
-    fn py_ceil(&self) -> Result<IntegerWrapper, FirkinError> {
-        match self {
-            SmallRat(r) => r.py_ceil(),
-            Rat(rational) => rational.py_ceil(),
-        }
-    }
-
-    fn py_trunc(&self) -> Result<IntegerWrapper, FirkinError> {
-        match self {
-            SmallRat(r) => r.py_trunc(),
-            Rat(rational) => rational.py_trunc(),
-        }
-    }
-
-    fn py_divmod(
-        &self,
-        other: &NumberWrapper,
-    ) -> Result<(IntegerWrapper, NumberWrapper), FirkinError> {
-        match self {
-            SmallRat(r) => r.py_divmod(other),
-            Rat(rational) => rational.py_divmod(other),
-        }
-    }
-
-    fn py_mod(&self, other: &NumberWrapper) -> Result<NumberWrapper, FirkinError> {
-        match self {
-            SmallRat(r) => r.py_mod(other),
-            Rat(rational) => rational.py_mod(other),
-        }
-    }
-}
-
 impl PythonNum for RationalWrapper {}
 impl PythonRat for RationalWrapper {}
+
+auto_impl_pymath_trait! {RationalWrapper {Rat SmallRat}}
+auto_impl_numpy_ufunc_trait! {RationalWrapper {Rat SmallRat}}
 
 impl RichDisplay for RationalWrapper {
     fn display_default(&self) -> String {
