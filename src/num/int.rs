@@ -1,18 +1,15 @@
-#![allow(unused)]
 
 use crate::error::FirkinError;
 use crate::num::traits::{
     FromInts, NumpyUFuncs, PythonInt, PythonMathFunctions, PythonNum, PythonRat, RichDisplay,
     TryFromFloats, auto_impl_numpy_ufunc_trait, auto_impl_pymath_trait,
 };
+#[allow(unused)]
 use crate::num::{float::FloatWrapper, number::NumberWrapper, rat::RationalWrapper};
 use pyo3::IntoPyObject;
 use pyo3::prelude::*;
 use pyo3::types::PyInt;
-use regex::regex;
-use rug::integer::{IntegerExt64, Order};
-use rug::ops::Pow;
-use rug::{Float, Integer, az::Cast, float::MiniFloat};
+use rug::{Float, Integer, az::Cast};
 use std::convert::Infallible;
 use std::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign,

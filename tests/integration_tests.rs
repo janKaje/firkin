@@ -165,7 +165,7 @@ fn round_sfig() -> PyResult<()> {
     run_closure(|py| {
         py.run(cr#"from firkin import Firkin
 year = Firkin.unit('year')
-assert str((year.as_unit('calendar year'))) == '1.0006635583041097 [calendar year]', f"Was actually {year.as_unit('calendar year')}"
+assert str((year.as_unit('calendar year'))) == '1.0006635583041097 [calendar year]', f'Was actually {year.as_unit("calendar year")}'
 assert str((year.as_unit('calendar year')).round_sfig(2)) == '1 [calendar year]'
 assert str((year.as_unit('calendar year')).round_sfig(5)) == '1.0007 [calendar year]'
 assert str((year.as_unit('calendar year')).round_sfig(7)) == '1.000664 [calendar year]'

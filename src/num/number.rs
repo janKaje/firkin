@@ -1,4 +1,4 @@
-#![allow(unused)]
+// #![allow(unused)]
 
 use std::{
     fmt::Display,
@@ -90,21 +90,21 @@ impl NumberWrapper {
     pub(crate) fn is_finite(&self) -> bool {
         match self {
             Float(f) => f.is_finite(),
-            _ => true
+            _ => true,
         }
     }
 
     pub(crate) fn is_infinite(&self) -> bool {
         match self {
             Float(f) => f.is_infinite(),
-            _ => false
+            _ => false,
         }
     }
 
     pub(crate) fn is_nan(&self) -> bool {
         match self {
             Float(f) => f.is_nan(),
-            _ => false
+            _ => false,
         }
     }
 
@@ -368,7 +368,7 @@ impl Neg for NumberWrapper {
 impl From<IntegerWrapper> for NumberWrapper {
     fn from(value: IntegerWrapper) -> Self {
         match value {
-            IntegerWrapper::SmallInt(i) => Int(value),
+            IntegerWrapper::SmallInt(_) => Int(value),
             IntegerWrapper::Int(integer) => integer.into(),
         }
     }
@@ -380,7 +380,7 @@ impl From<RationalWrapper> for NumberWrapper {
             Int(value.to_integer())
         } else {
             match value {
-                RationalWrapper::SmallRat(r) => Rat(value),
+                RationalWrapper::SmallRat(_) => Rat(value),
                 RationalWrapper::Rat(rational) => rational.into(),
             }
         }
@@ -471,7 +471,7 @@ impl PartialEq for NumberWrapper {
             (Rat(r), Float(f)) => r.eq(f),
             (Float(f), Int(i)) => f.eq(i),
             (Float(f), Rat(r)) => f.eq(r),
-            (Float(f), Float(f2)) => f.eq(f),
+            (Float(f), Float(f2)) => f.eq(f2),
         }
     }
 }
@@ -487,7 +487,7 @@ impl PartialOrd for NumberWrapper {
             (Rat(r), Float(f)) => r.partial_cmp(f),
             (Float(f), Int(i)) => f.partial_cmp(i),
             (Float(f), Rat(r)) => f.partial_cmp(r),
-            (Float(f), Float(f2)) => f.partial_cmp(f),
+            (Float(f), Float(f2)) => f.partial_cmp(f2),
         }
     }
 }

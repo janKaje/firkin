@@ -6,7 +6,7 @@ use std::{
     },
 };
 
-use pyo3::{prelude::*, types::*};
+use pyo3::prelude::*;
 
 mod float;
 mod int;
@@ -38,8 +38,8 @@ pub struct FirkinNumber {
 
 #[pymethods]
 impl FirkinNumber {
-    #[classmethod]
-    fn new(_cls: &Bound<'_, PyType>, input: NumberWrapper) -> PyResult<FirkinNumber> {
+    #[new]
+    fn init(input: NumberWrapper) -> PyResult<FirkinNumber> {
         Ok(input.into())
     }
 

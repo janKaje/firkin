@@ -1,13 +1,12 @@
-#![allow(unused)]
+// #![allow(unused)]
 
 use std::{
     cmp::{Ord, Ordering},
     fmt::{Debug, Display},
     ops::{
-        Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div,
+        Add, AddAssign, Div,
         DivAssign, Mul, MulAssign, Neg, Not, Rem, Sub, SubAssign,
     },
-    str::FromStr,
 };
 
 use gcd::{binary_u64, binary_u128};
@@ -34,17 +33,6 @@ pub(crate) struct SmallRational {
 }
 
 impl SmallRational {
-    const MAX: SmallRational = SmallRational {
-        numerator: u64::MAX,
-        denominator: 1,
-        sign: Positive,
-    };
-
-    const MIN: SmallRational = SmallRational {
-        numerator: u64::MAX,
-        denominator: 1,
-        sign: Negative,
-    };
 
     const ZERO: SmallRational = SmallRational {
         numerator: 0,
@@ -134,7 +122,7 @@ impl SmallRational {
     }
 
     pub(crate) fn reduce(&self) -> Self {
-        let mut new = self.clone();
+        let new = self.clone();
         new.reduce_inplace()
     }
 
@@ -360,8 +348,8 @@ impl SmallRational {
             self.get_whole_number_part()
         } else {
             let rem = self.get_remainder();
-            if (rem > SmallRational::ZERO && rem < SmallRational::new(1, 2, true)
-                || rem < SmallRational::ZERO && rem > SmallRational::new(1, 2, false))
+            if rem > SmallRational::ZERO && rem < SmallRational::new(1, 2, true)
+                || rem < SmallRational::ZERO && rem > SmallRational::new(1, 2, false)
             {
                 self.get_whole_number_part()
             } else {
@@ -982,7 +970,7 @@ impl PythonMathFunctions for SmallRational {
                             }
                             None => Rational::from(self).py_floordiv(other),
                         },
-                        IntegerWrapper::Int(integer) => Rational::from(self).py_floordiv(other),
+                        IntegerWrapper::Int(_) => Rational::from(self).py_floordiv(other),
                     }
                 } else {
                     match int {
@@ -996,7 +984,7 @@ impl PythonMathFunctions for SmallRational {
                             }
                             None => Rational::from(self).py_floordiv(other),
                         },
-                        IntegerWrapper::Int(integer) => Rational::from(self).py_floordiv(other),
+                        IntegerWrapper::Int(_) => Rational::from(self).py_floordiv(other),
                     }
                 }
             }
@@ -1005,9 +993,9 @@ impl PythonMathFunctions for SmallRational {
                     Some(res) => Ok(IntegerWrapper::from(res.floor())),
                     None => Rational::from(self).py_floordiv(other),
                 },
-                RationalWrapper::Rat(rational) => Rational::from(self).py_floordiv(other),
+                RationalWrapper::Rat(_) => Rational::from(self).py_floordiv(other),
             },
-            NumberWrapper::Float(float) => FloatWrapper::from(*self).py_floordiv(other),
+            NumberWrapper::Float(_) => FloatWrapper::from(*self).py_floordiv(other),
         }
     }
 
@@ -1033,7 +1021,7 @@ impl PythonMathFunctions for SmallRational {
                         }
                     }
                 }
-                IntegerWrapper::Int(integer) => FloatWrapper::from(*self).py_pow(other, modulus),
+                IntegerWrapper::Int(_) => FloatWrapper::from(*self).py_pow(other, modulus),
             },
             _ => FloatWrapper::from(*self).py_pow(other, modulus),
         }
@@ -1054,7 +1042,7 @@ impl PythonMathFunctions for SmallRational {
                     Some(res) => Ok(NumberWrapper::from(res)),
                     None => Rational::from(self).py_truediv(other),
                 },
-                IntegerWrapper::Int(integer) => Rational::from(self).py_truediv(other),
+                IntegerWrapper::Int(_) => Rational::from(self).py_truediv(other),
             },
             NumberWrapper::Rat(rational_wrapper) => match rational_wrapper {
                 RationalWrapper::SmallRat(r) => match self.checked_div(r) {
@@ -1064,7 +1052,7 @@ impl PythonMathFunctions for SmallRational {
                 RationalWrapper::Rat(rational) => Ok(NumberWrapper::from(self / rational)),
             },
 
-            NumberWrapper::Float(float_wrapper) => FloatWrapper::from(*self).py_truediv(other),
+            NumberWrapper::Float(_) => FloatWrapper::from(*self).py_truediv(other),
         }
     }
 
@@ -1081,7 +1069,7 @@ impl PythonMathFunctions for SmallRational {
     }
 
     fn py_round(&self, ndigits: i32) -> Result<NumberWrapper, FirkinError> {
-        Ok(self.round().into())
+        todo!()
     }
 
     fn py_floor(&self) -> Result<IntegerWrapper, FirkinError> {
@@ -1136,9 +1124,9 @@ impl PythonMathFunctions for SmallRational {
                         None => Rational::from(self).py_mod(other),
                     }
                 }
-                RationalWrapper::Rat(rational) => Rational::from(self).py_mod(other),
+                RationalWrapper::Rat(_) => Rational::from(self).py_mod(other),
             },
-            NumberWrapper::Float(float_wrapper) => FloatWrapper::from(*self).py_mod(other),
+            NumberWrapper::Float(_) => FloatWrapper::from(*self).py_mod(other),
         }
     }
 }

@@ -11,7 +11,7 @@ mod unit;
 #[pymodule]
 mod firkin {
     use pyo3::{prelude::*, types::*};
-    use std::{fmt, ops::Mul};
+    use std::fmt;
 
     use crate::constant::search_for_constant_name;
     use crate::error::FirkinError;
@@ -625,17 +625,6 @@ mod firkin {
             self.unit_collection = new.unit_collection;
             self.value = new.value;
             Ok(())
-        }
-    }
-
-    impl Mul for Firkin {
-        type Output = Self;
-
-        fn mul(self, rhs: Self) -> Self {
-            Firkin {
-                unit_collection: self.unit_collection * rhs.unit_collection,
-                value: self.value * rhs.value,
-            }
         }
     }
 

@@ -1,16 +1,21 @@
-#![allow(unused)]
+// #![allow(unused)]
 
-use std::ops::{Div, Mul, Rem, Shl};
 
 use rug::{
     Float, Integer, Rational,
-    integer::IntegerExt64,
-    ops::{Pow, PowAssign},
+    ops::Pow,
 };
 
 use crate::{
-    error::FirkinError, num::{
-        float::{DEFAULT_PREC, FloatWrapper::{self, BigFloat, SmallFloat}}, int::IntegerWrapper::{self, Int, SmallInt}, number::NumberWrapper, rat::RationalWrapper, traits::NumpyUFuncs,
+    error::FirkinError,
+    num::{
+        float::{
+            DEFAULT_PREC,
+            FloatWrapper::{self, },
+        },
+        int::IntegerWrapper::{self, },
+        number::NumberWrapper,
+        traits::NumpyUFuncs,
     },
 };
 
@@ -178,8 +183,7 @@ impl NumpyUFuncs for f64 {
         let as_exp = self.exp();
         if as_exp.is_finite() {
             Ok(self.exp().into())
-        }
-        else {
+        } else {
             Float::with_val(DEFAULT_PREC, self).np_exp()
         }
     }
@@ -188,8 +192,7 @@ impl NumpyUFuncs for f64 {
         let as_exp = self.exp();
         if as_exp.is_finite() {
             Ok(self.exp2().into())
-        }
-        else {
+        } else {
             Float::with_val(DEFAULT_PREC, self).np_exp2()
         }
     }

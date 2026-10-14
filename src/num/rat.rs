@@ -1,17 +1,16 @@
-#![allow(unused)]
+// #![allow(unused)]
 
 use crate::error::FirkinError;
 use crate::num::int::IntegerWrapper::{self, Int, SmallInt};
 use crate::num::smallrational::SmallRational;
 use crate::num::traits::{
-    FromFloats, FromInts, NumpyUFuncs, PythonMathFunctions, PythonNum, PythonRat, RichDisplay,
+    FromInts, NumpyUFuncs, PythonMathFunctions, PythonNum, PythonRat, RichDisplay,
     TryFromFloats, auto_impl_numpy_ufunc_trait, auto_impl_pymath_trait,
 };
-use crate::num::{float::FloatWrapper, number::NumberWrapper};
+use crate::num::number::NumberWrapper;
 
 use regex::regex;
 use rug::Float;
-use rug::ops::PowAssign;
 use rug::{Integer, Rational, ops::Pow};
 use std::{
     fmt::Display,

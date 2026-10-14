@@ -1,4 +1,4 @@
-#![allow(unused)]
+// #![allow(unused)]
 
 use crate::{
     error::FirkinError,
@@ -15,12 +15,10 @@ use crate::{
 };
 use rug::{
     Assign, Float, Integer, Rational,
-    float::Round,
-    ops::{AssignRound, Pow},
 };
 use std::{
     fmt::Display,
-    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, Sub, SubAssign},
+    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
     str::FromStr,
 };
 
@@ -36,7 +34,7 @@ pub(crate) enum FloatWrapper {
 impl FloatWrapper {
     pub(crate) fn prec(&self) -> u32 {
         match self {
-            SmallFloat(f) => 53,
+            SmallFloat(_) => 53,
             BigFloat(float) => float.prec(),
         }
     }
@@ -804,8 +802,7 @@ mod tests {
         let mut rng = rand::rng();
         for _ in 0..100 {
             // generate completely random float
-            let float: f64 = 0.0;
-            let mut as_bytes = float.to_ne_bytes();
+            let mut as_bytes = 0.0_f64.to_ne_bytes();
             rng.fill_bytes(&mut as_bytes);
             let as_float = f64::from_ne_bytes(as_bytes);
             assert_eq!(
