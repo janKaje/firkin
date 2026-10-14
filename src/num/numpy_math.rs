@@ -9,13 +9,8 @@ use rug::{
 };
 
 use crate::{
-    error::FirkinError,
-    num::{
-        float::FloatWrapper::{self, BigFloat, SmallFloat},
-        int::IntegerWrapper::{self, Int, SmallInt},
-        number::NumberWrapper,
-        rat::RationalWrapper,
-        traits::NumpyUFuncs,
+    error::FirkinError, num::{
+        float::{DEFAULT_PREC, FloatWrapper::{self, BigFloat, SmallFloat}}, int::IntegerWrapper::{self, Int, SmallInt}, number::NumberWrapper, rat::RationalWrapper, traits::NumpyUFuncs,
     },
 };
 
@@ -180,11 +175,23 @@ impl NumpyUFuncs for Integer {
 
 impl NumpyUFuncs for f64 {
     fn np_exp(&self) -> Result<NumberWrapper, FirkinError> {
-        Ok(self.exp().into())
+        let as_exp = self.exp();
+        if as_exp.is_finite() {
+            Ok(self.exp().into())
+        }
+        else {
+            Float::with_val(DEFAULT_PREC, self).np_exp()
+        }
     }
 
     fn np_exp2(&self) -> Result<NumberWrapper, FirkinError> {
-        Ok(self.exp2().into())
+        let as_exp = self.exp();
+        if as_exp.is_finite() {
+            Ok(self.exp2().into())
+        }
+        else {
+            Float::with_val(DEFAULT_PREC, self).np_exp2()
+        }
     }
 
     fn np_log(&self) -> Result<NumberWrapper, FirkinError> {

@@ -24,7 +24,7 @@ use crate::{
     error::FirkinError,
     num::{
         int::IntegerWrapper,
-        traits::{PythonInt, PythonMathFunctions, RichDisplay},
+        traits::{NumpyUFuncs, PythonInt, PythonMathFunctions, RichDisplay},
     },
 };
 
@@ -40,7 +40,19 @@ pub struct FirkinNumber {
 impl FirkinNumber {
     #[classmethod]
     fn new(_cls: &Bound<'_, PyType>, input: NumberWrapper) -> PyResult<FirkinNumber> {
-        Ok(FirkinNumber { value: input })
+        Ok(input.into())
+    }
+
+    fn is_finite(&self) -> PyResult<bool> {
+        Ok(self.value.is_finite())
+    }
+
+    fn is_infinite(&self) -> PyResult<bool> {
+        Ok(self.value.is_infinite())
+    }
+
+    fn is_nan(&self) -> PyResult<bool> {
+        Ok(self.value.is_nan())
     }
 
     fn __repr__(&self) -> PyResult<String> {
@@ -84,47 +96,32 @@ impl FirkinNumber {
     }
 
     fn __add__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
-        Ok(FirkinNumber {
-            value: &self.value + other,
-        })
+        Ok((&self.value + other).into())
     }
 
     fn __sub__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
-        Ok(FirkinNumber {
-            value: &self.value - other,
-        })
+        Ok((&self.value - other).into())
     }
 
     fn __mul__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
-        Ok(FirkinNumber {
-            value: &self.value * other,
-        })
+        Ok((&self.value * other).into())
     }
 
     fn __truediv__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
-        Ok(FirkinNumber {
-            value: self.value.py_truediv(&other)?,
-        })
+        Ok(self.value.py_truediv(&other)?.into())
     }
 
-    fn __floordiv__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
-        Ok(FirkinNumber {
-            value: self.value.py_floordiv(&other)?.into(),
-        })
+    fn __floordiv__(&self, other: NumberWrapper) -> PyResult<IntegerWrapper> {
+        Ok(self.value.py_floordiv(&other)?)
     }
 
     fn __mod__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
-        Ok(FirkinNumber {
-            value: self.value.py_mod(&other)?,
-        })
+        Ok(self.value.py_mod(&other)?.into())
     }
 
-    fn __divmod__(&self, other: NumberWrapper) -> PyResult<(FirkinNumber, FirkinNumber)> {
+    fn __divmod__(&self, other: NumberWrapper) -> PyResult<(IntegerWrapper, FirkinNumber)> {
         let (numa, numb) = self.value.py_divmod(&other)?;
-        Ok((
-            FirkinNumber { value: numa.into() },
-            FirkinNumber { value: numb },
-        ))
+        Ok((numa, numb.into()))
     }
 
     fn __pow__(
@@ -132,53 +129,36 @@ impl FirkinNumber {
         other: NumberWrapper,
         modulo: Option<NumberWrapper>,
     ) -> PyResult<FirkinNumber> {
-        Ok(FirkinNumber {
-            value: self.value.py_pow(&other, modulo)?,
-        })
+        Ok(self.value.py_pow(&other, modulo)?.into())
     }
 
     fn __radd__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
-        Ok(FirkinNumber {
-            value: other + &self.value,
-        })
+        Ok((other + &self.value).into())
     }
 
     fn __rsub__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
-        Ok(FirkinNumber {
-            value: other - &self.value,
-        })
+        Ok((other - &self.value).into())
     }
 
     fn __rmul__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
-        Ok(FirkinNumber {
-            value: other * &self.value,
-        })
+        Ok((other * &self.value).into())
     }
 
     fn __rtruediv__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
-        Ok(FirkinNumber {
-            value: other.py_truediv(&self.value)?,
-        })
+        Ok(other.py_truediv(&self.value)?.into())
     }
 
-    fn __rfloordiv__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
-        Ok(FirkinNumber {
-            value: other.py_floordiv(&self.value)?.into(),
-        })
+    fn __rfloordiv__(&self, other: NumberWrapper) -> PyResult<IntegerWrapper> {
+        Ok(other.py_floordiv(&self.value)?)
     }
 
     fn __rmod__(&self, other: NumberWrapper) -> PyResult<FirkinNumber> {
-        Ok(FirkinNumber {
-            value: other.py_mod(&self.value)?,
-        })
+        Ok(other.py_mod(&self.value)?.into())
     }
 
-    fn __rdivmod__(&self, other: NumberWrapper) -> PyResult<(FirkinNumber, FirkinNumber)> {
+    fn __rdivmod__(&self, other: NumberWrapper) -> PyResult<(IntegerWrapper, FirkinNumber)> {
         let (numa, numb) = other.py_divmod(&self.value)?;
-        Ok((
-            FirkinNumber { value: numa.into() },
-            FirkinNumber { value: numb },
-        ))
+        Ok((numa, numb.into()))
     }
 
     fn __rpow__(
@@ -227,21 +207,15 @@ impl FirkinNumber {
     }
 
     fn __neg__(&self) -> PyResult<FirkinNumber> {
-        Ok(FirkinNumber {
-            value: -self.value.clone(),
-        })
+        Ok((-self.value.clone()).into())
     }
 
     fn __pos__(&self) -> PyResult<FirkinNumber> {
-        Ok(FirkinNumber {
-            value: self.value.clone(),
-        })
+        Ok(self.value.clone().into())
     }
 
     fn __abs__(&self) -> PyResult<FirkinNumber> {
-        Ok(FirkinNumber {
-            value: self.value.abs(),
-        })
+        Ok(self.value.abs().into())
     }
 
     fn __int__(&self) -> PyResult<IntegerWrapper> {
@@ -266,28 +240,20 @@ impl FirkinNumber {
                     }
                 })?,
             }),
-            None => Ok(FirkinNumber {
-                value: self.value.py_round(0)?,
-            }),
+            None => Ok(self.value.py_round(0)?.into()),
         }
     }
 
-    fn __trunc__(&self) -> PyResult<FirkinNumber> {
-        Ok(FirkinNumber {
-            value: self.value.py_trunc()?.into(),
-        })
+    fn __trunc__(&self) -> PyResult<IntegerWrapper> {
+        Ok(self.value.py_trunc()?)
     }
 
-    fn __floor__(&self) -> PyResult<FirkinNumber> {
-        Ok(FirkinNumber {
-            value: self.value.py_floor()?.into(),
-        })
+    fn __floor__(&self) -> PyResult<IntegerWrapper> {
+        Ok(self.value.py_floor()?)
     }
 
-    fn __ceil__(&self) -> PyResult<FirkinNumber> {
-        Ok(FirkinNumber {
-            value: self.value.py_ceil()?.into(),
-        })
+    fn __ceil__(&self) -> PyResult<IntegerWrapper> {
+        Ok(self.value.py_ceil()?)
     }
 
     // integer only methods
@@ -508,11 +474,42 @@ impl FirkinNumber {
             .into()),
         }
     }
+
+    // numpy ufuncs
+    fn exp(&self) -> PyResult<FirkinNumber> {
+        Ok(self.value.np_exp()?.into())
+    }
+
+    fn exp2(&self) -> PyResult<FirkinNumber> {
+        Ok(self.value.np_exp2()?.into())
+    }
+
+    fn log(&self) -> PyResult<FirkinNumber> {
+        Ok(self.value.np_log()?.into())
+    }
+
+    fn log2(&self) -> PyResult<FirkinNumber> {
+        Ok(self.value.np_log2()?.into())
+    }
+
+    fn log10(&self) -> PyResult<FirkinNumber> {
+        Ok(self.value.np_log10()?.into())
+    }
+
+    fn sqrt(&self) -> PyResult<FirkinNumber> {
+        Ok(self.value.np_sqrt()?.into())
+    }
 }
 
 impl Display for FirkinNumber {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.value.fmt(f)
+    }
+}
+
+impl From<NumberWrapper> for FirkinNumber {
+    fn from(value: NumberWrapper) -> Self {
+        FirkinNumber { value }
     }
 }
 

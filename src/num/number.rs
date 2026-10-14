@@ -87,6 +87,27 @@ impl NumberWrapper {
         }
     }
 
+    pub(crate) fn is_finite(&self) -> bool {
+        match self {
+            Float(f) => f.is_finite(),
+            _ => true
+        }
+    }
+
+    pub(crate) fn is_infinite(&self) -> bool {
+        match self {
+            Float(f) => f.is_infinite(),
+            _ => false
+        }
+    }
+
+    pub(crate) fn is_nan(&self) -> bool {
+        match self {
+            Float(f) => f.is_nan(),
+            _ => false
+        }
+    }
+
     fn from_py_int(py_int: Bound<'_, PyInt>) -> PyResult<NumberWrapper> {
         if let Ok(i) = py_int.extract::<i64>() {
             return Ok(NumberWrapper::from(i));

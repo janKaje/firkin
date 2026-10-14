@@ -24,7 +24,7 @@ use std::{
     str::FromStr,
 };
 
-const DEFAULT_PREC: u32 = 53;
+pub(crate) const DEFAULT_PREC: u32 = 53;
 
 /// Wraps around the logic for both small and large precision floats
 #[derive(Clone, Debug)]
