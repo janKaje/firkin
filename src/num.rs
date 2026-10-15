@@ -10,13 +10,13 @@ use pyo3::prelude::*;
 
 mod float;
 mod int;
-mod number;
+pub(crate) mod number;
 mod numpy_math;
 mod python_math;
 mod rat;
 mod sign;
-mod smallrational;
-mod traits;
+pub(crate) mod smallrational;
+pub(crate) mod traits;
 
 use number::NumberWrapper;
 

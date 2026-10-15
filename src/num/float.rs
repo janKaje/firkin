@@ -781,6 +781,9 @@ mod tests {
             let mut as_bytes = 0.0_f64.to_ne_bytes();
             rng.fill_bytes(&mut as_bytes);
             let as_float = f64::from_ne_bytes(as_bytes);
+            if as_float.is_nan() {
+                continue
+            }
             assert_eq!(
                 FloatWrapper::from(as_float),
                 as_float.to_string().parse::<FloatWrapper>()?

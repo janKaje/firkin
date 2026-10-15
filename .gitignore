@@ -73,3 +73,6 @@ docs/_build/
 
 # Python testing file
 test.py
+
+# Coverage info
+lcov.info

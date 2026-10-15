@@ -27,7 +27,6 @@ pub(crate) enum RationalWrapper {
 use RationalWrapper::{Rat, SmallRat};
 
 impl RationalWrapper {
-
     pub(crate) fn from_str_radix(src: &str, radix: i32) -> Option<Self> {
         match Rational::from_str_radix(src, radix) {
             Ok(result) => Some(RationalWrapper::from(result)),

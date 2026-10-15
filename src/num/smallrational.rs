@@ -30,13 +30,13 @@ pub(crate) struct SmallRational {
 }
 
 impl SmallRational {
-    const ZERO: SmallRational = SmallRational {
+    pub(crate) const ZERO: SmallRational = SmallRational {
         numerator: 0,
         denominator: 1,
         sign: Positive,
     };
 
-    const ONE: SmallRational = SmallRational {
+    pub(crate) const ONE: SmallRational = SmallRational {
         numerator: 1,
         denominator: 1,
         sign: Positive,
@@ -365,7 +365,8 @@ impl SmallRational {
     fn coerce_to_denom_round(&self, denom: u64) -> SmallRational {
         let floord = self.numerator / self.denominator;
         let rem = self.numerator % self.denominator;
-        if rem <= denom / 2 { // round down
+        if rem <= denom / 2 {
+            // round down
             SmallRational::new(floord * denom, denom, self.is_positive())
         } else {
             SmallRational::new(floord * denom + 1, denom, self.is_positive())
@@ -583,6 +584,9 @@ impl TryFrom<i128> for SmallRational {
 
 impl PartialEq for SmallRational {
     fn eq(&self, other: &Self) -> bool {
+        if self.is_zero() && other.is_zero() {
+            return true
+        }
         self.numerator == other.numerator
             && other.denominator == self.denominator
             && self.sign == other.sign
@@ -754,9 +758,54 @@ impl Ord for SmallRational {
 
 macro_rules! arith_binary_rational {
     (
+        $checked_method:ident
         $Imp:ident { $method:ident }
         $ImpAssign:ident { $method_assign:ident }
     ) => {
+        impl $Imp<SmallRational> for SmallRational {
+            type Output = SmallRational;
+
+            fn $method(self, rhs:SmallRational) -> Self::Output {
+                match self.$checked_method(rhs) {
+                    Some(result) => result,
+                    None => panic!("Overflow")
+                }
+            }
+        }
+
+        impl $Imp<&SmallRational> for SmallRational {
+            type Output = SmallRational;
+
+            fn $method(self, rhs:&SmallRational) -> Self::Output {
+                match self.$checked_method(rhs) {
+                    Some(result) => result,
+                    None => panic!("Overflow")
+                }
+            }
+        }
+        
+        impl $Imp<SmallRational> for &SmallRational {
+            type Output = SmallRational;
+
+            fn $method(self, rhs:SmallRational) -> Self::Output {
+                match self.$checked_method(rhs) {
+                    Some(result) => result,
+                    None => panic!("Overflow")
+                }
+            }
+        }
+
+        impl $Imp<&SmallRational> for &SmallRational {
+            type Output = SmallRational;
+
+            fn $method(self, rhs:&SmallRational) -> Self::Output {
+                match self.$checked_method(rhs) {
+                    Some(result) => result,
+                    None => panic!("Overflow")
+                }
+            }
+        }
+
         impl $Imp<Rational> for SmallRational {
             type Output = Rational;
 
@@ -824,25 +873,41 @@ macro_rules! arith_binary_rational {
                 self.$method_assign(Rational::from(rhs));
             }
         }
+
+        impl $ImpAssign<SmallRational> for SmallRational {
+            fn $method_assign(&mut self, rhs: SmallRational) {
+                *self = self.$method(rhs)
+            }
+        }
+
+        impl $ImpAssign<&SmallRational> for SmallRational {
+            fn $method_assign(&mut self, rhs: &SmallRational) {
+                *self = self.$method(rhs)
+            }
+        }
     };
 }
 
 arith_binary_rational! {
+    checked_add
     Add { add }
     AddAssign { add_assign }
 }
 
 arith_binary_rational! {
+    checked_sub
     Sub { sub }
     SubAssign { sub_assign }
 }
 
 arith_binary_rational! {
+    checked_mul
     Mul { mul }
     MulAssign { mul_assign }
 }
 
 arith_binary_rational! {
+    checked_div
     Div { div }
     DivAssign { div_assign }
 }
@@ -1078,7 +1143,11 @@ impl PythonMathFunctions for SmallRational {
         if ndigits <= 0 {
             IntegerWrapper::from(self.round()).py_round(ndigits)
         } else {
-            let new_denom: u64 = if ndigits < 0 {1} else {10_u64.pow(ndigits.unsigned_abs())};
+            let new_denom: u64 = if ndigits < 0 {
+                1
+            } else {
+                10_u64.pow(ndigits.unsigned_abs())
+            };
             Ok(self.coerce_to_denom_round(new_denom).into())
         }
     }
