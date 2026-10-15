@@ -41,14 +41,6 @@ impl NumberWrapper {
     pub(crate) const ZERO: Self = NumberWrapper::Int(IntegerWrapper::ZERO);
     pub(crate) const ONE: Self = NumberWrapper::Int(IntegerWrapper::ONE);
 
-    pub(crate) fn abs(&self) -> NumberWrapper {
-        match self {
-            Int(i) => Int(i.abs()),
-            Rat(r) => Rat(r.abs()),
-            Float(f) => Float(f.abs()),
-        }
-    }
-
     pub(crate) fn to_f64(&self) -> f64 {
         match self {
             Int(i) => i.to_f64(),

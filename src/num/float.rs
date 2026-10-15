@@ -13,9 +13,7 @@ use crate::{
         },
     },
 };
-use rug::{
-    Assign, Float, Integer, Rational,
-};
+use rug::{Assign, Float, Integer, Rational};
 use std::{
     fmt::Display,
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
@@ -57,20 +55,6 @@ impl FloatWrapper {
         match self {
             SmallFloat(f) => f.abs().into(),
             BigFloat(float) => float.clone().abs().into(),
-        }
-    }
-
-    pub(crate) fn floor(&self) -> Result<IntegerWrapper, &'static str> {
-        match self {
-            SmallFloat(f) => f.floor().try_into(),
-            BigFloat(float) => float.clone().floor().try_into(),
-        }
-    }
-
-    pub(crate) fn ceil(&self) -> Result<IntegerWrapper, &'static str> {
-        match self {
-            SmallFloat(f) => f.ceil().try_into(),
-            BigFloat(float) => float.clone().ceil().try_into(),
         }
     }
 
@@ -762,14 +746,6 @@ mod tests {
         assert_eq!(
             FloatWrapper::from(-125.64).abs(),
             FloatWrapper::from(125.64)
-        );
-        assert_eq!(
-            FloatWrapper::from(-125.64).floor().unwrap(),
-            IntegerWrapper::from(-126)
-        );
-        assert_eq!(
-            FloatWrapper::from(-125.64).ceil().unwrap(),
-            IntegerWrapper::from(-125)
         );
         assert_eq!(
             FloatWrapper::from(-125.64).round().unwrap(),

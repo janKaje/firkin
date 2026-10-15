@@ -3,10 +3,7 @@
 use std::{
     cmp::{Ord, Ordering},
     fmt::{Debug, Display},
-    ops::{
-        Add, AddAssign, Div,
-        DivAssign, Mul, MulAssign, Neg, Not, Rem, Sub, SubAssign,
-    },
+    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Not, Rem, Sub, SubAssign},
 };
 
 use gcd::{binary_u64, binary_u128};
@@ -33,7 +30,6 @@ pub(crate) struct SmallRational {
 }
 
 impl SmallRational {
-
     const ZERO: SmallRational = SmallRational {
         numerator: 0,
         denominator: 1,
@@ -363,6 +359,16 @@ impl SmallRational {
             numerator: self.numerator,
             denominator: self.denominator,
             sign: Positive,
+        }
+    }
+
+    fn coerce_to_denom_round(&self, denom: u64) -> SmallRational {
+        let floord = self.numerator / self.denominator;
+        let rem = self.numerator % self.denominator;
+        if rem <= denom / 2 { // round down
+            SmallRational::new(floord * denom, denom, self.is_positive())
+        } else {
+            SmallRational::new(floord * denom + 1, denom, self.is_positive())
         }
     }
 }
@@ -1069,7 +1075,12 @@ impl PythonMathFunctions for SmallRational {
     }
 
     fn py_round(&self, ndigits: i32) -> Result<NumberWrapper, FirkinError> {
-        todo!()
+        if ndigits <= 0 {
+            IntegerWrapper::from(self.round()).py_round(ndigits)
+        } else {
+            let new_denom: u64 = if ndigits < 0 {1} else {10_u64.pow(ndigits.unsigned_abs())};
+            Ok(self.coerce_to_denom_round(new_denom).into())
+        }
     }
 
     fn py_floor(&self) -> Result<IntegerWrapper, FirkinError> {

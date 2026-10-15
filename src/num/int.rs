@@ -1,4 +1,3 @@
-
 use crate::error::FirkinError;
 use crate::num::traits::{
     FromInts, NumpyUFuncs, PythonInt, PythonMathFunctions, PythonNum, PythonRat, RichDisplay,
@@ -104,30 +103,11 @@ impl IntegerWrapper {
         }
     }
 
-    pub(crate) fn as_u32(&self) -> u32 {
-        match self {
-            SmallInt(i) => i.cast(),
-            Int(integer) => integer.cast(),
-        }
-    }
-
     pub(crate) fn abs(&self) -> IntegerWrapper {
         match self {
             SmallInt(i) => SmallInt(i.abs()),
             Int(integer) => Int(integer.clone().abs()),
         }
-    }
-
-    pub(crate) fn floor(&self) -> IntegerWrapper {
-        self.clone()
-    }
-
-    pub(crate) fn ceil(&self) -> IntegerWrapper {
-        self.clone()
-    }
-
-    pub(crate) fn round(&self) -> IntegerWrapper {
-        self.clone()
     }
 }
 

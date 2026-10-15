@@ -2,12 +2,12 @@
 
 use crate::error::FirkinError;
 use crate::num::int::IntegerWrapper::{self, Int, SmallInt};
+use crate::num::number::NumberWrapper;
 use crate::num::smallrational::SmallRational;
 use crate::num::traits::{
-    FromInts, NumpyUFuncs, PythonMathFunctions, PythonNum, PythonRat, RichDisplay,
-    TryFromFloats, auto_impl_numpy_ufunc_trait, auto_impl_pymath_trait,
+    FromInts, NumpyUFuncs, PythonMathFunctions, PythonNum, PythonRat, RichDisplay, TryFromFloats,
+    auto_impl_numpy_ufunc_trait, auto_impl_pymath_trait,
 };
-use crate::num::number::NumberWrapper;
 
 use regex::regex;
 use rug::Float;
@@ -27,13 +27,6 @@ pub(crate) enum RationalWrapper {
 use RationalWrapper::{Rat, SmallRat};
 
 impl RationalWrapper {
-    pub(crate) fn from_f32(value: f32) -> Option<Self> {
-        Some(RationalWrapper::from(Rational::from_f32(value)?))
-    }
-
-    pub(crate) fn from_f64(value: f64) -> Option<Self> {
-        Some(RationalWrapper::from(Rational::from_f64(value)?))
-    }
 
     pub(crate) fn from_str_radix(src: &str, radix: i32) -> Option<Self> {
         match Rational::from_str_radix(src, radix) {
@@ -416,19 +409,23 @@ impl PartialOrd<IntegerWrapper> for RationalWrapper {
     fn partial_cmp(&self, other: &IntegerWrapper) -> Option<std::cmp::Ordering> {
         if self.is_integer() {
             self.to_integer().partial_cmp(other)
+        } else if self.floor() >= other {
+            Some(std::cmp::Ordering::Greater)
         } else {
-            if self.floor() >= other {
-                Some(std::cmp::Ordering::Greater)
-            } else {
-                Some(std::cmp::Ordering::Less)
-            }
+            Some(std::cmp::Ordering::Less)
         }
     }
 }
 
 impl PartialOrd<RationalWrapper> for IntegerWrapper {
     fn partial_cmp(&self, other: &RationalWrapper) -> Option<std::cmp::Ordering> {
-        todo!()
+        if other.is_integer() {
+            other.to_integer().partial_cmp(self)
+        } else if other.floor() >= self {
+            Some(std::cmp::Ordering::Less)
+        } else {
+            Some(std::cmp::Ordering::Greater)
+        }
     }
 }
 
@@ -658,8 +655,8 @@ mod tests {
     #[test]
     fn from_float() {
         assert_eq!(
-            RationalWrapper::from_f64(3.125),
-            RationalWrapper::from_f32(3.125)
+            RationalWrapper::try_from(3.125_f64),
+            RationalWrapper::try_from(3.125_f32)
         );
     }
 
@@ -683,7 +680,7 @@ mod tests {
     fn from_decimal_str() {
         assert_eq!(
             RationalWrapper::from_decimal_str("+12.498e12").unwrap(),
-            RationalWrapper::from_f64(12.498e12).unwrap()
+            RationalWrapper::try_from(12.498e12).unwrap()
         );
         assert_eq!(
             RationalWrapper::from_decimal_str("-1.12").unwrap(),
@@ -694,13 +691,13 @@ mod tests {
     #[test]
     fn arith() {
         let test1 = RationalWrapper::from(-345);
-        let test2 = RationalWrapper::from_f64(51.625).unwrap();
+        let test2 = RationalWrapper::try_from(51.625).unwrap();
         let test3 = RationalWrapper::from_decimal_str("513.43").unwrap();
         let test4 = RationalWrapper::from_str_radix("-5/124", 10).unwrap();
 
         assert_eq!(
             dbg!(&test1 + &test2),
-            RationalWrapper::from_f64(51.625 - 345.0).unwrap()
+            RationalWrapper::try_from(51.625 - 345.0).unwrap()
         );
         assert_eq!(
             &test2 - &test3,

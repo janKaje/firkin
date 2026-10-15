@@ -19,9 +19,9 @@ pub(crate) trait PythonNum:
 {
 }
 
+#[allow(unused)]
 pub(crate) trait PythonRat: Sized + Hash + PythonNum {}
 
-#[allow(unused)]
 pub(crate) trait PythonInt:
     Sized
     + Rem
@@ -66,7 +66,6 @@ pub(crate) trait PythonMathFunctions: Sized + Neg + PartialOrd + PartialEq {
     fn py_trunc(&self) -> Result<IntegerWrapper, FirkinError>;
 }
 
-#[allow(unused)]
 pub(crate) trait NumpyUFuncs: PythonMathFunctions {
     fn np_exp(&self) -> Result<NumberWrapper, FirkinError>;
     fn np_exp2(&self) -> Result<NumberWrapper, FirkinError>;
@@ -76,10 +75,13 @@ pub(crate) trait NumpyUFuncs: PythonMathFunctions {
     fn np_sqrt(&self) -> Result<NumberWrapper, FirkinError>;
 }
 
+#[allow(unused)]
 pub(crate) trait FromFloats: From<f64> + From<f32> + From<Float> {}
 
+#[allow(unused)]
 pub(crate) trait TryFromFloats: TryFrom<f64> + TryFrom<f32> + TryFrom<Float> {}
 
+#[allow(unused)]
 pub(crate) trait FromInts:
     From<i8>
     + From<i16>

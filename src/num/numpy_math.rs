@@ -1,19 +1,15 @@
 // #![allow(unused)]
 
-
-use rug::{
-    Float, Integer, Rational,
-    ops::Pow,
-};
+use rug::{Float, Integer, Rational, ops::Pow};
 
 use crate::{
     error::FirkinError,
     num::{
         float::{
             DEFAULT_PREC,
-            FloatWrapper::{self, },
+            FloatWrapper::{self},
         },
-        int::IntegerWrapper::{self, },
+        int::IntegerWrapper::{self},
         number::NumberWrapper,
         traits::NumpyUFuncs,
     },

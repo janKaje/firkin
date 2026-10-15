@@ -215,7 +215,7 @@ impl FirkinNumber {
     }
 
     fn __abs__(&self) -> PyResult<FirkinNumber> {
-        Ok(self.value.abs().into())
+        Ok(self.value.py_abs()?.into())
     }
 
     fn __int__(&self) -> PyResult<IntegerWrapper> {
