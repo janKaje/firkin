@@ -1,4 +1,5 @@
 use std::{
+    borrow::Cow,
     collections::HashMap,
     fmt,
     ops::{Div, Mul},
@@ -16,7 +17,13 @@ use unit_defs::{BASE_UNITS, NUMBER_OF_BASE_UNITS, search_for_unit_name};
 pub(crate) use log_unit::LogUnit;
 pub(crate) use unit_defs::search_for_log_unit_name;
 
-use crate::{error::FirkinError, num::smallrational::SmallRational};
+use crate::{
+    error::FirkinError,
+    num::{
+        FirkinNumber, number::NumberWrapper, smallrational::SmallRational,
+        traits::PythonMathFunctions,
+    },
+};
 
 const UNIT_SEP: &str = "."; // separate units within num/denom
 const UNIT_DIV_SEP: &str = "/"; // separate numerator from denominator
@@ -28,9 +35,9 @@ const UNIT_POW_IND: &str = ""; // indicates unit raised to a power
 // coerce single unit to unit collection
 #[derive(Clone, PartialEq, Debug)]
 pub(crate) struct UnitCollection {
-    pub(crate) single_units: HashMap<SingleUnit, f64>,
+    pub(crate) single_units: HashMap<SingleUnit, SmallRational>,
     pub(crate) base_units: [SmallRational; NUMBER_OF_BASE_UNITS],
-    pub(crate) scale: f64,
+    pub(crate) scale: NumberWrapper,
 }
 
 impl Eq for UnitCollection {}
@@ -56,7 +63,7 @@ impl Mul for UnitCollection {
                 prod_single_units.insert(key.clone(), value);
             }
             // if zero, just discard
-            if prod_single_units[key] == 0.0 {
+            if prod_single_units[key].is_zero() {
                 prod_single_units.remove(key);
             }
         }
@@ -90,7 +97,7 @@ impl Div for UnitCollection {
                 quot_single_units.insert(key.clone(), -value);
             }
             // if zero, just discard
-            if quot_single_units[key] == 0.0 {
+            if quot_single_units[key].is_zero() {
                 quot_single_units.remove(key);
             }
         }
@@ -104,7 +111,7 @@ impl Div for UnitCollection {
 }
 
 impl UnitCollection {
-    pub(crate) fn offset(&self) -> Option<f64> {
+    pub(crate) fn offset(&self) -> Option<&NumberWrapper> {
         let mut keys = self.single_units.keys().collect::<Vec<&SingleUnit>>();
         if keys.len() != 1 {
             None
@@ -116,7 +123,7 @@ impl UnitCollection {
     }
 
     // raise to a power
-    pub(crate) fn pow(&self, exponent: f64) -> Self {
+    pub(crate) fn pow(&self, exponent: SmallRational) -> Result<Self, FirkinError> {
         let mut result_single_units = HashMap::new();
 
         for (k, v) in self.single_units.iter() {
@@ -132,25 +139,25 @@ impl UnitCollection {
             }
         }
 
-        UnitCollection {
+        Ok(UnitCollection {
             single_units: result_single_units,
             base_units: result_base_units,
-            scale: self.scale.powf(exponent),
-        }
+            scale: self.scale.py_pow(&NumberWrapper::from(exponent), None)?,
+        })
     }
 
     pub(crate) fn coerce_unit_to_collection(unit: SingleUnit) -> Self {
         UnitCollection {
             base_units: unit.base_units().map(|x| *x),
-            scale: unit.scale(),
-            single_units: HashMap::from([(unit, 1.0)]),
+            scale: unit.scale().into_owned(),
+            single_units: HashMap::from([(unit, SmallRational::ONE)]),
         }
     }
 
     pub(crate) fn empty_collection() -> Self {
         UnitCollection {
             base_units: [SmallRational::ZERO; NUMBER_OF_BASE_UNITS],
-            scale: 1.0,
+            scale: NumberWrapper::ONE,
             single_units: HashMap::new(),
         }
     }
@@ -188,7 +195,7 @@ impl UnitCollection {
                 };
 
                 // parse exponent into number
-                let exp = match exp.parse::<f64>() {
+                let exp = match exp.parse::<SmallRational>() {
                     Ok(f) => f,
                     Err(_) => continue,
                 };
@@ -196,8 +203,14 @@ impl UnitCollection {
                 match search_for_unit_name(q) {
                     Some(unit) => {
                         result = result
-                            * UnitCollection::coerce_unit_to_collection(SingleUnit::Static(unit))
-                                .pow(exp)
+                            * match UnitCollection::coerce_unit_to_collection(SingleUnit::Static(
+                                unit,
+                            ))
+                            .pow(exp)
+                            {
+                                Ok(r) => r,
+                                Err(_) => return None,
+                            }
                     }
                     None => continue,
                 };
@@ -216,7 +229,7 @@ impl UnitCollection {
                 };
 
                 // parse exponent into number
-                let exp = match exp.parse::<f64>() {
+                let exp = match exp.parse::<SmallRational>() {
                     Ok(f) => f,
                     Err(_) => continue,
                 };
@@ -224,8 +237,14 @@ impl UnitCollection {
                 match search_for_unit_name(q) {
                     Some(unit) => {
                         result = result
-                            / UnitCollection::coerce_unit_to_collection(SingleUnit::Static(unit))
-                                .pow(exp)
+                            / match UnitCollection::coerce_unit_to_collection(SingleUnit::Static(
+                                unit,
+                            ))
+                            .pow(exp)
+                            {
+                                Ok(r) => r,
+                                Err(_) => return None,
+                            }
                     }
                     None => continue,
                 };
@@ -243,9 +262,9 @@ impl UnitCollection {
         let mut num = self
             .single_units
             .iter()
-            .filter(|x| *x.1 > 0.0)
+            .filter(|x| *x.1 > SmallRational::ZERO)
             .map(|x| {
-                if *x.1 != 1.0 {
+                if *x.1 != SmallRational::ONE {
                     x.0.abbr() + UNIT_POW_IND + &x.1.to_string()
                 } else {
                     x.0.abbr()
@@ -258,9 +277,9 @@ impl UnitCollection {
         let mut denom = self
             .single_units
             .iter()
-            .filter(|x| *x.1 < 0.0)
+            .filter(|x| *x.1 < SmallRational::ZERO)
             .map(|x| {
-                if *x.1 != -1.0 {
+                if *x.1 != SmallRational::NEG_ONE {
                     x.0.abbr() + UNIT_POW_IND + &(-x.1).to_string()
                 } else {
                     x.0.abbr()
@@ -291,9 +310,9 @@ impl UnitCollection {
         let mut num = self
             .single_units
             .iter()
-            .filter(|x| *x.1 > 0.0)
+            .filter(|x| *x.1 > SmallRational::ZERO)
             .map(|x| {
-                if *x.1 != 1.0 {
+                if *x.1 != SmallRational::ONE {
                     x.0.name() + UNIT_POW_IND + &x.1.to_string()
                 } else {
                     x.0.name()
@@ -306,9 +325,9 @@ impl UnitCollection {
         let mut denom = self
             .single_units
             .iter()
-            .filter(|x| *x.1 < 0.0)
+            .filter(|x| *x.1 < SmallRational::ZERO)
             .map(|x| {
-                if *x.1 != -1.0 {
+                if *x.1 != SmallRational::NEG_ONE {
                     x.0.name() + UNIT_POW_IND + &(-x.1).to_string()
                 } else {
                     x.0.name()
@@ -339,9 +358,9 @@ impl UnitCollection {
         let mut num = self
             .single_units
             .iter()
-            .filter(|x| *x.1 > 0.0)
+            .filter(|x| *x.1 > SmallRational::ZERO)
             .map(|x| {
-                if *x.1 != 1.0 {
+                if *x.1 != SmallRational::ONE {
                     x.0.abbr() + "^" + &x.1.to_string()
                 } else {
                     x.0.abbr()
@@ -354,9 +373,9 @@ impl UnitCollection {
         let mut denom = self
             .single_units
             .iter()
-            .filter(|x| *x.1 < 0.0)
+            .filter(|x| *x.1 < SmallRational::ZERO)
             .map(|x| {
-                if *x.1 != -1.0 {
+                if *x.1 != SmallRational::NEG_ONE {
                     x.0.abbr() + "^" + &(-x.1).to_string()
                 } else {
                     x.0.abbr()
@@ -382,8 +401,8 @@ impl UnitCollection {
             None
         } else {
             Some(ScaleDiff {
-                self_scale: self.scale,
-                other_scale: other.scale,
+                self_scale: self.scale.clone(),
+                other_scale: self.scale.clone(),
             })
         }
     }
@@ -401,7 +420,7 @@ impl UnitCollection {
         UnitCollection {
             single_units: base_unit_hashmap,
             base_units: self.base_units,
-            scale: 1.0,
+            scale: NumberWrapper::ONE,
         }
     }
 
@@ -441,59 +460,53 @@ impl UnitCollection {
                     }
                     if key1.base_units() == key2.base_units() {
                         // Same base units, now check if signs are opposite (num/denom split)
-                        if exp1.is_sign_positive() && exp2.is_sign_negative() {
-                            let min = exp1.min(exp2.abs());
+                        if exp1.is_positive() && exp2.is_negative() {
+                            let min = (*exp1).min(exp2.abs());
                             let x1 = hashmap_new.get_mut(key1).unwrap();
-                            match *x1 - min {
-                                0.0 => {
-                                    hashmap_new.remove(key1);
-                                }
-                                _ => *x1 -= min,
+                            if *x1 - min == SmallRational::ZERO {
+                                hashmap_new.remove(key1);
+                            } else {
+                                *x1 -= min
                             }
                             let x2 = hashmap_new.get_mut(key2).unwrap();
-                            match *x2 + min {
-                                0.0 => {
-                                    hashmap_new.remove(key2);
-                                }
-                                _ => *x2 += min,
+                            if *x2 + min == SmallRational::ZERO {
+                                hashmap_new.remove(key2);
+                            } else {
+                                *x2 += min
                             }
                             continue 'wl; // when changes are made, restart for loop
-                        } else if exp1.is_sign_negative() && exp2.is_sign_positive() {
+                        } else if exp1.is_negative() && exp2.is_positive() {
                             let min = exp1.abs().min(*exp2);
                             let x1 = hashmap_new.get_mut(key1).unwrap();
-                            match *x1 + min {
-                                0.0 => {
-                                    hashmap_new.remove(key1);
-                                }
-                                _ => *x1 += min,
+                            if *x1 + min == SmallRational::ZERO {
+                                hashmap_new.remove(key1);
+                            } else {
+                                *x1 += min
                             }
                             let x2 = hashmap_new.get_mut(key2).unwrap();
-                            match *x2 - min {
-                                0.0 => {
-                                    hashmap_new.remove(key2);
-                                }
-                                _ => *x2 -= min,
+                            if *x2 - min == SmallRational::ZERO {
+                                hashmap_new.remove(key2);
+                            } else {
+                                *x2 -= min
                             }
                             continue 'wl;
                         }
                     } else if key1.base_units().map(|x| *x) == key2.base_units().map(|x| -x) {
                         // Opposite base units, now check if signs are same
                         // panic!("got into opposite base units!!");
-                        if exp1.is_sign_positive() == exp2.is_sign_positive() {
-                            let min = exp1.min(*exp2);
+                        if exp1.is_positive() == exp2.is_positive() {
+                            let min = exp1.min(exp2);
                             let x1 = hashmap_new.get_mut(key1).unwrap();
-                            match *x1 - min {
-                                0.0 => {
-                                    hashmap_new.remove(key1);
-                                }
-                                _ => *x1 -= min,
+                            if *x1 - min == SmallRational::ZERO {
+                                hashmap_new.remove(key1);
+                            } else {
+                                *x1 -= min
                             }
                             let x2 = hashmap_new.get_mut(key2).unwrap();
-                            match *x2 - min {
-                                0.0 => {
-                                    hashmap_new.remove(key2);
-                                }
-                                _ => *x2 -= min,
+                            if *x2 - min == SmallRational::ZERO {
+                                hashmap_new.remove(key2);
+                            } else {
+                                *x2 -= min
                             }
                             continue 'wl;
                         }
@@ -529,7 +542,8 @@ impl UnitCollection {
 
         // if any non-integer exponents, use simple_simplify
         for exp in psd.single_units.values() {
-            if *exp != exp.round() {
+            if !exp.is_integer() {
+                // change later todo!()
                 return psd;
             }
         }
@@ -581,7 +595,13 @@ impl UnitCollection {
             starting_holes.insert(unit, 0);
         }
         for unit in retained {
-            *starting_holes.get_mut(unit).unwrap() = *psd.single_units.get(unit).unwrap() as i32;
+            *starting_holes.get_mut(unit).unwrap() = psd
+                .single_units
+                .get(unit)
+                .unwrap()
+                .to_integer()
+                .to_i32()
+                .expect("todo!() fix this");
         }
 
         let mut starting_holes_new = HashMap::new();
@@ -590,13 +610,16 @@ impl UnitCollection {
         }
         let mut units_i32 = HashMap::new();
         for (unit, value) in &psd.single_units {
-            units_i32.insert(unit.clone(), *value as i32);
+            units_i32.insert(
+                unit.clone(),
+                value.to_integer().to_i32().expect("todo!() fix this"),
+            );
         }
 
         if check_satisfies_base_units(&starting_holes_new, &psd.base_units) {
             let mut new_map = HashMap::new();
             for (key, value) in starting_holes_new.iter() {
-                new_map.insert((**key).clone(), *value as f64);
+                new_map.insert((**key).clone(), SmallRational::from(*value));
             }
             return UnitCollection::from_single_unit_hashmap(new_map);
         }
@@ -611,7 +634,7 @@ impl UnitCollection {
             Some(map) => {
                 let mut new_map = HashMap::new();
                 for (key, value) in map {
-                    new_map.insert((*key).clone(), value as f64);
+                    new_map.insert((*key).clone(), SmallRational::from(value));
                 }
                 UnitCollection::from_single_unit_hashmap(new_map)
             }
@@ -621,12 +644,17 @@ impl UnitCollection {
         }
     }
 
-    fn from_single_unit_hashmap(single_units: HashMap<SingleUnit, f64>) -> UnitCollection {
-        let mut scale = 1.0;
+    fn from_single_unit_hashmap(
+        single_units: HashMap<SingleUnit, SmallRational>,
+    ) -> UnitCollection {
+        let mut scale = NumberWrapper::ONE;
         let mut base_units = [SmallRational::ZERO; NUMBER_OF_BASE_UNITS];
 
         for (unit, exponent) in single_units.iter() {
-            scale *= unit.scale().powf(*exponent);
+            scale *= unit
+                .scale()
+                .py_pow(&NumberWrapper::from(*exponent), None)
+                .expect("todo!() fix this");
             for i in 0..NUMBER_OF_BASE_UNITS {
                 base_units[i] += unit.base_units()[i]
                     * match SmallRational::try_from(*exponent) {
@@ -653,23 +681,72 @@ impl fmt::Display for UnitCollection {
 }
 
 pub(crate) struct ScaleDiff {
-    self_scale: f64,
-    other_scale: f64,
+    //todo!() get rid of this
+    self_scale: NumberWrapper,
+    other_scale: NumberWrapper,
 }
 
-impl Mul<ScaleDiff> for f64 {
-    type Output = f64;
+impl Mul<ScaleDiff> for NumberWrapper {
+    type Output = NumberWrapper;
 
-    fn mul(self, rhs: ScaleDiff) -> f64 {
+    fn mul(self, rhs: ScaleDiff) -> NumberWrapper {
         self * rhs.other_scale / rhs.self_scale
     }
 }
 
-impl Div<ScaleDiff> for f64 {
-    type Output = f64;
+impl Div<ScaleDiff> for NumberWrapper {
+    type Output = NumberWrapper;
 
-    fn div(self, rhs: ScaleDiff) -> f64 {
+    fn div(self, rhs: ScaleDiff) -> NumberWrapper {
         self * rhs.self_scale / rhs.other_scale
+    }
+}
+
+impl Mul<ScaleDiff> for &NumberWrapper {
+    type Output = NumberWrapper;
+
+    fn mul(self, rhs: ScaleDiff) -> NumberWrapper {
+        self * rhs.other_scale / rhs.self_scale
+    }
+}
+
+impl Div<ScaleDiff> for &NumberWrapper {
+    type Output = NumberWrapper;
+
+    fn div(self, rhs: ScaleDiff) -> NumberWrapper {
+        self * rhs.self_scale / rhs.other_scale
+    }
+}
+
+impl Mul<ScaleDiff> for FirkinNumber {
+    type Output = FirkinNumber;
+
+    fn mul(self, rhs: ScaleDiff) -> FirkinNumber {
+        self * FirkinNumber::from(rhs.other_scale / rhs.self_scale)
+    }
+}
+
+impl Div<ScaleDiff> for FirkinNumber {
+    type Output = FirkinNumber;
+
+    fn div(self, rhs: ScaleDiff) -> FirkinNumber {
+        self * FirkinNumber::from(rhs.self_scale / rhs.other_scale)
+    }
+}
+
+impl Mul<ScaleDiff> for &FirkinNumber {
+    type Output = FirkinNumber;
+
+    fn mul(self, rhs: ScaleDiff) -> FirkinNumber {
+        self * FirkinNumber::from(rhs.other_scale / rhs.self_scale)
+    }
+}
+
+impl Div<ScaleDiff> for &FirkinNumber {
+    type Output = FirkinNumber;
+
+    fn div(self, rhs: ScaleDiff) -> FirkinNumber {
+        self * FirkinNumber::from(rhs.self_scale / rhs.other_scale)
     }
 }
 
@@ -794,15 +871,17 @@ mod tests {
     }
 
     #[test]
-    fn test_pow() {
+    fn test_pow() -> Result<(), FirkinError> {
         let joule = UnitCollection::from_unit_name("joule").unwrap();
         let meter = UnitCollection::from_unit_name("meter").unwrap();
 
-        let joule2 = joule.clone().pow(2.0);
+        let joule2 = joule.clone().pow(2.into())?;
         assert_eq!(format!("{}", joule2), "[J2]");
 
-        let joule_meter2 = (joule / meter).pow(2.0);
+        let joule_meter2 = (joule / meter).pow(2.into())?;
         assert_eq!(format!("{}", joule_meter2), "[J2/m2]");
+
+        Ok(())
     }
 
     #[test]

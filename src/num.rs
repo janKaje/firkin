@@ -1,21 +1,21 @@
 use std::{
     fmt::Display,
     ops::{
-        BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not, Shl, ShlAssign, Shr,
-        ShrAssign,
+        Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Mul,
+        MulAssign, Neg, Not, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
     },
 };
 
 use pyo3::prelude::*;
 
-mod float;
-mod int;
 mod numpy_math;
 mod python_math;
-mod rat;
 mod sign;
 
+pub(crate) mod float;
+pub(crate) mod int;
 pub(crate) mod number;
+pub(crate) mod rat;
 pub(crate) mod smallrational;
 pub(crate) mod traits;
 
@@ -34,7 +34,7 @@ const DEFAULT_RATIONAL_SIG_FIGS: usize = 5;
 #[pyclass(from_py_object)]
 #[derive(Clone, Debug)]
 pub struct FirkinNumber {
-    value: NumberWrapper,
+    pub(crate) value: NumberWrapper,
 }
 
 #[pymethods]
@@ -502,6 +502,15 @@ impl FirkinNumber {
     }
 }
 
+impl FirkinNumber {
+    pub(crate) const ZERO: Self = FirkinNumber {
+        value: NumberWrapper::Int(IntegerWrapper::SmallInt(0)),
+    };
+    pub(crate) const ONE: Self = FirkinNumber {
+        value: NumberWrapper::Int(IntegerWrapper::SmallInt(1)),
+    };
+}
+
 impl Display for FirkinNumber {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.value.fmt(f)
@@ -511,6 +520,265 @@ impl Display for FirkinNumber {
 impl From<NumberWrapper> for FirkinNumber {
     fn from(value: NumberWrapper) -> Self {
         FirkinNumber { value }
+    }
+}
+
+impl From<&NumberWrapper> for FirkinNumber {
+    fn from(value: &NumberWrapper) -> Self {
+        FirkinNumber {
+            value: value.clone(),
+        }
+    }
+}
+
+macro_rules! from_int {
+    (
+        $Int:ty
+    ) => {
+        impl From<$Int> for FirkinNumber {
+            fn from(value: $Int) -> Self {
+                FirkinNumber {
+                    value: NumberWrapper::Int(IntegerWrapper::from(value)),
+                }
+            }
+        }
+    };
+}
+
+from_int! {i8}
+from_int! {i16}
+from_int! {i32}
+from_int! {i64}
+from_int! {i128}
+from_int! {isize}
+from_int! {u8}
+from_int! {u16}
+from_int! {u32}
+from_int! {u64}
+from_int! {u128}
+from_int! {usize}
+
+macro_rules! arith_binary {
+    (
+        $Imp:ident { $method:ident }
+        $ImpAssign:ident { $method_assign:ident }
+    ) => {
+        impl $Imp<FirkinNumber> for FirkinNumber {
+            type Output = FirkinNumber;
+
+            fn $method(self, rhs: FirkinNumber) -> Self::Output {
+                self.value.$method(rhs.value).into()
+            }
+        }
+
+        impl $Imp<FirkinNumber> for &FirkinNumber {
+            type Output = FirkinNumber;
+
+            fn $method(self, rhs: FirkinNumber) -> Self::Output {
+                self.value.clone().$method(rhs.value).into()
+            }
+        }
+
+        impl $Imp<&FirkinNumber> for FirkinNumber {
+            type Output = FirkinNumber;
+
+            fn $method(self, rhs: &FirkinNumber) -> Self::Output {
+                self.value.$method(&rhs.value).into()
+            }
+        }
+
+        impl $Imp<&FirkinNumber> for &FirkinNumber {
+            type Output = FirkinNumber;
+
+            fn $method(self, rhs: &FirkinNumber) -> Self::Output {
+                self.value.clone().$method(&rhs.value).into()
+            }
+        }
+
+        impl $ImpAssign<FirkinNumber> for FirkinNumber {
+            fn $method_assign(&mut self, rhs: FirkinNumber) {
+                *self = self.clone().$method(rhs)
+            }
+        }
+
+        impl $ImpAssign<&FirkinNumber> for FirkinNumber {
+            fn $method_assign(&mut self, rhs: &FirkinNumber) {
+                *self = self.clone().$method(rhs)
+            }
+        }
+
+        impl $Imp<NumberWrapper> for FirkinNumber {
+            type Output = FirkinNumber;
+
+            fn $method(self, rhs: NumberWrapper) -> Self::Output {
+                self.value.$method(rhs).into()
+            }
+        }
+
+        impl $Imp<NumberWrapper> for &FirkinNumber {
+            type Output = FirkinNumber;
+
+            fn $method(self, rhs: NumberWrapper) -> Self::Output {
+                self.value.clone().$method(rhs).into()
+            }
+        }
+
+        impl $Imp<&NumberWrapper> for FirkinNumber {
+            type Output = FirkinNumber;
+
+            fn $method(self, rhs: &NumberWrapper) -> Self::Output {
+                self.value.$method(rhs).into()
+            }
+        }
+
+        impl $Imp<&NumberWrapper> for &FirkinNumber {
+            type Output = FirkinNumber;
+
+            fn $method(self, rhs: &NumberWrapper) -> Self::Output {
+                self.value.clone().$method(rhs).into()
+            }
+        }
+
+        impl $ImpAssign<NumberWrapper> for FirkinNumber {
+            fn $method_assign(&mut self, rhs: NumberWrapper) {
+                *self = self.clone().$method(rhs)
+            }
+        }
+
+        impl $ImpAssign<&NumberWrapper> for FirkinNumber {
+            fn $method_assign(&mut self, rhs: &NumberWrapper) {
+                *self = self.clone().$method(rhs)
+            }
+        }
+
+        impl $Imp<FirkinNumber> for NumberWrapper {
+            type Output = FirkinNumber;
+
+            fn $method(self, rhs: FirkinNumber) -> Self::Output {
+                self.$method(rhs.value).into()
+            }
+        }
+
+        impl $Imp<FirkinNumber> for &NumberWrapper {
+            type Output = FirkinNumber;
+
+            fn $method(self, rhs: FirkinNumber) -> Self::Output {
+                self.$method(rhs.value).into()
+            }
+        }
+
+        impl $Imp<&FirkinNumber> for NumberWrapper {
+            type Output = FirkinNumber;
+
+            fn $method(self, rhs: &FirkinNumber) -> Self::Output {
+                self.$method(&rhs.value).into()
+            }
+        }
+
+        impl $Imp<&FirkinNumber> for &NumberWrapper {
+            type Output = FirkinNumber;
+
+            fn $method(self, rhs: &FirkinNumber) -> Self::Output {
+                self.$method(&rhs.value).into()
+            }
+        }
+    };
+}
+
+arith_binary! {
+    Add { add }
+    AddAssign { add_assign }
+}
+
+arith_binary! {
+    Sub { sub }
+    SubAssign { sub_assign }
+}
+
+arith_binary! {
+    Mul { mul }
+    MulAssign { mul_assign }
+}
+
+impl Neg for FirkinNumber {
+    type Output = FirkinNumber;
+
+    fn neg(self) -> Self::Output {
+        FirkinNumber { value: -self.value }
+    }
+}
+
+impl PartialEq for FirkinNumber {
+    fn eq(&self, other: &Self) -> bool {
+        self.value == other.value
+    }
+}
+
+impl PartialOrd for FirkinNumber {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.value.partial_cmp(&other.value)
+    }
+}
+
+impl FirkinNumber {
+    pub(crate) fn py_mod(&self, other: &FirkinNumber) -> Result<FirkinNumber, FirkinError> {
+        Ok(FirkinNumber {
+            value: self.value.py_mod(&other.value)?,
+        })
+    }
+
+    pub(crate) fn py_pow(
+        &self,
+        other: &FirkinNumber,
+        modulus: Option<FirkinNumber>,
+    ) -> Result<FirkinNumber, FirkinError> {
+        Ok(FirkinNumber {
+            value: self
+                .value
+                .py_pow(&other.value, modulus.and_then(|x| Some(x.value)))?,
+        })
+    }
+
+    pub(crate) fn py_truediv(&self, other: &FirkinNumber) -> Result<FirkinNumber, FirkinError> {
+        Ok(FirkinNumber {
+            value: self.value.py_truediv(&other.value)?,
+        })
+    }
+
+    pub(crate) fn py_floordiv(&self, other: &FirkinNumber) -> Result<IntegerWrapper, FirkinError> {
+        Ok(self.value.py_floordiv(&other.value)?)
+    }
+
+    pub(crate) fn py_abs(&self) -> Result<FirkinNumber, FirkinError> {
+        Ok(FirkinNumber {
+            value: self.value.py_abs()?,
+        })
+    }
+
+    pub(crate) fn py_int(&self) -> Result<IntegerWrapper, FirkinError> {
+        Ok(self.value.py_int()?)
+    }
+
+    pub(crate) fn py_float(&self) -> Result<f64, FirkinError> {
+        Ok(self.value.py_float()?)
+    }
+
+    pub(crate) fn py_round(&self, ndigits: i32) -> Result<FirkinNumber, FirkinError> {
+        Ok(FirkinNumber {
+            value: self.value.py_round(ndigits)?,
+        })
+    }
+
+    pub(crate) fn py_floor(&self) -> Result<IntegerWrapper, FirkinError> {
+        Ok(self.value.py_floor()?)
+    }
+
+    pub(crate) fn py_ceil(&self) -> Result<IntegerWrapper, FirkinError> {
+        Ok(self.value.py_ceil()?)
+    }
+
+    pub(crate) fn py_trunc(&self) -> Result<IntegerWrapper, FirkinError> {
+        Ok(self.value.py_trunc()?)
     }
 }
 
@@ -558,7 +826,7 @@ for i in [
 -129873587561632981623847125461234,
 -128349712349817265916236498762985612347198237648172359817236491562384716289576192344871234,
 ]:
-    assert int(FirkinNumber.new(i)) == i
+    assert int(FirkinNumber.new(i)) == i, f"Actually: {int(FirkinNumber.new(i))}, {i} "
 "#,
                 None,
                 None,

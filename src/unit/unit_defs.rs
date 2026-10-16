@@ -5,7 +5,14 @@ mod base_units;
 mod derived_units;
 mod log_units;
 
+use gmp_mpfr_sys::gmp::{self, mpq_t};
+
 use log_units::LOG_UNITS;
+use rug::{Integer, Rational};
+
+use crate::num::{
+    int::IntegerWrapper, number::NumberWrapper, rat::RationalWrapper, smallrational::SmallRational,
+};
 
 pub(crate) use super::log_unit::LogUnit;
 use super::single_unit::StaticSingleUnit;
@@ -17,45 +24,259 @@ pub(crate) use base_units::{BASE_UNITS, NUMBER_OF_BASE_UNITS};
 pub(crate) use derived_units::OTHER_UNITS;
 
 // prefix, abbr, multiplier
-pub(super) type PrefixDef = (&'static str, &'static str, f64);
+pub(super) type PrefixDef = (&'static str, &'static str, &'static NumberWrapper);
 
-const STANDARD_PREFIXES: &[PrefixDef] = &[
-    ("kibi", "Ki", (1 << 10) as f64),
-    ("mebi", "Mi", (1 << 20) as f64),
-    ("gibi", "Gi", (1 << 30) as f64),
-    ("tebi", "Ti", (1i64 << 40) as f64),
-    ("pebi", "Pi", (1i64 << 50) as f64),
-    ("exbi", "Ei", (1i64 << 60) as f64),
-    ("zebi", "Zi", (1i128 << 70) as f64),
-    ("yobi", "Yi", (1i128 << 80) as f64),
-    ("robi", "Ri", (1i128 << 90) as f64),
-    ("quebi", "Qi", (1i128 << 100) as f64),
-    ("quetta", "Q", 1e30),
-    ("ronna", "R", 1e27),
-    ("yotta", "Y", 1e24),
-    ("zetta", "Z", 1e21),
-    ("exa", "E", 1e18),
-    ("peta", "P", 1e15),
-    ("tera", "T", 1e12),
-    ("giga", "G", 1e9),
-    ("mega", "M", 1e6),
-    ("myria", "myria", 1e4),
-    ("kilo", "k", 1e3),
-    ("hecto", "h", 1e2),
-    ("deca", "da", 1e1),
-    ("deka", "da", 1e1),
-    ("deci", "d", 1e-1),
-    ("centi", "c", 1e-2),
-    ("milli", "m", 1e-3),
-    ("micro", "u", 1e-6),
-    ("nano", "n", 1e-9),
-    ("pico", "p", 1e-12),
-    ("femto", "f", 1e-15),
-    ("atto", "a", 1e-18),
-    ("zepto", "z", 1e-21),
-    ("yocto", "y", 1e-24),
-    ("ronto", "r", 1e-27),
-    ("quecto", "q", 1e-30),
+static STANDARD_PREFIXES: &[PrefixDef] = &[
+    (
+        "kibi",
+        "Ki",
+        &NumberWrapper::Int(IntegerWrapper::SmallInt(1 << 10)),
+    ),
+    (
+        "mebi",
+        "Mi",
+        &NumberWrapper::Int(IntegerWrapper::SmallInt(1 << 20)),
+    ),
+    (
+        "gibi",
+        "Gi",
+        &NumberWrapper::Int(IntegerWrapper::SmallInt(1 << 30)),
+    ),
+    (
+        "tebi",
+        "Ti",
+        &NumberWrapper::Int(IntegerWrapper::SmallInt(1i64 << 40)),
+    ),
+    (
+        "pebi",
+        "Pi",
+        &NumberWrapper::Int(IntegerWrapper::SmallInt(1i64 << 50)),
+    ),
+    (
+        "exbi",
+        "Ei",
+        &NumberWrapper::Int(IntegerWrapper::SmallInt(1i64 << 60)),
+    ),
+    (
+        "zebi",
+        "Zi",
+        &NumberWrapper::Int(IntegerWrapper::Int(unsafe {
+            Integer::from_raw(gmp::MPZ_ROINIT_N([64, 64].as_ptr().cast_mut(), -2))
+        })),
+    ),
+    (
+        "yobi",
+        "Yi",
+        &NumberWrapper::Int(IntegerWrapper::Int(unsafe {
+            Integer::from_raw(gmp::MPZ_ROINIT_N([65536, 65536].as_ptr().cast_mut(), -2))
+        })),
+    ),
+    (
+        "robi",
+        "Ri",
+        &NumberWrapper::Int(IntegerWrapper::Int(unsafe {
+            Integer::from_raw(gmp::MPZ_ROINIT_N(
+                [67108864, 67108864].as_ptr().cast_mut(),
+                2,
+            ))
+        })),
+    ),
+    (
+        "quebi",
+        "Qi",
+        &NumberWrapper::Int(IntegerWrapper::Int(unsafe {
+            Integer::from_raw(gmp::MPZ_ROINIT_N(
+                [68719476736, 68719476736].as_ptr().cast_mut(),
+                2,
+            ))
+        })),
+    ),
+    (
+        "quetta",
+        "Q",
+        &NumberWrapper::Int(IntegerWrapper::Int(unsafe {
+            Integer::from_raw(gmp::MPZ_ROINIT_N(
+                [5076944324515372240, 54210108624].as_ptr().cast_mut(),
+                2,
+            ))
+        })),
+    ),
+    (
+        "ronna",
+        "R",
+        &NumberWrapper::Int(IntegerWrapper::Int(unsafe {
+            Integer::from_raw(gmp::MPZ_ROINIT_N(
+                [11515845246319275580, 54210108].as_ptr().cast_mut(),
+                2,
+            ))
+        })),
+    ),
+    (
+        "yotta",
+        "Y",
+        &NumberWrapper::Int(IntegerWrapper::Int(unsafe {
+            Integer::from_raw(gmp::MPZ_ROINIT_N(
+                [2003764205206950850, 54210].as_ptr().cast_mut(),
+                2,
+            ))
+        })),
+    ),
+    (
+        "zetta",
+        "Z",
+        &NumberWrapper::Int(IntegerWrapper::Int(unsafe {
+            Integer::from_raw(gmp::MPZ_ROINIT_N(
+                [3875820019684212790, 54].as_ptr().cast_mut(),
+                2,
+            ))
+        })),
+    ),
+    (
+        "exa",
+        "E",
+        &NumberWrapper::Int(IntegerWrapper::SmallInt(1000000000000000000)),
+    ),
+    (
+        "peta",
+        "P",
+        &NumberWrapper::Int(IntegerWrapper::SmallInt(1000000000000000)),
+    ),
+    (
+        "tera",
+        "T",
+        &NumberWrapper::Int(IntegerWrapper::SmallInt(1000000000000)),
+    ),
+    (
+        "giga",
+        "G",
+        &NumberWrapper::Int(IntegerWrapper::SmallInt(1000000000)),
+    ),
+    (
+        "mega",
+        "M",
+        &NumberWrapper::Int(IntegerWrapper::SmallInt(1000000)),
+    ),
+    (
+        "myria",
+        "myria",
+        &NumberWrapper::Int(IntegerWrapper::SmallInt(10000)),
+    ),
+    (
+        "kilo",
+        "k",
+        &NumberWrapper::Int(IntegerWrapper::SmallInt(1000)),
+    ),
+    (
+        "hecto",
+        "h",
+        &NumberWrapper::Int(IntegerWrapper::SmallInt(100)),
+    ),
+    (
+        "deca",
+        "da",
+        &NumberWrapper::Int(IntegerWrapper::SmallInt(10)),
+    ),
+    (
+        "deka",
+        "da",
+        &NumberWrapper::Int(IntegerWrapper::SmallInt(10)),
+    ),
+    (
+        "deci",
+        "d",
+        &NumberWrapper::Rat(RationalWrapper::SmallRat(SmallRational::new(1, 10, true))),
+    ),
+    (
+        "centi",
+        "c",
+        &NumberWrapper::Rat(RationalWrapper::SmallRat(SmallRational::new(1, 100, true))),
+    ),
+    (
+        "milli",
+        "m",
+        &NumberWrapper::Rat(RationalWrapper::SmallRat(SmallRational::new(1, 1000, true))),
+    ),
+    (
+        "micro",
+        "u",
+        &NumberWrapper::Rat(RationalWrapper::SmallRat(SmallRational::new(
+            1, 1000000, true,
+        ))),
+    ),
+    (
+        "nano",
+        "n",
+        &NumberWrapper::Rat(RationalWrapper::SmallRat(SmallRational::new(
+            1, 1000000000, true,
+        ))),
+    ),
+    (
+        "pico",
+        "p",
+        &NumberWrapper::Rat(RationalWrapper::SmallRat(SmallRational::new(
+            1,
+            1000000000000,
+            true,
+        ))),
+    ),
+    (
+        "femto",
+        "f",
+        &NumberWrapper::Rat(RationalWrapper::SmallRat(SmallRational::new(
+            1,
+            1000000000000000,
+            true,
+        ))),
+    ),
+    (
+        "atto",
+        "a",
+        &NumberWrapper::Rat(RationalWrapper::SmallRat(SmallRational::new(
+            1,
+            1000000000000000000,
+            true,
+        ))),
+    ),
+    (
+        "zepto",
+        "z",
+        &NumberWrapper::Rat(RationalWrapper::Rat(unsafe {
+            Rational::from_raw(mpq_t {
+                num: gmp::MPZ_ROINIT_N([1].as_ptr().cast_mut(), 1),
+                den: gmp::MPZ_ROINIT_N([3875820019684212790, 54].as_ptr().cast_mut(), 2),
+            })
+        })),
+    ),
+    (
+        "yocto",
+        "y",
+        &NumberWrapper::Rat(RationalWrapper::Rat(unsafe {
+            Rational::from_raw(mpq_t {
+                num: gmp::MPZ_ROINIT_N([1].as_ptr().cast_mut(), 1),
+                den: gmp::MPZ_ROINIT_N([2003764205206950850, 54210].as_ptr().cast_mut(), 2),
+            })
+        })),
+    ),
+    (
+        "ronto",
+        "r",
+        &NumberWrapper::Rat(RationalWrapper::Rat(unsafe {
+            Rational::from_raw(mpq_t {
+                num: gmp::MPZ_ROINIT_N([1].as_ptr().cast_mut(), 1),
+                den: gmp::MPZ_ROINIT_N([11515845246319275580, 54210108].as_ptr().cast_mut(), 2),
+            })
+        })),
+    ),
+    (
+        "quecto",
+        "q",
+        &NumberWrapper::Rat(RationalWrapper::Rat(unsafe {
+            Rational::from_raw(mpq_t {
+                num: gmp::MPZ_ROINIT_N([1].as_ptr().cast_mut(), 1),
+                den: gmp::MPZ_ROINIT_N([5076944324515372240, 54210108624].as_ptr().cast_mut(), 2),
+            })
+        })),
+    ),
 ];
 
 fn query_unit_aliases_internal(query: &str) -> &str {
@@ -125,7 +346,7 @@ pub(crate) fn search_for_unit_name(query: &str) -> Option<StaticSingleUnit> {
                 query_unit_names_internal(&query.replacen(prefix_def.0, "", 1), true)
             {
                 // disallow prefixes for nonabsolute scales
-                if result.2 != 0.0 {
+                if !result.2.is_zero() {
                     return None;
                 }
 
@@ -139,7 +360,7 @@ pub(crate) fn search_for_unit_name(query: &str) -> Option<StaticSingleUnit> {
             if let Some(result) = query_unit_symbols_internal(&query.replacen(prefix_def.1, "", 1))
             {
                 // disallow prefixes for nonabsolute scales
-                if result.2 != 0.0 {
+                if !result.2.is_zero() {
                     return None;
                 }
 
@@ -203,8 +424,8 @@ mod tests {
             Some(unit) => unit,
             None => panic!("kilometer not found"),
         };
-        assert_eq!(kilometer.scale, 1.0);
-        assert_eq!(kilometer.prefix.unwrap().2, 1000.0);
+        assert_eq!(kilometer.scale, &NumberWrapper::ONE);
+        assert_eq!(kilometer.prefix.unwrap().2, &NumberWrapper::from(1000));
     }
 
     #[test]

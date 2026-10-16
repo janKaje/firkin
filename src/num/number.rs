@@ -6,7 +6,7 @@ use std::{
     str::FromStr,
 };
 
-use pyo3::{prelude::*, types::*};
+use pyo3::{PyTypeCheck, prelude::*, types::*};
 use regex::regex;
 
 use crate::{
@@ -140,7 +140,7 @@ impl NumberWrapper {
 
     fn from_string(py_string: String) -> PyResult<NumberWrapper> {
         // this captures floats, integers, and rational numbers
-        let m = match regex!(r"\s*([-+]?\d*).?(\d*)[eE]?([-+]?\d*)\s*").captures(&py_string) {
+        let m = match regex!(r"\s*([-+]?\d*)\.?(\d*)[eE]?([-+]?\d*)\s*").captures(&py_string) {
             Some(m) => m,
             None => match RationalWrapper::from_str_radix(&py_string, 10) {
                 Some(rational) => {
@@ -200,6 +200,23 @@ impl NumberWrapper {
                 )
                 .into()),
             }
+        }
+    }
+
+    pub(crate) fn to_small_rational(&self) -> Result<SmallRational, FirkinError> {
+        match self {
+            Int(integer_wrapper) => match integer_wrapper {
+                IntegerWrapper::SmallInt(i) => Ok((*i).into()),
+                IntegerWrapper::Int(integer) => Ok(SmallRational::try_from(integer)?),
+            },
+            Rat(rational_wrapper) => match rational_wrapper {
+                RationalWrapper::SmallRat(small_rational) => Ok(*small_rational),
+                RationalWrapper::Rat(rational) => Ok(SmallRational::try_from(rational)?),
+            },
+            Float(float_wrapper) => match float_wrapper {
+                FloatWrapper::SmallFloat(f) => Ok(SmallRational::try_from(*f)?),
+                FloatWrapper::BigFloat(float) => Ok(SmallRational::try_from(float)?),
+            },
         }
     }
 }

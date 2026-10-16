@@ -4,10 +4,11 @@ use std::{
     cmp::{Ord, Ordering},
     fmt::{Debug, Display},
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Not, Rem, Sub, SubAssign},
+    str::FromStr,
 };
 
 use gcd::{binary_u64, binary_u128};
-use rug::{Assign, Integer, Rational};
+use rug::{Assign, Float, Integer, Rational};
 
 use crate::{
     error::FirkinError,
@@ -84,7 +85,7 @@ impl SmallRational {
         sign: Negative,
     };
 
-    pub(crate) fn new(numerator: u64, denominator: u64, is_positive: bool) -> Self {
+    pub(crate) const fn new(numerator: u64, denominator: u64, is_positive: bool) -> Self {
         if denominator == 0 {
             panic!("denominator cannot be zero");
         }
@@ -103,7 +104,11 @@ impl SmallRational {
         result.reduce_inplace()
     }
 
-    pub(crate) fn try_new(numerator: u128, denominator: u128, is_positive: bool) -> Option<Self> {
+    pub(crate) const fn try_new(
+        numerator: u128,
+        denominator: u128,
+        is_positive: bool,
+    ) -> Option<Self> {
         if denominator == 0 {
             panic!("denominator cannot be zero");
         }
@@ -127,7 +132,7 @@ impl SmallRational {
                     denominator: denominator as u64,
                     sign: { if is_positive { Positive } else { Negative } },
                 }
-                .reduce(),
+                .reduce_inplace(),
             )
         }
     }
@@ -152,7 +157,7 @@ impl SmallRational {
         return IntegerWrapper::from(self.get_whole_number_part());
     }
 
-    fn reduce_inplace(mut self) -> Self {
+    const fn reduce_inplace(mut self) -> Self {
         let gcd = binary_u64(self.numerator, self.denominator);
         self.numerator /= gcd;
         self.denominator /= gcd;
@@ -233,8 +238,8 @@ impl SmallRational {
                         rnum.checked_mul(sden)?
                             .checked_sub(snum.checked_mul(rden)?)?,
                         sden.checked_mul(rden)?,
-                        true,)
-                    
+                        true,
+                    )
                 } else {
                     SmallRational::try_new(
                         snum.checked_mul(rden)?
@@ -413,6 +418,14 @@ impl SmallRational {
         } else {
             SmallRational::new(floord * denom + 1, denom, self.is_positive())
         }
+    }
+}
+
+impl FromStr for SmallRational {
+    type Err = FirkinError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        todo!()
     }
 }
 
@@ -614,28 +627,115 @@ impl From<&SmallRational> for SmallRational {
 }
 
 impl TryFrom<i128> for SmallRational {
-    type Error = &'static str;
+    type Error = FirkinError;
 
     fn try_from(value: i128) -> Result<Self, Self::Error> {
         match SmallRational::try_new(value.unsigned_abs(), 1, value.is_positive()) {
             Some(res) => Ok(res),
-            None => Err("Overflow"),
+            None => Err(FirkinError::OverflowError(format!(
+                "Overflow: could not convert {value} to small rational"
+            ))),
+        }
+    }
+}
+
+impl TryFrom<&Integer> for SmallRational {
+    type Error = FirkinError;
+
+    fn try_from(value: &Integer) -> Result<Self, Self::Error> {
+        match SmallRational::try_new(
+            match value.to_u128() {
+                Some(i) => i,
+                None => {
+                    return Err(FirkinError::OverflowError(format!(
+                        "Overflow: could not convert {value} to small rational"
+                    )));
+                }
+            },
+            1,
+            value.is_positive(),
+        ) {
+            Some(res) => Ok(res),
+            None => Err(FirkinError::OverflowError(format!(
+                "Overflow: could not convert {value} to small rational"
+            ))),
         }
     }
 }
 
 impl TryFrom<f64> for SmallRational {
-    type Error = &'static str;
+    type Error = FirkinError;
 
     fn try_from(value: f64) -> Result<Self, Self::Error> {
         if value.is_infinite() {
-            Err("Value is infinite.")
+            Err(FirkinError::CannotConvertInfinity(format!(
+                "Value {value} is infinite"
+            )))
         } else if value > i128::MAX as f64 || value < i128::MIN as f64 {
-            Err("Value is too big")
+            Err(FirkinError::OverflowError(format!(
+                "Overflow: could not convert {value} to small rational"
+            )))
         } else if value != value.round() {
-            Err("Value is not integer.") // SWITCH LATER todo!()
+            Err(FirkinError::OverflowError(format!(
+                "Overflow: could not convert {value} to small rational"
+            ))) // SWITCH LATER todo!()
         } else {
-            SmallRational::try_from(value.round() as i128)
+            Ok(SmallRational::try_from(value.round() as i128)?)
+        }
+    }
+}
+
+impl TryFrom<&Rational> for SmallRational {
+    type Error = FirkinError;
+
+    fn try_from(value: &Rational) -> Result<Self, Self::Error> {
+        match SmallRational::try_new(
+            match value.numer().to_u128() {
+                Some(n) => n,
+                None => {
+                    return Err(FirkinError::OverflowError(format!(
+                        "Overflow: could not convert {value} to small rational"
+                    )));
+                }
+            },
+            match value.denom().to_u128() {
+                Some(n) => n,
+                None => {
+                    return Err(FirkinError::OverflowError(format!(
+                        "Overflow: could not convert {value} to small rational"
+                    )));
+                }
+            },
+            value.is_positive(),
+        ) {
+            Some(result) => Ok(result),
+            None => Err(FirkinError::OverflowError(format!(
+                "Overflow: could not convert {value} to small rational"
+            ))),
+        }
+    }
+}
+
+impl TryFrom<&Float> for SmallRational {
+    type Error = FirkinError;
+
+    fn try_from(value: &Float) -> Result<Self, Self::Error> {
+        if value.is_infinite() {
+            Err(FirkinError::CannotConvertInfinity(format!(
+                "Value {value} is infinite"
+            )))
+        } else if value > &i128::MAX || value < &i128::MIN {
+            Err(FirkinError::OverflowError(format!(
+                "Overflow: could not convert {value} to small rational"
+            )))
+        } else if !value.is_integer() {
+            Err(FirkinError::OverflowError(format!(
+                "Overflow: could not convert {value} to small rational"
+            ))) // SWITCH LATER todo!()
+        } else {
+            Ok(SmallRational::try_from(
+                &value.to_integer().expect("unreachable"),
+            )?)
         }
     }
 }

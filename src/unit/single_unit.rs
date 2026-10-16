@@ -1,7 +1,10 @@
-use std::hash::{Hash, Hasher};
+use std::{
+    borrow::Cow,
+    hash::{Hash, Hasher},
+};
 
 use crate::{
-    num::smallrational::SmallRational,
+    num::{number::NumberWrapper, smallrational::SmallRational},
     unit::unit_defs::{NUMBER_OF_BASE_UNITS, PrefixDef, UnitDefStatic},
 };
 
@@ -12,8 +15,8 @@ pub(crate) struct StaticSingleUnit {
     pub(crate) name: &'static str,
     pub(crate) abbr: &'static str,
     pub(crate) prefix: Option<PrefixDef>,
-    pub(crate) scale: f64,
-    pub(crate) offset: f64,
+    pub(crate) scale: &'static NumberWrapper,
+    pub(crate) offset: &'static NumberWrapper,
     pub(crate) base_units: [&'static SmallRational; NUMBER_OF_BASE_UNITS],
 }
 
@@ -49,7 +52,7 @@ impl StaticSingleUnit {
 pub(crate) struct OwnedSingleUnit {
     pub(crate) name: String,
     pub(crate) abbr: String,
-    pub(crate) scale: f64,
+    pub(crate) scale: NumberWrapper,
     pub(crate) base_units: [SmallRational; NUMBER_OF_BASE_UNITS],
 }
 
@@ -64,7 +67,7 @@ impl OwnedSingleUnit {
     pub(crate) const fn new(
         name: String,
         abbr: String,
-        scale: f64,
+        scale: NumberWrapper,
         base_units: [SmallRational; NUMBER_OF_BASE_UNITS],
     ) -> Self {
         OwnedSingleUnit {
@@ -92,7 +95,7 @@ impl SingleUnit {
     pub(crate) const fn new_owned(
         name: String,
         abbr: String,
-        scale: f64,
+        scale: NumberWrapper,
         base_units: [SmallRational; NUMBER_OF_BASE_UNITS],
     ) -> Self {
         Self::Owned(OwnedSingleUnit::new(name, abbr, scale, base_units))
@@ -118,20 +121,20 @@ impl SingleUnit {
         }
     }
 
-    pub(crate) fn offset(&self) -> f64 {
+    pub(crate) fn offset(&self) -> &NumberWrapper {
         match self {
             SingleUnit::Static(static_single_unit) => static_single_unit.offset,
-            SingleUnit::Owned(_) => 0.0,
+            SingleUnit::Owned(_) => &NumberWrapper::ZERO,
         }
     }
 
-    pub(crate) fn scale(&self) -> f64 {
+    pub(crate) fn scale(&self) -> Cow<NumberWrapper> {
         match self {
             SingleUnit::Static(static_single_unit) => match static_single_unit.prefix {
-                Some(prefix) => static_single_unit.scale * prefix.2,
-                None => static_single_unit.scale,
+                Some(prefix) => Cow::Owned(static_single_unit.scale * prefix.2),
+                None => Cow::Borrowed(static_single_unit.scale),
             },
-            SingleUnit::Owned(owned_single_unit) => owned_single_unit.scale,
+            SingleUnit::Owned(owned_single_unit) => Cow::Borrowed(&owned_single_unit.scale),
         }
     }
 

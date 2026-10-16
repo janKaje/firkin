@@ -11,10 +11,16 @@ mod unit;
 #[pymodule]
 mod firkin {
     use pyo3::{prelude::*, types::*};
+    use rug::az::CastFrom;
     use std::fmt;
 
     use crate::constant::search_for_constant_name;
     use crate::error::FirkinError;
+    use crate::num::int::IntegerWrapper;
+    use crate::num::number::NumberWrapper;
+    use crate::num::smallrational::SmallRational;
+    use crate::num::traits::NumpyUFuncs;
+    use crate::num::traits::PythonMathFunctions;
     use crate::unit::LogUnit;
     use crate::unit::UnitCollection;
     use crate::unit::search_for_log_unit_name;
@@ -30,7 +36,7 @@ mod firkin {
     #[derive(Clone)]
     struct Firkin {
         unit_collection: UnitCollection,
-        value: f64,
+        value: FirkinNumber,
     }
 
     #[pymethods]
@@ -79,7 +85,7 @@ mod firkin {
 
             Ok(Firkin {
                 unit_collection: unit,
-                value: 1.0,
+                value: FirkinNumber::ONE,
             })
         }
 
@@ -166,7 +172,7 @@ mod firkin {
             let unit = definition.to_single_unit(name, abbr)?;
             Ok(Firkin {
                 unit_collection: UnitCollection::coerce_unit_to_collection(unit),
-                value: 1.0,
+                value: FirkinNumber::ONE,
             })
         }
 
@@ -229,19 +235,23 @@ mod firkin {
         >>> amt/gbp # returns a unitless Firkin instance
         90.87161669770558 [] */
         #[pyo3(signature = (other=None, scale=false))]
-        fn as_number(&self, other: Option<UnitCoercible>, scale: bool) -> PyResult<f64> {
+        fn as_number(&self, other: Option<UnitCoercible>, scale: bool) -> PyResult<FirkinNumber> {
             match other {
                 Some(other) => {
                     let other: Firkin = other.into();
                     match self.as_number_internal(
                         &other.unit_collection,
-                        if scale { other.value } else { 1.0 },
+                        if scale {
+                            other.value.value
+                        } else {
+                            NumberWrapper::ONE
+                        },
                     ) {
-                        Ok(r) => Ok(r),
+                        Ok(r) => Ok(r.into()),
                         Err(e) => Err(e.into()),
                     }
                 }
-                None => Ok(self.value),
+                None => Ok(self.value.clone()),
             }
         }
 
@@ -251,9 +261,9 @@ mod firkin {
         :return: The numerical value of self.
         :rtype: float
         :raise TypeError: If self is not unitless. */
-        fn as_unitless(&self) -> PyResult<f64> {
-            match self.as_number_internal(&UnitCollection::empty_collection(), 1.0) {
-                Ok(r) => Ok(r),
+        fn as_unitless(&self) -> PyResult<FirkinNumber> {
+            match self.as_number_internal(&UnitCollection::empty_collection(), NumberWrapper::ONE) {
+                Ok(r) => Ok(r.into()),
                 Err(e) => Err(e.into()),
             }
         }
@@ -271,7 +281,15 @@ mod firkin {
         significant figures. Similar to self.__round__(). */
         fn round_sfig(&mut self, n_sig_figs: i32) -> PyResult<Firkin> {
             self.__round__(Some(
-                n_sig_figs - 1 - (self.value.abs().log10().floor() as i32),
+                n_sig_figs
+                    - 1
+                    - self
+                        .value
+                        .value
+                        .py_abs()?
+                        .np_log10()?
+                        .py_floor()?
+                        .to_i32()?,
             ))
         }
 
@@ -303,7 +321,7 @@ mod firkin {
             let other: Firkin = other.into();
             Ok(Firkin {
                 unit_collection: self.unit_collection.clone() * other.unit_collection.clone(),
-                value: self.value * other.value,
+                value: &self.value * other.value,
             }
             .simple_simplify_internal()?)
         }
@@ -316,7 +334,7 @@ mod firkin {
             let other: Firkin = other.into();
             Ok(Firkin {
                 unit_collection: self.unit_collection.clone() / other.unit_collection.clone(),
-                value: self.value / other.value,
+                value: self.value.py_truediv(&other.value)?,
             }
             .simple_simplify_internal()?)
         }
@@ -329,7 +347,7 @@ mod firkin {
             let other: Firkin = other.into();
             Ok(Firkin {
                 unit_collection: other.unit_collection.clone() / self.unit_collection.clone(),
-                value: other.value / self.value,
+                value: other.value.py_truediv(&self.value)?,
             }
             .simple_simplify_internal()?)
         }
@@ -345,7 +363,7 @@ mod firkin {
         fn __neg__(&self) -> PyResult<Firkin> {
             Ok(Firkin {
                 unit_collection: self.unit_collection.clone(),
-                value: -self.value,
+                value: -self.value.clone(),
             }
             .simple_simplify_internal()?)
         }
@@ -358,7 +376,7 @@ mod firkin {
             {
                 Ok(Firkin {
                     unit_collection: self.unit_collection.clone(),
-                    value: self.value + other.value * scale_diff,
+                    value: &self.value + other.value * scale_diff,
                 }
                 .simple_simplify_internal()?)
             } else {
@@ -382,7 +400,7 @@ mod firkin {
             {
                 Ok(Firkin {
                     unit_collection: self.unit_collection.clone(),
-                    value: self.value - other.value * scale_diff,
+                    value: &self.value - other.value * scale_diff,
                 }
                 .simple_simplify_internal()?)
             } else {
@@ -402,7 +420,7 @@ mod firkin {
             {
                 Ok(Firkin {
                     unit_collection: self.unit_collection.clone(),
-                    value: other.value - self.value * scale_diff,
+                    value: other.value - &self.value * scale_diff,
                 }
                 .simple_simplify_internal()?)
             } else {
@@ -414,22 +432,34 @@ mod firkin {
             }
         }
 
-        fn __pow__(&self, exponent: UnitCoercible, _modulus: Option<PyNumber>) -> PyResult<Firkin> {
+        fn __pow__(
+            &self,
+            exponent: UnitCoercible,
+            modulus: Option<NumberWrapper>,
+        ) -> PyResult<Firkin> {
             let exponent: Firkin = exponent.into();
-            let exponent = exponent.as_number_internal(&UnitCollection::empty_collection(), 1.0)?;
+            let exponent = exponent
+                .as_number_internal(&UnitCollection::empty_collection(), NumberWrapper::ONE)?
+                .to_small_rational()?;
             Ok(Firkin {
-                unit_collection: self.unit_collection.pow(exponent),
-                value: self.value.powf(exponent),
+                unit_collection: self.unit_collection.pow(exponent)?,
+                value: FirkinNumber::from(self.value.value.py_pow(&exponent.into(), modulus)?),
             }
             .simple_simplify_internal()?)
         }
 
-        fn __rpow__(&self, other: UnitCoercible, _modulus: Option<PyNumber>) -> PyResult<Firkin> {
+        fn __rpow__(
+            &self,
+            other: UnitCoercible,
+            modulus: Option<NumberWrapper>,
+        ) -> PyResult<Firkin> {
             let other: Firkin = other.into();
-            let exponent = self.as_number_internal(&UnitCollection::empty_collection(), 1.0)?;
+            let exponent = self
+                .as_number_internal(&UnitCollection::empty_collection(), NumberWrapper::ONE)?
+                .to_small_rational()?;
             Ok(Firkin {
-                unit_collection: other.unit_collection.pow(exponent),
-                value: other.value.powf(exponent),
+                unit_collection: other.unit_collection.pow(exponent)?,
+                value: FirkinNumber::from(other.value.value.py_pow(&exponent.into(), modulus)?),
             }
             .simple_simplify_internal()?)
         }
@@ -467,16 +497,16 @@ mod firkin {
         fn __abs__(&self) -> PyResult<Firkin> {
             Ok(Firkin {
                 unit_collection: self.unit_collection.clone(),
-                value: self.value.abs(),
+                value: self.value.py_abs()?,
             })
         }
 
-        fn __int__(&self) -> PyResult<i32> {
-            Ok(self.value as i32)
+        fn __int__(&self) -> PyResult<IntegerWrapper> {
+            Ok(self.value.py_int()?)
         }
 
         fn __float__(&self) -> PyResult<f64> {
-            Ok(self.value)
+            Ok(self.value.py_float()?)
         }
 
         /// Round the internal value to ndigits decimal places.
@@ -484,45 +514,34 @@ mod firkin {
         fn __round__(&mut self, ndigits: Option<i32>) -> PyResult<Firkin> {
             self.ss_inpl_internal()?;
             match ndigits {
-                Some(n) => {
-                    let mul = 10.0f64.powi(n);
-                    Ok(Firkin {
-                        unit_collection: self.unit_collection.clone(),
-                        value: (self.value * mul).round() / mul,
-                    })
-                }
+                Some(n) => Ok(Firkin {
+                    unit_collection: self.unit_collection.clone(),
+                    value: self.value.py_round(n)?,
+                }),
+
                 None => Ok(Firkin {
                     unit_collection: self.unit_collection.clone(),
-                    value: self.value.round(),
+                    value: self.value.py_round(0)?,
                 }),
             }
         }
 
-        fn __exp__(&self) -> PyResult<f64> {
-            let exponent = self.as_number_internal(&UnitCollection::empty_collection(), 1.0)?;
-            Ok(exponent.exp())
+        fn exp(&self) -> PyResult<FirkinNumber> {
+            let exponent: NumberWrapper =
+                self.as_number_internal(&UnitCollection::empty_collection(), NumberWrapper::ONE)?;
+            Ok(FirkinNumber::from(exponent.np_exp()?))
         }
 
-        fn exp(&self) -> PyResult<f64> {
-            self.__exp__()
+        fn log(&self) -> PyResult<FirkinNumber> {
+            let exponent =
+                self.as_number_internal(&UnitCollection::empty_collection(), NumberWrapper::ONE)?;
+            Ok(FirkinNumber::from(exponent.np_log()?))
         }
 
-        fn __log__(&self) -> PyResult<f64> {
-            let exponent = self.as_number_internal(&UnitCollection::empty_collection(), 1.0)?;
-            Ok(exponent.ln())
-        }
-
-        fn log(&self) -> PyResult<f64> {
-            self.__log__()
-        }
-
-        fn __log10__(&self) -> PyResult<f64> {
-            let exponent = self.as_number_internal(&UnitCollection::empty_collection(), 1.0)?;
-            Ok(exponent.log10())
-        }
-
-        fn log10(&self) -> PyResult<f64> {
-            self.__log10__()
+        fn log10(&self) -> PyResult<FirkinNumber> {
+            let exponent =
+                self.as_number_internal(&UnitCollection::empty_collection(), NumberWrapper::ONE)?;
+            Ok(FirkinNumber::from(exponent.np_log10()?))
         }
 
         /** Returns a more descriptive version of the usual unit string, with unit
@@ -556,14 +575,17 @@ mod firkin {
                     Ok(Firkin {
                         unit_collection: other.clone(),
                         value: {
-                            (self.value * self.unit_collection.scale - self_offset + other_offset)
-                                / other.scale
+                            FirkinNumber::from(
+                                &self.value * &self.unit_collection.scale - self_offset
+                                    + other_offset,
+                            )
+                            .py_truediv(&(&other.scale).into())?
                         },
                     })
                 } else {
                     Ok(Firkin {
                         unit_collection: other.clone(),
-                        value: self.value / scale_diff,
+                        value: &self.value / scale_diff,
                     })
                 }
             } else {
@@ -577,10 +599,10 @@ mod firkin {
         fn as_number_internal(
             &self,
             other: &UnitCollection,
-            scale: f64,
-        ) -> Result<f64, FirkinError> {
+            scale: NumberWrapper,
+        ) -> Result<NumberWrapper, FirkinError> {
             match self.as_unit_internal(other) {
-                Ok(u) => Ok(u.value / scale),
+                Ok(u) => Ok(u.value.value / scale),
                 Err(e) => Err(e),
             }
         }
@@ -588,7 +610,7 @@ mod firkin {
         fn empty_unit() -> Firkin {
             Firkin {
                 unit_collection: UnitCollection::empty_collection(),
-                value: 1.0,
+                value: FirkinNumber::ONE,
             }
         }
 
@@ -600,7 +622,7 @@ mod firkin {
                         Some(r) => r,
                         None => return Err(FirkinError::UnitNotFound(const_def.2.to_string())),
                     },
-                    value: const_def.1,
+                    value: FirkinNumber::from(NumberWrapper::from(const_def.1)), // todo!() fix constant defs to use num wrappers
                 }),
             }
         }
@@ -632,7 +654,7 @@ mod firkin {
         fn from(input: f64) -> Firkin {
             Firkin {
                 unit_collection: UnitCollection::empty_collection(),
-                value: input,
+                value: FirkinNumber::from(NumberWrapper::from(input)),
             }
         }
     }
@@ -641,7 +663,7 @@ mod firkin {
         fn from(input: i32) -> Firkin {
             Firkin {
                 unit_collection: UnitCollection::empty_collection(),
-                value: input as f64,
+                value: FirkinNumber::from(NumberWrapper::from(input)),
             }
         }
     }
@@ -669,15 +691,14 @@ mod firkin {
             UnitCollection {
                 single_units: input.unit_collection.single_units,
                 base_units: input.unit_collection.base_units,
-                scale: input.value * input.unit_collection.scale,
+                scale: input.value.value * input.unit_collection.scale,
             }
         }
     }
 
     enum UnitCoercible {
         Firkin(Firkin),
-        Float(f64),
-        Int(i32),
+        Number(NumberWrapper),
         StrQuery(String),
         LogFirkin(LogFirkin),
     }
@@ -686,30 +707,26 @@ mod firkin {
         fn from(input: UnitCoercible) -> Firkin {
             match input {
                 UnitCoercible::Firkin(f) => f.clone(),
-                UnitCoercible::Float(f) => Firkin {
+                UnitCoercible::Number(n) => Firkin {
                     unit_collection: UnitCollection::empty_collection(),
-                    value: f,
-                },
-                UnitCoercible::Int(i) => Firkin {
-                    unit_collection: UnitCollection::empty_collection(),
-                    value: i as f64,
+                    value: FirkinNumber::from(n),
                 },
                 UnitCoercible::StrQuery(q) => {
                     if let Some(u) = UnitCollection::from_unit_name(q.as_str()) {
                         Firkin {
                             unit_collection: u,
-                            value: 1.0,
+                            value: FirkinNumber::ONE,
                         }
                     } else {
                         Firkin {
                             unit_collection: UnitCollection::empty_collection(),
-                            value: 1.0,
+                            value: FirkinNumber::ONE,
                         }
                     }
                 }
                 UnitCoercible::LogFirkin(l) => Firkin {
                     unit_collection: UnitCollection::empty_collection(),
-                    value: l.resolve(),
+                    value: FirkinNumber::from(NumberWrapper::from(l.resolve())),
                 },
             }
         }
@@ -723,10 +740,8 @@ mod firkin {
                 Ok(UnitCoercible::Firkin(f.extract::<Firkin>()?))
             } else if let Ok(f) = obj.cast::<LogFirkin>() {
                 Ok(UnitCoercible::LogFirkin(f.extract::<LogFirkin>()?))
-            } else if let Ok(f) = obj.cast::<PyFloat>() {
-                Ok(UnitCoercible::Float(f.extract::<f64>()?))
-            } else if let Ok(i) = obj.cast::<PyInt>() {
-                Ok(UnitCoercible::Int(i.extract::<i32>()?))
+            } else if let Ok(f) = obj.extract::<NumberWrapper>() {
+                Ok(UnitCoercible::Number(f))
             } else if let Ok(q) = obj.cast::<PyString>() {
                 let q = q.extract::<String>()?;
                 if let Some(_u) = UnitCollection::from_unit_name(q.as_str()) {

@@ -57,18 +57,22 @@ impl IntegerWrapper {
         }
     }
 
-    pub(crate) fn to_i32(&self) -> Result<i32, &'static str> {
+    pub(crate) fn to_i32(&self) -> Result<i32, FirkinError> {
         match self {
             SmallInt(i) => {
                 if *i > i32::MAX as i64 || *i < i32::MIN as i64 {
-                    Err("Overflow")
+                    Err(FirkinError::OverflowError(format!(
+                        "Overflow: could not convert {self} to i32"
+                    )))
                 } else {
                     Ok(*i as i32)
                 }
             }
             Int(integer) => match integer.to_i32() {
                 Some(i) => Ok(i),
-                None => Err("Overflow"),
+                None => Err(FirkinError::OverflowError(format!(
+                    "Overflow: could not convert {self} to i32"
+                ))),
             },
         }
     }
