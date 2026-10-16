@@ -107,7 +107,7 @@ impl UnitCollection {
         if keys.len() != 1 {
             None
         } else if let Some(unit) = keys.pop() {
-            Some(unit.offset)
+            Some(unit.offset())
         } else {
             None //unreachable but w/e
         }
@@ -136,8 +136,8 @@ impl UnitCollection {
 
     pub(crate) fn coerce_unit_to_collection(unit: SingleUnit) -> Self {
         UnitCollection {
-            base_units: unit.base_units,
-            scale: unit.scale,
+            base_units: unit.base_units(),
+            scale: unit.scale(),
             single_units: HashMap::from([(unit, 1.0)]),
         }
     }
@@ -152,7 +152,9 @@ impl UnitCollection {
 
     pub(crate) fn from_unit_name(query: &str) -> Option<Self> {
         if let Some(single_unit) = search_for_unit_name(query) {
-            Some(Self::coerce_unit_to_collection(single_unit))
+            Some(Self::coerce_unit_to_collection(SingleUnit::Static(
+                single_unit,
+            )))
         } else {
             let query = query.trim();
 
@@ -188,7 +190,9 @@ impl UnitCollection {
 
                 match search_for_unit_name(q) {
                     Some(unit) => {
-                        result = result * UnitCollection::coerce_unit_to_collection(unit).pow(exp)
+                        result = result
+                            * UnitCollection::coerce_unit_to_collection(SingleUnit::Static(unit))
+                                .pow(exp)
                     }
                     None => continue,
                 };
@@ -214,7 +218,9 @@ impl UnitCollection {
 
                 match search_for_unit_name(q) {
                     Some(unit) => {
-                        result = result / UnitCollection::coerce_unit_to_collection(unit).pow(exp)
+                        result = result
+                            / UnitCollection::coerce_unit_to_collection(SingleUnit::Static(unit))
+                                .pow(exp)
                     }
                     None => continue,
                 };
@@ -235,9 +241,9 @@ impl UnitCollection {
             .filter(|x| *x.1 > 0.0)
             .map(|x| {
                 if *x.1 != 1.0 {
-                    x.0.abbr.clone() + UNIT_POW_IND + &x.1.to_string()
+                    x.0.abbr() + UNIT_POW_IND + &x.1.to_string()
                 } else {
-                    x.0.abbr.clone()
+                    x.0.abbr()
                 }
             })
             .collect::<Vec<String>>();
@@ -250,9 +256,9 @@ impl UnitCollection {
             .filter(|x| *x.1 < 0.0)
             .map(|x| {
                 if *x.1 != -1.0 {
-                    x.0.abbr.clone() + UNIT_POW_IND + &(-x.1).to_string()
+                    x.0.abbr() + UNIT_POW_IND + &(-x.1).to_string()
                 } else {
-                    x.0.abbr.clone()
+                    x.0.abbr()
                 }
             })
             .collect::<Vec<String>>();
@@ -283,9 +289,9 @@ impl UnitCollection {
             .filter(|x| *x.1 > 0.0)
             .map(|x| {
                 if *x.1 != 1.0 {
-                    x.0.name.clone() + UNIT_POW_IND + &x.1.to_string()
+                    x.0.name() + UNIT_POW_IND + &x.1.to_string()
                 } else {
-                    x.0.name.clone()
+                    x.0.name()
                 }
             })
             .collect::<Vec<String>>();
@@ -298,9 +304,9 @@ impl UnitCollection {
             .filter(|x| *x.1 < 0.0)
             .map(|x| {
                 if *x.1 != -1.0 {
-                    x.0.name.clone() + UNIT_POW_IND + &(-x.1).to_string()
+                    x.0.name() + UNIT_POW_IND + &(-x.1).to_string()
                 } else {
-                    x.0.name.clone()
+                    x.0.name()
                 }
             })
             .collect::<Vec<String>>();
@@ -331,9 +337,9 @@ impl UnitCollection {
             .filter(|x| *x.1 > 0.0)
             .map(|x| {
                 if *x.1 != 1.0 {
-                    x.0.abbr.clone() + "^" + &x.1.to_string()
+                    x.0.abbr() + "^" + &x.1.to_string()
                 } else {
-                    x.0.abbr.clone()
+                    x.0.abbr()
                 }
             })
             .collect::<Vec<String>>();
@@ -346,9 +352,9 @@ impl UnitCollection {
             .filter(|x| *x.1 < 0.0)
             .map(|x| {
                 if *x.1 != -1.0 {
-                    x.0.abbr.clone() + "^" + &(-x.1).to_string()
+                    x.0.abbr() + "^" + &(-x.1).to_string()
                 } else {
-                    x.0.abbr.clone()
+                    x.0.abbr()
                 }
             })
             .collect::<Vec<String>>();
@@ -382,7 +388,7 @@ impl UnitCollection {
 
         for i in 0..8 {
             base_unit_hashmap.insert(
-                SingleUnit::create_from_unit_def_static(&BASE_UNITS[i]),
+                SingleUnit::new_static(&BASE_UNITS[i], None),
                 self.base_units[i],
             );
         }
@@ -395,13 +401,7 @@ impl UnitCollection {
     }
 
     pub(crate) fn to_single_unit(self, name: String, abbr: String) -> SingleUnit {
-        SingleUnit {
-            name,
-            abbr,
-            scale: self.scale,
-            offset: 0.0,
-            base_units: self.base_units,
-        }
+        SingleUnit::new_owned(name, abbr, self.scale, self.base_units)
     }
 
     /// Remove any pairs of units that can be canceled out
@@ -419,7 +419,7 @@ impl UnitCollection {
                     if key1 == key2 || !hashmap_new.contains_key(key2) {
                         continue;
                     }
-                    if key1.base_units == key2.base_units {
+                    if key1.base_units() == key2.base_units() {
                         // Same base units, now check if signs are opposite (num/denom split)
                         if exp1.is_sign_positive() && exp2.is_sign_negative() {
                             let min = exp1.min(exp2.abs());
@@ -456,7 +456,7 @@ impl UnitCollection {
                             }
                             continue 'wl;
                         }
-                    } else if key1.base_units == key2.base_units.map(|x| -x) {
+                    } else if key1.base_units() == key2.base_units().map(|x| -x) {
                         // Opposite base units, now check if signs are same
                         // panic!("got into opposite base units!!");
                         if exp1.is_sign_positive() == exp2.is_sign_positive() {
@@ -520,7 +520,7 @@ impl UnitCollection {
             if psd.base_units[i] != 0.0 {
                 let mut unit = None;
                 for &single_unit in &units {
-                    if single_unit.base_units[i] != 0.0 {
+                    if single_unit.base_units()[i] != 0.0 {
                         match unit {
                             Some(_) => {
                                 continue 'bunits;
@@ -606,9 +606,9 @@ impl UnitCollection {
         let mut base_units = [0.0; NUMBER_OF_BASE_UNITS];
 
         for (unit, exponent) in single_units.iter() {
-            scale *= unit.scale.powf(*exponent);
+            scale *= unit.scale().powf(*exponent);
             for i in 0..NUMBER_OF_BASE_UNITS {
-                base_units[i] += unit.base_units[i] * exponent;
+                base_units[i] += unit.base_units()[i] * exponent;
             }
         }
 
@@ -715,11 +715,11 @@ fn check_satisfies_base_units(
     for (unit, &exp) in units {
         for i in 0..NUMBER_OF_BASE_UNITS {
             if exp == 1 {
-                base_units_copy[i] -= unit.base_units[i]
+                base_units_copy[i] -= unit.base_units()[i]
             } else if exp == -1 {
-                base_units_copy[i] += unit.base_units[i]
+                base_units_copy[i] += unit.base_units()[i]
             } else {
-                base_units_copy[i] -= unit.base_units[i] * (exp as f64);
+                base_units_copy[i] -= unit.base_units()[i] * (exp as f64);
             }
         }
     }
