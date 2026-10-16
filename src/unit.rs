@@ -16,7 +16,7 @@ use unit_defs::{BASE_UNITS, NUMBER_OF_BASE_UNITS, search_for_unit_name};
 pub(crate) use log_unit::LogUnit;
 pub(crate) use unit_defs::search_for_log_unit_name;
 
-use crate::error::FirkinError;
+use crate::{error::FirkinError, num::smallrational::SmallRational};
 
 const UNIT_SEP: &str = "."; // separate units within num/denom
 const UNIT_DIV_SEP: &str = "/"; // separate numerator from denominator
@@ -29,7 +29,7 @@ const UNIT_POW_IND: &str = ""; // indicates unit raised to a power
 #[derive(Clone, PartialEq, Debug)]
 pub(crate) struct UnitCollection {
     pub(crate) single_units: HashMap<SingleUnit, f64>,
-    pub(crate) base_units: [f64; NUMBER_OF_BASE_UNITS],
+    pub(crate) base_units: [SmallRational; NUMBER_OF_BASE_UNITS],
     pub(crate) scale: f64,
 }
 
@@ -40,7 +40,7 @@ impl Mul for UnitCollection {
 
     fn mul(self, rhs: Self) -> Self {
         // easy stuff first - base units and scale
-        let mut prod_base_units = [0.0; NUMBER_OF_BASE_UNITS];
+        let mut prod_base_units = [SmallRational::ZERO; NUMBER_OF_BASE_UNITS];
         for i in 0..NUMBER_OF_BASE_UNITS {
             prod_base_units[i] += self.base_units[i] + rhs.base_units[i];
         }
@@ -74,7 +74,7 @@ impl Div for UnitCollection {
 
     fn div(self, rhs: Self) -> Self {
         // easy stuff first - base units and scale
-        let mut quot_base_units = [0.0; NUMBER_OF_BASE_UNITS];
+        let mut quot_base_units = [SmallRational::ZERO; NUMBER_OF_BASE_UNITS];
         for i in 0..NUMBER_OF_BASE_UNITS {
             quot_base_units[i] += self.base_units[i] - rhs.base_units[i];
         }
@@ -126,7 +126,10 @@ impl UnitCollection {
         let mut result_base_units = self.base_units.clone();
 
         for i in 0..8 {
-            result_base_units[i] *= exponent
+            result_base_units[i] *= match SmallRational::try_from(exponent) {
+                Ok(r) => r,
+                Err(e) => panic!("Could not convert exponent to small rational: {}", e),
+            }
         }
 
         UnitCollection {
@@ -138,7 +141,7 @@ impl UnitCollection {
 
     pub(crate) fn coerce_unit_to_collection(unit: SingleUnit) -> Self {
         UnitCollection {
-            base_units: unit.base_units(),
+            base_units: unit.base_units().map(|x| *x),
             scale: unit.scale(),
             single_units: HashMap::from([(unit, 1.0)]),
         }
@@ -146,7 +149,7 @@ impl UnitCollection {
 
     pub(crate) fn empty_collection() -> Self {
         UnitCollection {
-            base_units: [0.0; NUMBER_OF_BASE_UNITS],
+            base_units: [SmallRational::ZERO; NUMBER_OF_BASE_UNITS],
             scale: 1.0,
             single_units: HashMap::new(),
         }
@@ -391,7 +394,7 @@ impl UnitCollection {
         for i in 0..8 {
             base_unit_hashmap.insert(
                 SingleUnit::new_static(&BASE_UNITS[i], None),
-                self.base_units[i],
+                self.base_units[i].into(),
             );
         }
 
@@ -473,7 +476,7 @@ impl UnitCollection {
                             }
                             continue 'wl;
                         }
-                    } else if key1.base_units() == key2.base_units().map(|x| -x) {
+                    } else if key1.base_units().map(|x| *x) == key2.base_units().map(|x| -x) {
                         // Opposite base units, now check if signs are same
                         // panic!("got into opposite base units!!");
                         if exp1.is_sign_positive() == exp2.is_sign_positive() {
@@ -534,10 +537,10 @@ impl UnitCollection {
         // if base unit only shows up once, that unit retains its exponent
         let mut retained = vec![];
         'bunits: for i in 0..NUMBER_OF_BASE_UNITS {
-            if psd.base_units[i] != 0.0 {
+            if !psd.base_units[i].is_zero() {
                 let mut unit = None;
                 for &single_unit in &units {
-                    if single_unit.base_units()[i] != 0.0 {
+                    if !single_unit.base_units()[i].is_zero() {
                         match unit {
                             Some(_) => {
                                 continue 'bunits;
@@ -620,12 +623,16 @@ impl UnitCollection {
 
     fn from_single_unit_hashmap(single_units: HashMap<SingleUnit, f64>) -> UnitCollection {
         let mut scale = 1.0;
-        let mut base_units = [0.0; NUMBER_OF_BASE_UNITS];
+        let mut base_units = [SmallRational::ZERO; NUMBER_OF_BASE_UNITS];
 
         for (unit, exponent) in single_units.iter() {
             scale *= unit.scale().powf(*exponent);
             for i in 0..NUMBER_OF_BASE_UNITS {
-                base_units[i] += unit.base_units()[i] * exponent;
+                base_units[i] += unit.base_units()[i]
+                    * match SmallRational::try_from(*exponent) {
+                        Ok(r) => r,
+                        Err(e) => panic!("Could not coerce number to small rational: {}", e),
+                    };
             }
         }
 
@@ -669,7 +676,7 @@ impl Div<ScaleDiff> for f64 {
 fn simplify_mapping_algorithm(
     units: Arc<HashMap<SingleUnit, i32>>,
     starting_holes: HashMap<Arc<SingleUnit>, i32>,
-    base_units: Arc<[f64; NUMBER_OF_BASE_UNITS]>,
+    base_units: Arc<[SmallRational; NUMBER_OF_BASE_UNITS]>,
     is_completed: Arc<Mutex<bool>>,
 ) -> Option<HashMap<Arc<SingleUnit>, i32>> {
     let mut thread_options = vec![];
@@ -726,7 +733,7 @@ fn simplify_mapping_algorithm(
 
 fn check_satisfies_base_units(
     units: &HashMap<Arc<SingleUnit>, i32>,
-    base_units: &[f64; NUMBER_OF_BASE_UNITS],
+    base_units: &[SmallRational; NUMBER_OF_BASE_UNITS],
 ) -> bool {
     let mut base_units_copy = base_units.clone();
     for (unit, &exp) in units {
@@ -736,11 +743,11 @@ fn check_satisfies_base_units(
             } else if exp == -1 {
                 base_units_copy[i] += unit.base_units()[i]
             } else {
-                base_units_copy[i] -= unit.base_units()[i] * (exp as f64);
+                base_units_copy[i] -= unit.base_units()[i] * SmallRational::from(exp);
             }
         }
     }
-    base_units_copy == [0.0; NUMBER_OF_BASE_UNITS]
+    base_units_copy == [SmallRational::ZERO; NUMBER_OF_BASE_UNITS]
 }
 
 #[cfg(test)]

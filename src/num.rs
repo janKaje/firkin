@@ -10,11 +10,12 @@ use pyo3::prelude::*;
 
 mod float;
 mod int;
-pub(crate) mod number;
 mod numpy_math;
 mod python_math;
 mod rat;
 mod sign;
+
+pub(crate) mod number;
 pub(crate) mod smallrational;
 pub(crate) mod traits;
 

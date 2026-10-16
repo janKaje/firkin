@@ -42,6 +42,48 @@ impl SmallRational {
         sign: Positive,
     };
 
+    pub(crate) const NEG_ONE: SmallRational = SmallRational {
+        numerator: 1,
+        denominator: 1,
+        sign: Negative,
+    };
+
+    pub(crate) const TWO: SmallRational = SmallRational {
+        numerator: 2,
+        denominator: 1,
+        sign: Positive,
+    };
+
+    pub(crate) const NEG_TWO: SmallRational = SmallRational {
+        numerator: 2,
+        denominator: 1,
+        sign: Negative,
+    };
+
+    pub(crate) const THREE: SmallRational = SmallRational {
+        numerator: 3,
+        denominator: 1,
+        sign: Positive,
+    };
+
+    pub(crate) const NEG_THREE: SmallRational = SmallRational {
+        numerator: 3,
+        denominator: 1,
+        sign: Negative,
+    };
+
+    pub(crate) const FOUR: SmallRational = SmallRational {
+        numerator: 4,
+        denominator: 1,
+        sign: Positive,
+    };
+
+    pub(crate) const NEG_FOUR: SmallRational = SmallRational {
+        numerator: 4,
+        denominator: 1,
+        sign: Negative,
+    };
+
     pub(crate) fn new(numerator: u64, denominator: u64, is_positive: bool) -> Self {
         if denominator == 0 {
             panic!("denominator cannot be zero");
@@ -186,19 +228,19 @@ impl SmallRational {
                         denominator: 1,
                         sign: Positive,
                     })
-                } else if selfabs > rhs {
+                } else if selfabs < rhs {
                     SmallRational::try_new(
                         rnum.checked_mul(sden)?
                             .checked_sub(snum.checked_mul(rden)?)?,
                         sden.checked_mul(rden)?,
-                        false,
-                    )
+                        true,)
+                    
                 } else {
                     SmallRational::try_new(
                         snum.checked_mul(rden)?
                             .checked_sub(rnum.checked_mul(sden)?)?,
                         sden.checked_mul(rden)?,
-                        true,
+                        false,
                     )
                 }
             }
@@ -582,10 +624,26 @@ impl TryFrom<i128> for SmallRational {
     }
 }
 
+impl TryFrom<f64> for SmallRational {
+    type Error = &'static str;
+
+    fn try_from(value: f64) -> Result<Self, Self::Error> {
+        if value.is_infinite() {
+            Err("Value is infinite.")
+        } else if value > i128::MAX as f64 || value < i128::MIN as f64 {
+            Err("Value is too big")
+        } else if value != value.round() {
+            Err("Value is not integer.") // SWITCH LATER todo!()
+        } else {
+            SmallRational::try_from(value.round() as i128)
+        }
+    }
+}
+
 impl PartialEq for SmallRational {
     fn eq(&self, other: &Self) -> bool {
         if self.is_zero() && other.is_zero() {
-            return true
+            return true;
         }
         self.numerator == other.numerator
             && other.denominator == self.denominator
@@ -765,10 +823,15 @@ macro_rules! arith_binary_rational {
         impl $Imp<SmallRational> for SmallRational {
             type Output = SmallRational;
 
-            fn $method(self, rhs:SmallRational) -> Self::Output {
+            fn $method(self, rhs: SmallRational) -> Self::Output {
                 match self.$checked_method(rhs) {
                     Some(result) => result,
-                    None => panic!("Overflow")
+                    None => panic!(
+                        "Overflow: {} method, self: {:?}, rhs: {:?}",
+                        stringify!($method),
+                        self,
+                        rhs
+                    ),
                 }
             }
         }
@@ -776,21 +839,31 @@ macro_rules! arith_binary_rational {
         impl $Imp<&SmallRational> for SmallRational {
             type Output = SmallRational;
 
-            fn $method(self, rhs:&SmallRational) -> Self::Output {
+            fn $method(self, rhs: &SmallRational) -> Self::Output {
                 match self.$checked_method(rhs) {
                     Some(result) => result,
-                    None => panic!("Overflow")
+                    None => panic!(
+                        "Overflow: {} method, self: {:?}, rhs: {:?}",
+                        stringify!($method),
+                        self,
+                        rhs
+                    ),
                 }
             }
         }
-        
+
         impl $Imp<SmallRational> for &SmallRational {
             type Output = SmallRational;
 
-            fn $method(self, rhs:SmallRational) -> Self::Output {
+            fn $method(self, rhs: SmallRational) -> Self::Output {
                 match self.$checked_method(rhs) {
                     Some(result) => result,
-                    None => panic!("Overflow")
+                    None => panic!(
+                        "Overflow: {} method, self: {:?}, rhs: {:?}",
+                        stringify!($method),
+                        self,
+                        rhs
+                    ),
                 }
             }
         }
@@ -798,10 +871,15 @@ macro_rules! arith_binary_rational {
         impl $Imp<&SmallRational> for &SmallRational {
             type Output = SmallRational;
 
-            fn $method(self, rhs:&SmallRational) -> Self::Output {
+            fn $method(self, rhs: &SmallRational) -> Self::Output {
                 match self.$checked_method(rhs) {
                     Some(result) => result,
-                    None => panic!("Overflow")
+                    None => panic!(
+                        "Overflow: {} method, self: {:?}, rhs: {:?}",
+                        stringify!($method),
+                        self,
+                        rhs
+                    ),
                 }
             }
         }

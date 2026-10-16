@@ -1,6 +1,9 @@
 use std::hash::{Hash, Hasher};
 
-use crate::unit::unit_defs::{NUMBER_OF_BASE_UNITS, PrefixDef, UnitDefStatic};
+use crate::{
+    num::smallrational::SmallRational,
+    unit::unit_defs::{NUMBER_OF_BASE_UNITS, PrefixDef, UnitDefStatic},
+};
 
 // TODO: rewrite impl of prefixes so uses less memory, is faster to clone?
 // being able to implement copy would be incredibly helpful for simplify speed i think
@@ -11,7 +14,7 @@ pub(crate) struct StaticSingleUnit {
     pub(crate) prefix: Option<PrefixDef>,
     pub(crate) scale: f64,
     pub(crate) offset: f64,
-    pub(crate) base_units: [f64; NUMBER_OF_BASE_UNITS],
+    pub(crate) base_units: [&'static SmallRational; NUMBER_OF_BASE_UNITS],
 }
 
 impl Hash for StaticSingleUnit {
@@ -47,7 +50,7 @@ pub(crate) struct OwnedSingleUnit {
     pub(crate) name: String,
     pub(crate) abbr: String,
     pub(crate) scale: f64,
-    pub(crate) base_units: [f64; NUMBER_OF_BASE_UNITS],
+    pub(crate) base_units: [SmallRational; NUMBER_OF_BASE_UNITS],
 }
 
 impl Hash for OwnedSingleUnit {
@@ -62,7 +65,7 @@ impl OwnedSingleUnit {
         name: String,
         abbr: String,
         scale: f64,
-        base_units: [f64; NUMBER_OF_BASE_UNITS],
+        base_units: [SmallRational; NUMBER_OF_BASE_UNITS],
     ) -> Self {
         OwnedSingleUnit {
             name,
@@ -90,7 +93,7 @@ impl SingleUnit {
         name: String,
         abbr: String,
         scale: f64,
-        base_units: [f64; NUMBER_OF_BASE_UNITS],
+        base_units: [SmallRational; NUMBER_OF_BASE_UNITS],
     ) -> Self {
         Self::Owned(OwnedSingleUnit::new(name, abbr, scale, base_units))
     }
@@ -132,10 +135,10 @@ impl SingleUnit {
         }
     }
 
-    pub(crate) fn base_units(&self) -> [f64; NUMBER_OF_BASE_UNITS] {
+    pub(crate) fn base_units(&self) -> [&SmallRational; NUMBER_OF_BASE_UNITS] {
         match self {
             SingleUnit::Static(static_single_unit) => static_single_unit.base_units,
-            SingleUnit::Owned(owned_single_unit) => owned_single_unit.base_units,
+            SingleUnit::Owned(owned_single_unit) => owned_single_unit.base_units.each_ref(),
         }
     }
 }

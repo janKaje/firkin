@@ -82,7 +82,7 @@ type ConstConfigLine = (String, f64, String, String);
 
 struct UnitDefNumbers {
     scale: f64,
-    base_units: Vec<f64>,
+    base_units: Vec<i32>,
 }
 
 struct UnitDef {
@@ -91,7 +91,22 @@ struct UnitDef {
     python_var_name: String,
     offset: f64,
     scale: f64,
-    base_units: Vec<f64>,
+    base_units: Vec<i32>,
+}
+
+fn i32_to_small_rat(n: i32) -> &'static str {
+    match n {
+        0 => "&SR::ZERO, ",
+        1 => "&SR::ONE, ",
+        -1 => "&SR::NEG_ONE, ",
+        2 => "&SR::TWO, ",
+        -2 => "&SR::NEG_TWO, ",
+        3 => "&SR::THREE, ",
+        -3 => "&SR::NEG_THREE, ",
+        4 => "&SR::FOUR, ",
+        -4 => "&SR::NEG_FOUR, ",
+        _ => "&SR::NONE, ",
+    }
 }
 
 /// Gathers information found in base_units.toml
@@ -116,8 +131,6 @@ fn write_base_units_rs(base_unit_vec: &Vec<BaseUnitConfigLine>) -> HashMap<Strin
     // get number of base units and create type_str
     let n_base_units = base_unit_vec.len();
 
-    let type_str = format!("&'static str, &'static str, f64, f64, [f64; {n_base_units}]");
-
     // initialize buffers to write data from toml file into
     let mut base_units_str = String::new();
 
@@ -128,10 +141,10 @@ fn write_base_units_rs(base_unit_vec: &Vec<BaseUnitConfigLine>) -> HashMap<Strin
         let mut numbers = vec![];
 
         for _ in 0..n_base_units {
-            numbers.push(0.0);
+            numbers.push(0);
         }
 
-        *numbers.get_mut(i).unwrap() = 1.0;
+        *numbers.get_mut(i).unwrap() = 1;
 
         // extract abbr from toml
         let name = &item.0;
@@ -144,7 +157,8 @@ fn write_base_units_rs(base_unit_vec: &Vec<BaseUnitConfigLine>) -> HashMap<Strin
         base_units_str.push_str(abbr);
         base_units_str.push_str("\", 0.0, 1.0, [");
         for n in numbers.iter() {
-            base_units_str.push_str(format!("{:?}, ", n).as_str());
+            base_units_str.push_str(i32_to_small_rat(*n))
+            // base_units_str.push_str(format!("{:?}, ", n).as_str());
         }
         base_units_str.push_str("]),");
 
@@ -163,11 +177,12 @@ fn write_base_units_rs(base_unit_vec: &Vec<BaseUnitConfigLine>) -> HashMap<Strin
 /// This file was generated automatically by the build script.
 /// If you want to add units, edit `unit_definitions\\base_units.csv`
 /// If you want to change file layout, edit `build.rs`
+use crate::num::smallrational::SmallRational as SR;
 
 pub(crate) const NUMBER_OF_BASE_UNITS: usize = {};
 
 #[rustfmt::skip]
-pub(crate) type UnitDefStatic = (&'static str, &'static str, f64, f64, [f64; NUMBER_OF_BASE_UNITS]);
+pub(crate) type UnitDefStatic = (&'static str, &'static str, f64, f64, [&'static SR; NUMBER_OF_BASE_UNITS]);
 
 #[rustfmt::skip]
 pub(crate) const BASE_UNITS: &[UnitDefStatic] = &[{}
@@ -206,7 +221,7 @@ fn get_unit_def_from_csv_line(
         .base_units
         .len();
 
-    let mut base_units = vec![0.0; n_base_units];
+    let mut base_units = vec![0; n_base_units];
 
     for unit_string in derivation.split("_") {
         if unit_string == "" {
@@ -214,7 +229,7 @@ fn get_unit_def_from_csv_line(
         }
         if unit_string.contains("^") {
             let v: Vec<&str> = unit_string.split("^").collect();
-            let (unit_name, exp) = (v[0], v[1].parse::<f64>().unwrap());
+            let (unit_name, exp) = (v[0], v[1].parse::<i32>().unwrap());
             let unit_numbers = match unit_def_hashmap.get(unit_name) {
                 Some(n) => n,
                 None => panic!(
@@ -224,7 +239,7 @@ fn get_unit_def_from_csv_line(
                 ),
             };
 
-            scale *= unit_numbers.scale.powf(exp);
+            scale *= unit_numbers.scale.powf(exp.into());
 
             for i in 0..n_base_units {
                 *base_units.get_mut(i).unwrap() += unit_numbers.base_units[i] * exp;
@@ -265,6 +280,7 @@ fn write_derived_units_rs(unit_def_vec: &Vec<UnitDef>) {
 /// If you want to add units, edit `unit_definitions\\derived_units.csv`
 /// If you want to change file layout, edit `build.rs`
 use super::base_units::UnitDefStatic;
+use crate::num::smallrational::SmallRational as SR;
 
 #[rustfmt::skip]
 pub(crate) const OTHER_UNITS: &[UnitDefStatic] = &["
@@ -279,7 +295,7 @@ pub(crate) const OTHER_UNITS: &[UnitDefStatic] = &["
             .as_str(),
         );
         for n in &unit_def.base_units {
-            derived_units_rs.push_str(format!("{:?}, ", n).as_str());
+            derived_units_rs.push_str(i32_to_small_rat(*n));
         }
         derived_units_rs.push_str("]),");
     }
