@@ -10,6 +10,7 @@ pub(crate) enum FirkinError {
     IncompatibleUnits { first: String, second: String },
     CannotConvertToFirkin(String),
     CannotConvertToNumber(String),
+    UnitAlreadyExists(String),
 }
 
 impl std::error::Error for FirkinError {}
@@ -17,17 +18,22 @@ impl std::error::Error for FirkinError {}
 impl fmt::Display for FirkinError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::UnitNotFound(query) => write!(f, "Unit {query} not found"),
-            Self::LogUnitNotFound(query) => write!(f, "Logarithmic ratio unit {query} not found"),
-            Self::ConstantNotFound(query) => write!(f, "Constant {query} not found"),
-            Self::IncompatibleUnits { first, second } => {
+            FirkinError::UnitNotFound(query) => write!(f, "Unit {query} not found"),
+            FirkinError::LogUnitNotFound(query) => {
+                write!(f, "Logarithmic ratio unit {query} not found")
+            }
+            FirkinError::ConstantNotFound(query) => write!(f, "Constant {query} not found"),
+            FirkinError::IncompatibleUnits { first, second } => {
                 write!(f, "{first} and {second} are not compatible")
             }
-            Self::CannotConvertToFirkin(other) => {
+            FirkinError::CannotConvertToFirkin(other) => {
                 write!(f, "{other} cannot be coerced into a unit")
             }
-            Self::CannotConvertToNumber(other) => {
+            FirkinError::CannotConvertToNumber(other) => {
                 write!(f, "{other} cannot be coerced into a number")
+            }
+            FirkinError::UnitAlreadyExists(unit_query) => {
+                write!(f, "Unit with the name/alias {} already exists", unit_query)
             }
         }
     }
@@ -45,6 +51,7 @@ impl std::convert::From<FirkinError> for PyErr {
             } => PyTypeError::new_err(err.to_string()),
             FirkinError::CannotConvertToFirkin(_other) => PyTypeError::new_err(err.to_string()),
             FirkinError::CannotConvertToNumber(_other) => PyTypeError::new_err(err.to_string()),
+            FirkinError::UnitAlreadyExists(_) => PyValueError::new_err(err.to_string()),
         }
     }
 }

@@ -16,6 +16,8 @@ use unit_defs::{BASE_UNITS, NUMBER_OF_BASE_UNITS, search_for_unit_name};
 pub(crate) use log_unit::LogUnit;
 pub(crate) use unit_defs::search_for_log_unit_name;
 
+use crate::error::FirkinError;
+
 const UNIT_SEP: &str = "."; // separate units within num/denom
 const UNIT_DIV_SEP: &str = "/"; // separate numerator from denominator
 const UNIT_FORMAT: (&str, &str) = ("[", "]"); // to come before and after unit
@@ -400,8 +402,23 @@ impl UnitCollection {
         }
     }
 
-    pub(crate) fn to_single_unit(self, name: String, abbr: String) -> SingleUnit {
-        SingleUnit::new_owned(name, abbr, self.scale, self.base_units)
+    pub(crate) fn to_single_unit(
+        self,
+        name: String,
+        abbr: String,
+    ) -> Result<SingleUnit, FirkinError> {
+        match search_for_unit_name(&name) {
+            Some(_) => Err(FirkinError::UnitAlreadyExists(name)),
+            None => match search_for_unit_name(&abbr) {
+                Some(_) => Err(FirkinError::UnitAlreadyExists(abbr)),
+                None => Ok(SingleUnit::new_owned(
+                    name,
+                    abbr,
+                    self.scale,
+                    self.base_units,
+                )),
+            },
+        }
     }
 
     /// Remove any pairs of units that can be canceled out

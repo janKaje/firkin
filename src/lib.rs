@@ -159,7 +159,7 @@ mod firkin {
         ) -> PyResult<Self> {
             let definition: Firkin = definition.into();
             let definition: UnitCollection = definition.into();
-            let unit = definition.to_single_unit(name, abbr);
+            let unit = definition.to_single_unit(name, abbr)?;
             Ok(Firkin {
                 unit_collection: UnitCollection::coerce_unit_to_collection(unit),
                 value: 1.0,
