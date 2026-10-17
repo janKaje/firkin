@@ -11,14 +11,14 @@ mod unit;
 #[pymodule]
 mod firkin {
     use pyo3::{prelude::*, types::*};
-    use rug::az::CastFrom;
+    
     use std::fmt;
 
     use crate::constant::search_for_constant_name;
     use crate::error::FirkinError;
     use crate::num::int::IntegerWrapper;
     use crate::num::number::NumberWrapper;
-    use crate::num::smallrational::SmallRational;
+    
     use crate::num::traits::NumpyUFuncs;
     use crate::num::traits::PythonMathFunctions;
     use crate::unit::LogUnit;
@@ -532,16 +532,34 @@ mod firkin {
             Ok(FirkinNumber::from(exponent.np_exp()?))
         }
 
+        fn exp2(&self) -> PyResult<FirkinNumber> {
+            let exponent: NumberWrapper =
+                self.as_number_internal(&UnitCollection::empty_collection(), NumberWrapper::ONE)?;
+            Ok(FirkinNumber::from(exponent.np_exp2()?))
+        }
+
         fn log(&self) -> PyResult<FirkinNumber> {
             let exponent =
                 self.as_number_internal(&UnitCollection::empty_collection(), NumberWrapper::ONE)?;
             Ok(FirkinNumber::from(exponent.np_log()?))
         }
 
+        fn log2(&self) -> PyResult<FirkinNumber> {
+            let exponent =
+                self.as_number_internal(&UnitCollection::empty_collection(), NumberWrapper::ONE)?;
+            Ok(FirkinNumber::from(exponent.np_log2()?))
+        }
+
         fn log10(&self) -> PyResult<FirkinNumber> {
             let exponent =
                 self.as_number_internal(&UnitCollection::empty_collection(), NumberWrapper::ONE)?;
             Ok(FirkinNumber::from(exponent.np_log10()?))
+        }
+
+        fn sqrt(&self) -> PyResult<FirkinNumber> {
+            let exponent =
+                self.as_number_internal(&UnitCollection::empty_collection(), NumberWrapper::ONE)?;
+            Ok(FirkinNumber::from(exponent.np_sqrt()?))
         }
 
         /** Returns a more descriptive version of the usual unit string, with unit
