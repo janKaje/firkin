@@ -12,6 +12,7 @@ pub(crate) enum FirkinError {
     CannotConvertToNumber(String, Option<String>),
     CannotConvertToInteger(String, Option<String>),
     CannotConvertToFloat(String, Option<String>),
+    CannotConvertToSmallRat(String, Option<String>),
     PowModDoesNotExist(String, String, String),
     DivideByZero(String, String),
     CannotConvertInfinity(String),
@@ -76,6 +77,14 @@ impl fmt::Display for FirkinError {
             FirkinError::UnitAlreadyExists(unit_query) => {
                 write!(f, "Unit with the name/alias {} already exists", unit_query)
             }
+            FirkinError::CannotConvertToSmallRat(input, opt_addl_info) => match opt_addl_info {
+                Some(addl_info) => write!(
+                    f,
+                    "Cannot convert \"{}\" to 128-bit rational. Additional info: {}",
+                    input, addl_info
+                ),
+                None => write!(f, "Cannot convert \"{}\" to 128-bit rational", input),
+            },
         }
     }
 }
@@ -101,6 +110,7 @@ impl std::convert::From<FirkinError> for PyErr {
             FirkinError::IntegerOnlyMethod(_) => PyNotImplementedError::new_err(err.to_string()),
             FirkinError::Undefined(_, _) => PyArithmeticError::new_err(err.to_string()),
             FirkinError::UnitAlreadyExists(_) => PyValueError::new_err(err.to_string()),
+            FirkinError::CannotConvertToSmallRat(_, _) => PyTypeError::new_err(err.to_string()),
         }
     }
 }

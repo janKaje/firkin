@@ -8,6 +8,7 @@ use std::{
 };
 
 use gcd::{binary_u64, binary_u128};
+use regex::regex;
 use rug::{Assign, Float, Integer, Rational};
 
 use crate::{
@@ -425,7 +426,122 @@ impl FromStr for SmallRational {
     type Err = FirkinError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        todo!()
+        let s = s.trim();
+        if let Some(m) = regex!(r"([-+]?)(\d+)/(\d+)").captures(s) {
+            // easy mode
+            let is_positive: bool = match &m[1] {
+                "-" => false,
+                _ => true,
+            };
+            let numer: u128 = match m[2].parse() {
+                Ok(r) => r,
+                Err(_) => {
+                    return Err(FirkinError::OverflowError(format!(
+                        "Substring {} of string {} is larger than u128 max, cannot coerce to small rational",
+                        &m[2], s
+                    )));
+                }
+            };
+            let denom: u128 = match m[3].parse() {
+                Ok(r) => r,
+                Err(_) => {
+                    return Err(FirkinError::OverflowError(format!(
+                        "Substring {} of string {} is larger than u128 max, cannot coerce to small rational",
+                        &m[3], s
+                    )));
+                }
+            };
+            match SmallRational::try_new(numer, denom, is_positive) {
+                Some(r) => Ok(r),
+                None => Err(FirkinError::OverflowError(format!(
+                    "String {} cannot be coerced to small rational",
+                    s
+                ))),
+            }
+        } else if let Some(m) = regex!(r"([-+]?\d+).?(\d*)[eE]?([-+]?)(\d*)").captures(s) {
+            // decimal
+            let exp: u32;
+            if (&m[4]).len() > 0 {
+                exp = match (&m[4]).parse::<u32>() {
+                    Ok(e) => e,
+                    Err(e) => {
+                        return Err(FirkinError::CannotConvertToSmallRat(
+                            s.into(),
+                            Some(e.to_string()),
+                        ));
+                    }
+                };
+            } else {
+                exp = 0
+            }
+
+            let neg_exp = &m[3] == "-";
+
+            let whole: i128 = m[1].parse().unwrap();
+
+            let frac_denom: u128;
+            let as_rat: SmallRational;
+            if (&m[2]).len() > 0 {
+                frac_denom = 10_u128.pow((&m[2]).len() as u32);
+                if !whole.is_negative() {
+                    as_rat = match SmallRational::try_new(
+                        whole.unsigned_abs() * frac_denom + m[2].parse::<u128>().unwrap(),
+                        frac_denom,
+                        true,
+                    ) {
+                        Some(r) => r,
+                        None => return Err(FirkinError::CannotConvertToSmallRat(s.into(), None)),
+                    };
+                } else {
+                    as_rat = match SmallRational::try_new(
+                        whole.unsigned_abs() * frac_denom - m[2].parse::<u128>().unwrap(),
+                        frac_denom,
+                        false,
+                    ) {
+                        Some(r) => r,
+                        None => return Err(FirkinError::CannotConvertToSmallRat(s.into(), None)),
+                    };
+                }
+            } else {
+                as_rat = match SmallRational::try_from(whole) {
+                    Ok(r) => r,
+                    Err(e) => {
+                        return Err(FirkinError::CannotConvertToSmallRat(
+                            s.into(),
+                            Some(e.to_string()),
+                        ));
+                    }
+                };
+            }
+
+            if exp == 0 {
+                Ok(as_rat)
+            } else if !neg_exp {
+                match SmallRational::try_from(10_i128.pow(exp)) {
+                    Ok(i) => match as_rat.checked_mul(i) {
+                        Some(r) => Ok(r),
+                        None => Err(FirkinError::CannotConvertToSmallRat(s.into(), None)),
+                    },
+                    Err(e) => Err(FirkinError::CannotConvertToSmallRat(
+                        s.into(),
+                        Some(e.to_string()),
+                    )),
+                }
+            } else {
+                match SmallRational::try_from(10_i128.pow(exp)) {
+                    Ok(i) => match as_rat.checked_div(i) {
+                        Some(r) => Ok(r),
+                        None => Err(FirkinError::CannotConvertToSmallRat(s.into(), None)),
+                    },
+                    Err(e) => Err(FirkinError::CannotConvertToSmallRat(
+                        s.into(),
+                        Some(e.to_string()),
+                    )),
+                }
+            }
+        } else {
+            Err(FirkinError::CannotConvertToSmallRat(s.into(), None))
+        }
     }
 }
 
