@@ -377,6 +377,10 @@ impl SmallRational {
         }
     }
 
+    fn floor_rat(&self) -> SmallRational {
+        SmallRational { numerator: ((self.numerator - (self.numerator % self.denominator)) / self.denominator), denominator: 1, sign: self.sign }
+    }
+
     pub(crate) fn ceil(&self) -> i128 {
         if self.numerator % self.denominator == 0 {
             self.get_whole_number_part()
@@ -1274,7 +1278,7 @@ impl Rem<&SmallRational> for &SmallRational {
     type Output = SmallRational;
 
     fn rem(self, rhs: &SmallRational) -> Self::Output {
-        todo!()
+        self - rhs * (self / rhs).floor_rat()
     }
 }
 
@@ -1719,6 +1723,13 @@ mod tests {
             SmallRational::new(u64::MAX, 1, true).round(),
             u64::MAX as i128
         );
+    }
+
+    #[test]
+    fn rem() {
+        let x = SmallRational::new(69,7, true);
+        let y = SmallRational::new(3, 4, true);
+        assert_eq!(x % y, SmallRational::new(3, 28, true));
     }
 
     #[test]
